@@ -10,6 +10,9 @@ import uvicorn
 # Übergeordnetes Verzeichnis zum Python-Pfad hinzufügen
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from typing import List
+# pyrefly: ignore [missing-import]
+from pydantic import BaseModel
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 # pyrefly: ignore [missing-import]
@@ -139,6 +142,149 @@ def get_asset_history(symbol: str, period: str = "30d"):
     except Exception as e:
         logger.error(f"Fehler beim Laden der Historie für {symbol} ({period}): {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class PortfolioItem(BaseModel):
+    symbol: str
+    quantity: float
+    buy_price: float
+
+class PortfolioAnalysisRequest(BaseModel):
+    holdings: List[PortfolioItem]
+    strategy: str
+
+@app.post("/api/portfolio/analyze")
+def analyze_portfolio(request: PortfolioAnalysisRequest):
+    """Analysiert das Nutzerportfolio und gibt Empfehlungen basierend auf einer Strategie."""
+    # pyrefly: ignore [missing-import]
+    from backend.ai_analyzer import client, HAS_NEW_GENAI, HAS_LEGACY_GENAI, GEMINI_API_KEY, get_mock_prediction
+    # pyrefly: ignore [missing-import]
+    from backend.data_fetcher import fetch_market_data
+    
+    if not request.holdings:
+        return {
+            "portfolio_score": 100,
+            "advice_summary": "Fügen Sie Ihrem Portfolio Investments hinzu, um eine KI-Analyse zu erhalten.",
+            "suggestions": [],
+            "forecasts": {},
+            "estimated_dividends": "Keine Investments vorhanden.",
+            "tips": ["Erstellen Sie Ihre ersten Investments in der Tabelle links."]
+        }
+        
+    # Marktdaten für die enthaltenen Assets sammeln
+    holdings_summary = []
+    total_value = 0.0
+    total_cost = 0.0
+    
+    for item in request.holdings:
+        symbol = item.symbol
+        # Versuche aktuelle Preise zu holen
+        market_data = fetch_market_data(symbol, days=30)
+        current_price = market_data["current_price"] if market_data else item.buy_price
+        
+        value = current_price * item.quantity
+        cost = item.buy_price * item.quantity
+        total_value += value
+        total_cost += cost
+        
+        holdings_summary.append({
+            "symbol": symbol,
+            "quantity": item.quantity,
+            "buy_price": item.buy_price,
+            "current_price": current_price,
+            "rsi": market_data["rsi"] if market_data else 50,
+            "trend": market_data["technical_trend"] if market_data else "Neutral"
+        })
+        
+    # Prompt zusammenbauen
+    holdings_text = ""
+    for h in holdings_summary:
+        holdings_text += f"- Ticker: {h['symbol']}, Menge: {h['quantity']}, Kaufpreis: {h['buy_price']} $, Aktueller Preis: {h['current_price']} $ (RSI: {h['rsi']}, Trend: {h['trend']})\n"
+        
+    prompt = f"""
+Du bist ein erstklassiger KI-Finanzberater und Portfolio-Manager.
+Ein Nutzer hat sein Portfolio mit folgenden Werten geladen:
+{holdings_text}
+
+Gesamtinvestition (Kosten): {total_cost:.2f} $
+Aktueller Gesamtwert: {total_value:.2f} $
+Gewählte Anlagestrategie des Nutzers: {request.strategy}
+
+Analysiere dieses Portfolio im Hinblick auf die gewählte Anlagestrategie (z.B. Konservativ, Ausgewogen, Aggressiv, Dividenden-Fokus).
+Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit diesem JSON-Objekt. Verwende genau folgendes Schema:
+
+{{
+  "portfolio_score": <Zahl zwischen 0 und 100, Bewertung der Portfolio-Qualität passend zur Strategie>,
+  "advice_summary": "<Zusammenfassende Einschätzung und Begründung des Scores auf Deutsch (ca. 3-4 Sätze).>",
+  "suggestions": ["Verbesserungsvorschlag 1", "Verbesserungsvorschlag 2", ...],
+  "forecasts": {{
+     "SYMBOL1": {{ "buy_percentage": <Zahl zwischen 0 und 100 für Kaufkonfidenz>, "action": "Kauf" | "Halten" | "Verkauf" }},
+     "SYMBOL2": ...
+  }},
+  "estimated_dividends": "<Spezifische Schätzung der zu erwartenden Dividenden bzw. Erträge dieses Portfolios auf Deutsch.>",
+  "tips": ["Hilfreicher allgemeiner Anlagetipp 1", "Hilfreicher allgemeiner Anlagetipp 2", ...]
+}}
+"""
+
+    # Mock Fallback, falls kein Key vorhanden
+    if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
+        score = 80 if request.strategy == "Ausgewogen" else 75
+        forecasts = {}
+        for h in holdings_summary:
+            rsi = h["rsi"]
+            if rsi < 40:
+                action, pct = "Kauf", 85
+            elif rsi > 70:
+                action, pct = "Verkauf", 75
+            else:
+                action, pct = "Halten", 55
+            forecasts[h["symbol"]] = {"buy_percentage": pct, "action": action}
+            
+        return {
+            "portfolio_score": score,
+            "advice_summary": f"Ihr Portfolio zeigt eine solide Grundlage für die Strategie '{request.strategy}'. Die Diversifikation über {len(request.holdings)} Asset(s) ist ein guter Anfang. Technische Indikatoren weisen auf kurzfristige Halte-Signale hin.",
+            "suggestions": [
+                "Erhöhen Sie den Anteil an Rohstoffen zur Inflationsabsicherung.",
+                "Setzen Sie regelmäßige Sparpläne auf Krypto-Assets auf, um den Cost-Average-Effekt zu nutzen."
+            ],
+            "forecasts": forecasts,
+            "estimated_dividends": f"Die geschätzte Dividendenrendite liegt bei ca. 1.5% - 2.2% p.a. (primär getrieben durch eventuelle Aktienanteile).",
+            "tips": [
+                "Diversifizieren Sie über verschiedene Assetklassen hinweg.",
+                "Reinvestieren Sie erhaltene Ausschüttungen direkt wieder."
+            ]
+        }
+
+    try:
+        if HAS_NEW_GENAI and client:
+            # pyrefly: ignore [missing-import]
+            from google.genai import types
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                )
+            )
+            response_text = response.text
+        elif HAS_LEGACY_GENAI:
+            # pyrefly: ignore [missing-import]
+            import google.generativeai as legacy_genai
+            model = legacy_genai.GenerativeModel("gemini-1.5-flash")
+            generation_config = {
+                "response_mime_type": "application/json",
+                "temperature": 0.2
+            }
+            response = model.generate_content(prompt, generation_config=generation_config)
+            response_text = response.text
+        else:
+            raise RuntimeError("Kein Gemini SDK verfügbar.")
+            
+        return json.loads(response_text.strip())
+    except Exception as e:
+        logger.error(f"Fehler bei der KI-Portfolio-Analyse: {e}")
+        raise HTTPException(status_code=500, detail=f"KI-Analyse fehlgeschlagen: {str(e)}")
 
 
 @app.post("/api/refresh")

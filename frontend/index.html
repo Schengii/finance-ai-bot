@@ -27,6 +27,16 @@
                     <p>Automated Market Analysis</p>
                 </div>
             </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="header-nav">
+                <button class="nav-tab active" id="nav-markets" data-tab="markets-view">
+                    <i data-lucide="line-chart"></i> Marktanalyse
+                </button>
+                <button class="nav-tab" id="nav-portfolio" data-tab="portfolio-view">
+                    <i data-lucide="wallet"></i> Portfolio-Planer
+                </button>
+            </nav>
             
             <div class="header-actions">
                 <div class="status-indicator">
@@ -40,202 +50,405 @@
                     <i data-lucide="refresh-cw" class="icon-spin-hover"></i>
                     <span>Analysieren</span>
                 </button>
+                <div class="user-profile">
+                    <div class="profile-avatar">MM</div>
+                    <span class="profile-name">Max Mustermann</span>
+                </div>
             </div>
         </header>
 
         <!-- Main Dashboard Layout -->
         <main class="dashboard-content">
             
-            <!-- Overall Stats Widgets -->
-            <section class="overview-stats">
-                <div class="stat-card glass-panel">
-                    <div class="stat-icon sentiment">
-                        <i data-lucide="brain"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>Markt-Sentiment</h3>
-                        <p class="stat-value" id="market-sentiment-val">Neutral</p>
-                        <span class="stat-desc">Durchschnittliches KI-News-Sentiment</span>
-                    </div>
-                </div>
-                
-                <div class="stat-card glass-panel">
-                    <div class="stat-icon assets">
-                        <i data-lucide="bar-chart-2"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>Überwachte Assets</h3>
-                        <p class="stat-value" id="total-assets-val">0</p>
-                        <span class="stat-desc">5 Aktien & 3 Kryptowährungen</span>
-                    </div>
-                </div>
-
-                <div class="stat-card glass-panel highlight">
-                    <div class="stat-icon top-pick">
-                        <i data-lucide="award"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>Top Empfehlung</h3>
-                        <p class="stat-value text-green" id="top-pick-val">-</p>
-                        <span class="stat-desc">Höchster KI-Konfidenz-Score</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Columns Layout -->
-            <div class="dashboard-grid">
-                
-                <!-- Left Column: Asset List -->
-                <section class="assets-list-section glass-panel">
-                    <div class="section-header">
-                        <h2>Märkte & Prognosen</h2>
-                        <div class="filter-tabs">
-                            <button class="tab-btn active" data-filter="all">Alle</button>
-                            <button class="tab-btn" data-filter="stock">Aktien</button>
-                            <button class="tab-btn" data-filter="crypto">Kryptos</button>
-                            <button class="tab-btn" data-filter="commodity">Rohstoffe</button>
+            <!-- Markets View (Market Analysis) -->
+            <div id="markets-view" class="view-panel active">
+                <!-- Overall Stats Widgets -->
+                <section class="overview-stats">
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon sentiment">
+                            <i data-lucide="brain"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Markt-Sentiment</h3>
+                            <p class="stat-value" id="market-sentiment-val">Neutral</p>
+                            <span class="stat-desc">Durchschnittliches KI-News-Sentiment</span>
                         </div>
                     </div>
                     
-                    <div class="assets-container" id="assets-list">
-                        <!-- Wird dynamisch befüllt -->
-                        <div class="loading-state">
-                            <div class="spinner"></div>
-                            <p>Lade Marktdaten...</p>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon assets">
+                            <i data-lucide="bar-chart-2"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Überwachte Assets</h3>
+                            <p class="stat-value" id="total-assets-val">0</p>
+                            <span class="stat-desc">5 Aktien & 3 Kryptowährungen</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass-panel highlight">
+                        <div class="stat-icon top-pick">
+                            <i data-lucide="award"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Top Empfehlung</h3>
+                            <p class="stat-value text-green" id="top-pick-val">-</p>
+                            <span class="stat-desc">Höchster KI-Konfidenz-Score</span>
                         </div>
                     </div>
                 </section>
 
-                <!-- Right Column: Detailed View -->
-                <section class="detail-section glass-panel" id="detail-panel">
-                    <!-- Standardmäßig wird hier ein Hinweis angezeigt, bis ein Asset ausgewählt ist -->
-                    <div class="no-selection-state" id="no-selection-msg">
-                        <i data-lucide="info" class="info-large"></i>
-                        <h3>Wählen Sie ein Asset aus</h3>
-                        <p>Klicken Sie links auf eine Aktie oder Kryptowährung, um die detaillierte KI-Prognose, Kurs-Charts und aktuelle Nachrichten anzuzeigen.</p>
+                <!-- Columns Layout -->
+                <div class="dashboard-grid">
+                    
+                    <!-- Left Column: Asset List -->
+                    <section class="assets-list-section glass-panel">
+                        <div class="section-header">
+                            <h2>Märkte & Prognosen</h2>
+                            <div class="filter-tabs">
+                                <button class="tab-btn active" data-filter="all">Alle</button>
+                                <button class="tab-btn" data-filter="stock">Aktien</button>
+                                <button class="tab-btn" data-filter="crypto">Kryptos</button>
+                                <button class="tab-btn" data-filter="commodity">Rohstoffe</button>
+                            </div>
+                        </div>
+                        
+                        <div class="assets-container" id="assets-list">
+                            <!-- Wird dynamisch befüllt -->
+                            <div class="loading-state">
+                                <div class="spinner"></div>
+                                <p>Lade Marktdaten...</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Right Column: Detailed View -->
+                    <section class="detail-section glass-panel" id="detail-panel">
+                        <!-- Standardmäßig wird hier ein Hinweis angezeigt, bis ein Asset ausgewählt ist -->
+                        <div class="no-selection-state" id="no-selection-msg">
+                            <i data-lucide="info" class="info-large"></i>
+                            <h3>Wählen Sie ein Asset aus</h3>
+                            <p>Klicken Sie links auf eine Aktie oder Kryptowährung, um die detaillierte KI-Prognose, Kurs-Charts und aktuelle Nachrichten anzuzeigen.</p>
+                        </div>
+
+                        <!-- Haupt-Detail-Inhalt (standardmäßig ausgeblendet) -->
+                        <div class="detail-content hidden" id="detail-content">
+                            <!-- Asset Header -->
+                            <div class="detail-header">
+                                <div>
+                                    <div class="detail-title-row">
+                                        <h2 id="detail-asset-name">Apple Inc.</h2>
+                                        <span class="asset-type-badge" id="detail-asset-type">Stock</span>
+                                    </div>
+                                    <p class="detail-ticker" id="detail-asset-symbol">AAPL</p>
+                                </div>
+                                <div class="detail-price-info">
+                                    <div class="detail-price" id="detail-asset-price">$180.25</div>
+                                    <div class="detail-change" id="detail-asset-change">+1.25% (24h)</div>
+                                </div>
+                            </div>
+
+                            <!-- Recommendations Card -->
+                            <div class="recommendation-hero">
+                                <div class="rec-score-ring">
+                                    <svg class="progress-ring" width="120" height="120">
+                                        <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                        <circle class="progress-ring__circle" id="score-ring-progress" stroke="var(--accent-color)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                    </svg>
+                                    <div class="score-ring-content">
+                                        <span class="score-num" id="detail-score">85%</span>
+                                        <span class="score-label">Konfidenz</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="rec-summary-text">
+                                    <div class="rec-badge" id="detail-rec-badge">Starker Kauf</div>
+                                    <div class="rec-meta">
+                                        <span>Risiko: <strong id="detail-risk">Mittel</strong></span>
+                                        <span class="separator">•</span>
+                                        <span>Sentiment: <strong id="detail-sentiment">Positiv</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tabs for Chart / AI / News -->
+                            <div class="detail-tabs">
+                                <button class="detail-tabactive active" data-tab="chart-tab">
+                                    <i data-lucide="line-chart"></i> Kursverlauf
+                                </button>
+                                <button class="detail-tabactive" data-tab="ai-tab">
+                                    <i data-lucide="cpu"></i> KI-Prognose
+                                </button>
+                                <button class="detail-tabactive" data-tab="news-tab">
+                                    <i data-lucide="newspaper"></i> Nachrichten
+                                </button>
+                            </div>
+
+                            <!-- Tab Contents -->
+                            <div class="tab-panes">
+                                <!-- Chart Tab -->
+                                <div class="tab-pane active" id="chart-tab">
+                                    <div class="chart-header-actions">
+                                        <div class="timeframe-selector" id="timeframe-selector">
+                                            <button class="tf-btn" data-period="24h">24h</button>
+                                            <button class="tf-btn" data-period="7d">7d</button>
+                                            <button class="tf-btn active" data-period="30d">30d</button>
+                                            <button class="tf-btn" data-period="1y">1y</button>
+                                            <button class="tf-btn" data-period="5y">5y</button>
+                                            <button class="tf-btn" data-period="10y">10y</button>
+                                        </div>
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="priceChart"></canvas>
+                                    </div>
+                                    <div class="tech-indicators-grid">
+                                        <div class="indicator-card">
+                                            <span class="ind-label">RSI (14)</span>
+                                            <span class="ind-value" id="ind-rsi">45.2</span>
+                                        </div>
+                                        <div class="indicator-card">
+                                            <span class="ind-label">Trend (SMA 20/50)</span>
+                                            <span class="ind-value" id="ind-trend">Bullish</span>
+                                        </div>
+                                        <div class="indicator-card">
+                                            <span class="ind-label">MACD (12, 26, 9)</span>
+                                            <span class="ind-value" id="ind-macd">0.824</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- AI Analysis Tab -->
+                                <div class="tab-pane" id="ai-tab">
+                                    <div class="ai-report-panel">
+                                        <h4>KI-Analysten-Bericht</h4>
+                                        <p class="ai-text-explanation" id="detail-ai-explanation">
+                                            Lade KI-Prognose...
+                                        </p>
+                                        
+                                        <div class="drivers-risks-container">
+                                            <div class="driver-box">
+                                                <h5><i data-lucide="trending-up" class="text-green"></i> Haupttreiber</h5>
+                                                <ul id="detail-ai-drivers">
+                                                    <!-- Dynamisch -->
+                                                </ul>
+                                            </div>
+                                            <div class="risk-box">
+                                                <h5><i data-lucide="alert-triangle" class="text-red"></i> Risikofaktoren</h5>
+                                                <ul id="detail-ai-risks">
+                                                    <!-- Dynamisch -->
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- News Tab -->
+                                <div class="tab-pane" id="news-tab">
+                                    <div class="news-list" id="detail-news-list">
+                                        <!-- Dynamisch -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Portfolio View (Portfolio Planner) -->
+            <div id="portfolio-view" class="view-panel hidden">
+                <!-- Portfolio Stats -->
+                <section class="overview-stats">
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon sentiment" style="background: rgba(99, 102, 241, 0.1); color: var(--accent); border-color: rgba(99, 102, 241, 0.15);">
+                            <i data-lucide="dollar-sign"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Portfolio-Wert</h3>
+                            <p class="stat-value" id="port-total-value">$ 0.00</p>
+                            <span class="stat-desc">Aktueller Marktwert</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon assets">
+                            <i data-lucide="coins"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Investiertes Kapital</h3>
+                            <p class="stat-value" id="port-total-cost">$ 0.00</p>
+                            <span class="stat-desc">Gesamte Anschaffungskosten</span>
+                        </div>
                     </div>
 
-                    <!-- Haupt-Detail-Inhalt (standardmäßig ausgeblendet) -->
-                    <div class="detail-content hidden" id="detail-content">
-                        <!-- Asset Header -->
-                        <div class="detail-header">
-                            <div>
-                                <div class="detail-title-row">
-                                    <h2 id="detail-asset-name">Apple Inc.</h2>
-                                    <span class="asset-type-badge" id="detail-asset-type">Stock</span>
+                    <div class="stat-card glass-panel highlight" id="port-performance-card">
+                        <div class="stat-icon top-pick">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Gewinn / Verlust</h3>
+                            <p class="stat-value" id="port-total-profit">$ 0.00 (+0.00%)</p>
+                            <span class="stat-desc">Entwicklung seit Kauf</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Portfolio Grid -->
+                <div class="dashboard-grid">
+                    <!-- Left: Holdings Table and Add Form -->
+                    <section class="assets-list-section glass-panel portfolio-left" style="max-height: none; overflow: visible;">
+                        <div class="section-header">
+                            <h2>Meine Investments</h2>
+                            <p class="section-subtitle">Erfassen und verwalten Sie Ihre Wertpapiere.</p>
+                        </div>
+
+                        <!-- Add Holding Form -->
+                        <form id="add-investment-form" class="add-investment-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="inv-asset">Asset wählen</label>
+                                    <select id="inv-asset" class="glass-input" required>
+                                        <!-- Dynamic Options -->
+                                    </select>
                                 </div>
-                                <p class="detail-ticker" id="detail-asset-symbol">AAPL</p>
+                                <div class="form-group">
+                                    <label for="inv-qty">Menge</label>
+                                    <input type="number" id="inv-qty" class="glass-input" step="any" min="0.000001" placeholder="z.B. 10" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="inv-price">Kaufpreis ($)</label>
+                                    <input type="number" id="inv-price" class="glass-input" step="any" min="0.01" placeholder="z.B. 150.50" required>
+                                </div>
                             </div>
-                            <div class="detail-price-info">
-                                <div class="detail-price" id="detail-asset-price">$180.25</div>
-                                <div class="detail-change" id="detail-asset-change">+1.25% (24h)</div>
+                            <button type="submit" class="btn btn-primary btn-add-inv">
+                                <i data-lucide="plus"></i> Investment hinzufügen
+                            </button>
+                        </form>
+
+                        <!-- Holdings Table -->
+                        <div class="holdings-table-container">
+                            <table class="holdings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset</th>
+                                        <th>Menge</th>
+                                        <th>Kaufkurs</th>
+                                        <th>Aktueller Kurs</th>
+                                        <th>Marktwert</th>
+                                        <th>Gewinn/Verlust</th>
+                                        <th>Aktion</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="holdings-list-body">
+                                    <!-- Dynamisch befüllt -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Right: AI Advisor Report -->
+                    <section class="detail-section glass-panel portfolio-right" style="max-height: none;">
+                        <div class="section-header">
+                            <h2>KI Portfolio-Berater</h2>
+                            <p class="section-subtitle">Analysen und Optimierungen basierend auf Ihrer Strategie.</p>
+                        </div>
+
+                        <!-- Strategy Selector -->
+                        <div class="strategy-selector-section">
+                            <h4>Anlagestrategie festlegen</h4>
+                            <div class="strategy-options">
+                                <button type="button" class="strategy-btn active" data-strategy="Ausgewogen">
+                                    <i data-lucide="scale"></i> Ausgewogen
+                                </button>
+                                <button type="button" class="strategy-btn" data-strategy="Konservativ">
+                                    <i data-lucide="shield-check"></i> Konservativ
+                                </button>
+                                <button type="button" class="strategy-btn" data-strategy="Aggressiv">
+                                    <i data-lucide="zap"></i> Aggressiv
+                                </button>
+                                <button type="button" class="strategy-btn" data-strategy="Dividenden-Fokus">
+                                    <i data-lucide="percent"></i> Dividenden-Fokus
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Recommendations Card -->
-                        <div class="recommendation-hero">
-                            <div class="rec-score-ring">
-                                <svg class="progress-ring" width="120" height="120">
-                                    <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
-                                    <circle class="progress-ring__circle" id="score-ring-progress" stroke="var(--accent-color)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
-                                </svg>
-                                <div class="score-ring-content">
-                                    <span class="score-num" id="detail-score">85%</span>
-                                    <span class="score-label">Konfidenz</span>
-                                </div>
-                            </div>
-                            
-                            <div class="rec-summary-text">
-                                <div class="rec-badge" id="detail-rec-badge">Starker Kauf</div>
-                                <div class="rec-meta">
-                                    <span>Risiko: <strong id="detail-risk">Mittel</strong></span>
-                                    <span class="separator">•</span>
-                                    <span>Sentiment: <strong id="detail-sentiment">Positiv</strong></span>
-                                </div>
-                            </div>
-                        </div>
+                        <button id="analyze-portfolio-btn" class="btn btn-primary btn-analyze-portfolio" style="width: 100%; justify-content: center; margin: 1rem 0 1.5rem 0;">
+                            <i data-lucide="brain"></i> Portfolio analysieren
+                        </button>
 
-                        <!-- Tabs for Chart / AI / News -->
-                        <div class="detail-tabs">
-                            <button class="detail-tabactive active" data-tab="chart-tab">
-                                <i data-lucide="line-chart"></i> Kursverlauf
-                            </button>
-                            <button class="detail-tabactive" data-tab="ai-tab">
-                                <i data-lucide="cpu"></i> KI-Prognose
-                            </button>
-                            <button class="detail-tabactive" data-tab="news-tab">
-                                <i data-lucide="newspaper"></i> Nachrichten
-                            </button>
-                        </div>
-
-                        <!-- Tab Contents -->
-                        <div class="tab-panes">
-                            <!-- Chart Tab -->
-                            <div class="tab-pane active" id="chart-tab">
-                                <div class="chart-header-actions">
-                                    <div class="timeframe-selector" id="timeframe-selector">
-                                        <button class="tf-btn" data-period="24h">24h</button>
-                                        <button class="tf-btn" data-period="7d">7d</button>
-                                        <button class="tf-btn active" data-period="30d">30d</button>
-                                        <button class="tf-btn" data-period="1y">1y</button>
-                                        <button class="tf-btn" data-period="5y">5y</button>
-                                        <button class="tf-btn" data-period="10y">10y</button>
+                        <!-- AI Analysis Card -->
+                        <div id="portfolio-ai-report" class="ai-report-panel hidden">
+                            <div class="recommendation-hero portfolio-score-hero">
+                                <div class="rec-score-ring">
+                                    <svg class="progress-ring" width="120" height="120">
+                                        <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                        <circle class="progress-ring__circle" id="port-score-ring-progress" stroke="var(--accent-color)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                    </svg>
+                                    <div class="score-ring-content">
+                                        <span class="score-num" id="port-ai-score">80%</span>
+                                        <span class="score-label">Health-Score</span>
                                     </div>
                                 </div>
-                                <div class="chart-container">
-                                    <canvas id="priceChart"></canvas>
-                                </div>
-                                <div class="tech-indicators-grid">
-                                    <div class="indicator-card">
-                                        <span class="ind-label">RSI (14)</span>
-                                        <span class="ind-value" id="ind-rsi">45.2</span>
-                                    </div>
-                                    <div class="indicator-card">
-                                        <span class="ind-label">Trend (SMA 20/50)</span>
-                                        <span class="ind-value" id="ind-trend">Bullish</span>
-                                    </div>
-                                    <div class="indicator-card">
-                                        <span class="ind-label">MACD (12, 26, 9)</span>
-                                        <span class="ind-value" id="ind-macd">0.824</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- AI Analysis Tab -->
-                            <div class="tab-pane" id="ai-tab">
-                                <div class="ai-report-panel">
-                                    <h4>KI-Analysten-Bericht</h4>
-                                    <p class="ai-text-explanation" id="detail-ai-explanation">
-                                        Lade KI-Prognose...
+                                <div class="rec-summary-text">
+                                    <div class="rec-badge" id="port-ai-badge" style="color: var(--accent); background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.2);">KI-Berater</div>
+                                    <p class="ai-portfolio-summary-text" id="port-ai-summary" style="font-size: 0.9rem; line-height: 1.4; color: var(--text-secondary);">
+                                        Lade KI-Bericht...
                                     </p>
-                                    
-                                    <div class="drivers-risks-container">
-                                        <div class="driver-box">
-                                            <h5><i data-lucide="trending-up" class="text-green"></i> Haupttreiber</h5>
-                                            <ul id="detail-ai-drivers">
-                                                <!-- Dynamisch -->
-                                            </ul>
-                                        </div>
-                                        <div class="risk-box">
-                                            <h5><i data-lucide="alert-triangle" class="text-red"></i> Risikofaktoren</h5>
-                                            <ul id="detail-ai-risks">
-                                                <!-- Dynamisch -->
-                                            </ul>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 
-                            <!-- News Tab -->
-                            <div class="tab-pane" id="news-tab">
-                                <div class="news-list" id="detail-news-list">
-                                    <!-- Dynamisch -->
+                            <!-- AI Suggestions list -->
+                            <div class="ai-details-panel" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                                <div class="ai-report-section">
+                                    <h5 style="font-family: var(--font-heading); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: white;">
+                                        <i data-lucide="sparkles" class="text-green"></i> KI-Verbesserungsvorschläge
+                                    </h5>
+                                    <ul id="port-ai-suggestions" class="ai-list-bullet" style="list-style-type: none; display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0;">
+                                        <!-- Dynamisch -->
+                                    </ul>
+                                </div>
+                                
+                                <div class="ai-report-section">
+                                    <h5 style="font-family: var(--font-heading); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: white;">
+                                        <i data-lucide="calendar" style="color: #3b82f6;"></i> Erwartete Erträge & Dividenden
+                                    </h5>
+                                    <p class="ai-text-explanation" id="port-ai-dividends" style="border-left: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.05); padding: 1rem; border-radius: 0 8px 8px 0; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary);">
+                                        Lade Dividenden-Schätzung...
+                                    </p>
+                                </div>
+                                
+                                <div class="ai-report-section">
+                                    <h5 style="font-family: var(--font-heading); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: white;">
+                                        <i data-lucide="lightbulb" style="color: #f59e0b;"></i> Nützliche Tipps & Hinweise
+                                    </h5>
+                                    <ul id="port-ai-tips" class="ai-list-bullet" style="list-style-type: none; display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0;">
+                                        <!-- Dynamisch -->
+                                    </ul>
+                                </div>
+
+                                <!-- Dynamic buy/sell percentage forecasts -->
+                                <div class="ai-report-section">
+                                    <h5 style="font-family: var(--font-heading); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: white;">
+                                        <i data-lucide="compass" style="color: var(--accent);"></i> Asset-Prognosen (Buy/Sell %)
+                                    </h5>
+                                    <div class="holdings-table-container">
+                                        <table class="holdings-table forecasts-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Asset</th>
+                                                    <th>Empfehlung</th>
+                                                    <th>Kaufkonfidenz</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="port-ai-forecasts-body">
+                                                <!-- Dynamisch -->
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </section>
-                
+                    </section>
+                </div>
             </div>
         </main>
     </div>

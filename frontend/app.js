@@ -8,6 +8,8 @@ let currentFilter = "all";
 let statusPollingInterval = null;
 let selectedPeriod = "30d"; // Ausgewählter Zeitraum
 let historyCache = {}; // Cache für geladene Kursverläufe
+let portfolio = [];
+let selectedStrategy = "Ausgewogen";
 
 
 // Dynamische API-Basis-URL: Falls lokal oder auf abweichendem Port (z.B. Live Server 5500) ausgeführt,
@@ -67,7 +69,39 @@ const elements = {
     aiRisks: document.getElementById('detail-ai-risks'),
     
     // News Pane
-    newsList: document.getElementById('detail-news-list')
+    newsList: document.getElementById('detail-news-list'),
+    
+    // Portfolio Navigation & Views
+    navMarkets: document.getElementById('nav-markets'),
+    navPortfolio: document.getElementById('nav-portfolio'),
+    marketsView: document.getElementById('markets-view'),
+    portfolioView: document.getElementById('portfolio-view'),
+    
+    // Portfolio Overview
+    portTotalValue: document.getElementById('port-total-value'),
+    portTotalCost: document.getElementById('port-total-cost'),
+    portTotalProfit: document.getElementById('port-total-profit'),
+    portPerformanceCard: document.getElementById('port-performance-card'),
+    
+    // Portfolio Form & Table
+    addInvestmentForm: document.getElementById('add-investment-form'),
+    invAsset: document.getElementById('inv-asset'),
+    invQty: document.getElementById('inv-qty'),
+    invPrice: document.getElementById('inv-price'),
+    holdingsListBody: document.getElementById('holdings-list-body'),
+    
+    // Portfolio AI Advisor
+    strategyBtns: document.querySelectorAll('.strategy-btn'),
+    analyzePortfolioBtn: document.getElementById('analyze-portfolio-btn'),
+    portfolioAiReport: document.getElementById('portfolio-ai-report'),
+    
+    portScoreRing: document.getElementById('port-score-ring-progress'),
+    portAiScore: document.getElementById('port-ai-score'),
+    portAiSummary: document.getElementById('port-ai-summary'),
+    portAiSuggestions: document.getElementById('port-ai-suggestions'),
+    portAiDividends: document.getElementById('port-ai-dividends'),
+    portAiTips: document.getElementById('port-ai-tips'),
+    portAiForecastsBody: document.getElementById('port-ai-forecasts-body')
 };
 
 // Initialize Application
@@ -128,6 +162,32 @@ function setupEventListeners() {
             });
         });
     });
+
+    // View Panel Navigation
+    if (elements.navMarkets && elements.navPortfolio) {
+        elements.navMarkets.addEventListener("click", () => switchView("markets-view"));
+        elements.navPortfolio.addEventListener("click", () => switchView("portfolio-view"));
+    }
+
+    // Portfolio Form Submit
+    if (elements.addInvestmentForm) {
+        elements.addInvestmentForm.addEventListener("submit", handleAddInvestment);
+    }
+
+    // Strategy Pills
+    elements.strategyBtns.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            elements.strategyBtns.forEach(b => b.classList.remove("active"));
+            const clicked = e.currentTarget;
+            clicked.classList.add("active");
+            selectedStrategy = clicked.dataset.strategy;
+        });
+    });
+
+    // Analyze Portfolio
+    if (elements.analyzePortfolioBtn) {
+        elements.analyzePortfolioBtn.addEventListener("click", analyzePortfolioWithAI);
+    }
 }
 
 // Fetch Data from API
@@ -157,6 +217,11 @@ async function fetchData() {
                 // Selektion aktualisieren
                 selectAsset(selectedAsset);
             }
+            
+            // Initialize and render Portfolio
+            initPortfolio();
+            populateAssetDropdown();
+            renderPortfolio();
         } else {
             // Keine Daten vorhanden (z.B. initialer Zustand)
             elements.assetsList.innerHTML = `
@@ -741,3 +806,334 @@ function showChartLoading(isLoading) {
         }
     }
 }
+
+// ==========================================
+// Portfolio Planner & AI Advisor Functions
+// ==========================================
+
+let portfolioInitialized = false;
+
+function switchView(viewId) {
+    if (viewId === "markets-view") {
+        elements.navMarkets.classList.add("active");
+        elements.navPortfolio.classList.remove("active");
+        elements.marketsView.classList.add("active");
+        elements.marketsView.classList.remove("hidden");
+        elements.portfolioView.classList.add("hidden");
+        elements.portfolioView.classList.remove("active");
+    } else {
+        elements.navPortfolio.classList.add("active");
+        elements.navMarkets.classList.remove("active");
+        elements.portfolioView.classList.add("active");
+        elements.portfolioView.classList.remove("hidden");
+        elements.marketsView.classList.add("hidden");
+        elements.marketsView.classList.remove("active");
+        // Ensure portfolio stats and holdings render
+        renderPortfolio();
+    }
+}
+
+function initPortfolio() {
+    if (portfolioInitialized) return;
+    
+    const stored = localStorage.getItem('finance_ai_portfolio');
+    if (stored) {
+        try {
+            portfolio = JSON.parse(stored);
+        } catch (e) {
+            console.error("Error parsing stored portfolio, resetting...", e);
+            portfolio = [];
+        }
+    }
+    
+    // Seed default portfolio if empty
+    if (!portfolio || portfolio.length === 0) {
+        portfolio = [
+            { symbol: "AAPL", quantity: 10, buy_price: 175.0 },
+            { symbol: "BTC-USD", quantity: 0.1, buy_price: 60000.0 },
+            { symbol: "GC=F", quantity: 2.0, buy_price: 2000.0 }
+        ];
+        localStorage.setItem('finance_ai_portfolio', JSON.stringify(portfolio));
+    }
+    portfolioInitialized = true;
+}
+
+function populateAssetDropdown() {
+    if (!elements.invAsset) return;
+    elements.invAsset.innerHTML = '';
+    
+    const assets = Object.values(appData.predictions);
+    assets.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    
+    assets.forEach(asset => {
+        const option = document.createElement('option');
+        option.value = asset.symbol;
+        const typeText = asset.type === 'crypto' ? 'Krypto' : (asset.type === 'stock' ? 'Aktie' : 'Rohstoff');
+        option.textContent = `${asset.symbol} - ${asset.name} (${typeText})`;
+        elements.invAsset.appendChild(option);
+    });
+}
+
+function renderPortfolio() {
+    if (!elements.holdingsListBody) return;
+    
+    if (portfolio.length === 0) {
+        elements.holdingsListBody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    Keine Investments erfasst. Fügen Sie oben ein Wertpapier hinzu.
+                </td>
+            </tr>
+        `;
+        elements.portTotalValue.innerText = formatCurrency(0, 'stock');
+        elements.portTotalCost.innerText = formatCurrency(0, 'stock');
+        elements.portTotalProfit.innerText = `${formatCurrency(0, 'stock')} (+0.00%)`;
+        elements.portTotalProfit.className = "stat-value";
+        elements.portPerformanceCard.style.border = '';
+        elements.portPerformanceCard.style.background = '';
+        return;
+    }
+    
+    elements.holdingsListBody.innerHTML = '';
+    let totalValue = 0;
+    let totalCost = 0;
+    
+    portfolio.forEach((item, index) => {
+        const asset = appData.predictions[item.symbol];
+        const currentPrice = asset ? asset.price : item.buy_price;
+        const assetType = asset ? asset.type : 'stock';
+        const assetName = asset ? asset.name : item.symbol;
+        
+        const cost = item.quantity * item.buy_price;
+        const value = item.quantity * currentPrice;
+        
+        totalCost += cost;
+        totalValue += value;
+        
+        const profitLoss = value - cost;
+        const profitLossPct = cost > 0 ? (profitLoss / cost) * 100 : 0;
+        const sign = profitLoss >= 0 ? '+' : '';
+        const colorClass = profitLoss >= 0 ? 'text-green' : 'text-red';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 600; color: white;">${item.symbol}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">${assetName}</span>
+                </div>
+            </td>
+            <td>${item.quantity.toLocaleString('de-DE', { maximumFractionDigits: 6 })}</td>
+            <td>${formatCurrency(item.buy_price, assetType)}</td>
+            <td>${formatCurrency(currentPrice, assetType)}</td>
+            <td style="font-weight: 600; color: white;">${formatCurrency(value, assetType)}</td>
+            <td class="${colorClass}" style="font-weight: 500;">
+                ${sign}${formatCurrency(profitLoss, assetType)}<br>
+                <span style="font-size: 0.75rem; font-weight: normal;">${sign}${profitLossPct.toFixed(2)}%</span>
+            </td>
+            <td>
+                <button class="btn-delete-inv" data-index="${index}" title="Löschen">
+                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                </button>
+            </td>
+        `;
+        elements.holdingsListBody.appendChild(tr);
+    });
+    
+    // Register delete handlers
+    elements.holdingsListBody.querySelectorAll('.btn-delete-inv').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.currentTarget.dataset.index);
+            deleteHolding(idx);
+        });
+    });
+    
+    // Reinitialize Lucide Icons for dynamic content
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+    
+    // Recalculate portfolio metrics
+    const totalProfitLoss = totalValue - totalCost;
+    const totalProfitLossPct = totalCost > 0 ? (totalProfitLoss / totalCost) * 100 : 0;
+    
+    elements.portTotalValue.innerText = formatCurrency(totalValue, 'stock');
+    elements.portTotalCost.innerText = formatCurrency(totalCost, 'stock');
+    
+    const overallSign = totalProfitLoss >= 0 ? '+' : '';
+    const overallColorClass = totalProfitLoss >= 0 ? 'text-green' : 'text-red';
+    
+    elements.portTotalProfit.className = `stat-value ${overallColorClass}`;
+    elements.portTotalProfit.innerText = `${overallSign}${formatCurrency(totalProfitLoss, 'stock')} (${overallSign}${totalProfitLossPct.toFixed(2)}%)`;
+    
+    // Performance card aesthetics
+    if (totalProfitLoss >= 0) {
+        elements.portPerformanceCard.style.border = '1px solid rgba(16, 185, 129, 0.2)';
+        elements.portPerformanceCard.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(255, 255, 255, 0.01) 100%)';
+    } else {
+        elements.portPerformanceCard.style.border = '1px solid rgba(244, 63, 94, 0.2)';
+        elements.portPerformanceCard.style.background = 'linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(255, 255, 255, 0.01) 100%)';
+    }
+}
+
+function handleAddInvestment(e) {
+    e.preventDefault();
+    const symbol = elements.invAsset.value;
+    const qty = parseFloat(elements.invQty.value);
+    const buyPrice = parseFloat(elements.invPrice.value);
+    
+    if (!symbol || isNaN(qty) || qty <= 0 || isNaN(buyPrice) || buyPrice <= 0) {
+        alert("Bitte geben Sie eine gültige Menge und einen Kaufpreis ein.");
+        return;
+    }
+    
+    const existingIndex = portfolio.findIndex(item => item.symbol === symbol);
+    if (existingIndex > -1) {
+        // Weighted average cost update
+        const existing = portfolio[existingIndex];
+        const totalQty = existing.quantity + qty;
+        const weightedAvgPrice = ((existing.quantity * existing.buy_price) + (qty * buyPrice)) / totalQty;
+        existing.quantity = totalQty;
+        existing.buy_price = weightedAvgPrice;
+    } else {
+        portfolio.push({ symbol, quantity: qty, buy_price: buyPrice });
+    }
+    
+    localStorage.setItem('finance_ai_portfolio', JSON.stringify(portfolio));
+    renderPortfolio();
+    
+    // Clear inputs
+    elements.invQty.value = '';
+    elements.invPrice.value = '';
+}
+
+function deleteHolding(idx) {
+    portfolio.splice(idx, 1);
+    localStorage.setItem('finance_ai_portfolio', JSON.stringify(portfolio));
+    renderPortfolio();
+}
+
+async function analyzePortfolioWithAI() {
+    if (portfolio.length === 0) {
+        alert("Fügen Sie Ihrem Portfolio mindestens ein Investment hinzu, bevor Sie die Analyse starten.");
+        return;
+    }
+    
+    elements.analyzePortfolioBtn.disabled = true;
+    const originalBtnHTML = elements.analyzePortfolioBtn.innerHTML;
+    elements.analyzePortfolioBtn.innerHTML = `<div class="spinner" style="width: 16px; height: 16px; border-width: 2px; display: inline-block;"></div> &nbsp; Analysiere...`;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/portfolio/analyze`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                holdings: portfolio,
+                strategy: selectedStrategy
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Fehler bei der KI-Analyse: ${response.statusText}`);
+        }
+        
+        const report = await response.json();
+        renderAiReport(report);
+    } catch (error) {
+        console.error("Fehler bei der KI-Portfolio-Analyse:", error);
+        alert("Die Portfolio-Analyse konnte nicht durchgeführt werden. Bitte überprüfen Sie Ihre Internetverbindung oder ob der Server läuft.");
+    } finally {
+        elements.analyzePortfolioBtn.disabled = false;
+        elements.analyzePortfolioBtn.innerHTML = originalBtnHTML;
+    }
+}
+
+function renderAiReport(report) {
+    if (!elements.portfolioAiReport) return;
+    
+    elements.portfolioAiReport.classList.remove('hidden');
+    
+    const score = report.portfolio_score !== undefined ? report.portfolio_score : 80;
+    elements.portAiScore.innerText = `${score}%`;
+    
+    let colorHex = "#f59e0b"; // Yellow
+    if (score >= 80) colorHex = "#10b981"; // Green
+    else if (score < 50) colorHex = "#f43f5e"; // Red
+    
+    updatePortScoreRing(score, colorHex);
+    
+    elements.portAiSummary.innerText = report.advice_summary || "Keine Zusammenfassung verfügbar.";
+    
+    // Suggestions
+    elements.portAiSuggestions.innerHTML = '';
+    if (report.suggestions && report.suggestions.length > 0) {
+        report.suggestions.forEach(s => {
+            const li = document.createElement('li');
+            li.innerText = s;
+            elements.portAiSuggestions.appendChild(li);
+        });
+    } else {
+        elements.portAiSuggestions.innerHTML = '<li>Keine Verbesserungsvorschläge. Das Portfolio entspricht der gewählten Strategie.</li>';
+    }
+    
+    // Expected yields / dividends
+    elements.portAiDividends.innerText = report.estimated_dividends || "Keine Dividenden-Schätzung verfügbar.";
+    
+    // Tips
+    elements.portAiTips.innerHTML = '';
+    if (report.tips && report.tips.length > 0) {
+        report.tips.forEach(t => {
+            const li = document.createElement('li');
+            li.innerText = t;
+            elements.portAiTips.appendChild(li);
+        });
+    } else {
+        elements.portAiTips.innerHTML = '<li>Keine Tipps verfügbar.</li>';
+    }
+    
+    // Forecasts buy/sell
+    elements.portAiForecastsBody.innerHTML = '';
+    if (report.forecasts && Object.keys(report.forecasts).length > 0) {
+        Object.entries(report.forecasts).forEach(([symbol, info]) => {
+            const tr = document.createElement('tr');
+            
+            let actionColorClass = 'text-yellow';
+            let actionText = info.action || 'Halten';
+            if (actionText === 'Kauf') actionColorClass = 'text-green';
+            else if (actionText === 'Verkauf') actionColorClass = 'text-red';
+            
+            tr.innerHTML = `
+                <td style="font-weight: 600; color: white;">${symbol}</td>
+                <td class="${actionColorClass}" style="font-weight: 600;">${actionText}</td>
+                <td style="font-weight: 500; color: var(--text-secondary);">${info.buy_percentage}%</td>
+            `;
+            elements.portAiForecastsBody.appendChild(tr);
+        });
+    } else {
+        elements.portAiForecastsBody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align: center; color: var(--text-muted);">
+                    Keine Prognosen vorhanden.
+                </td>
+            </tr>
+        `;
+    }
+    
+    // Smooth scroll into view
+    elements.portfolioAiReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function updatePortScoreRing(percent, color) {
+    const circle = elements.portScoreRing;
+    if (!circle) return;
+    const radius = circle.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    const offset = circumference - (percent / 100 * circumference);
+    circle.style.strokeDashoffset = offset;
+    circle.style.stroke = color;
+}
+
