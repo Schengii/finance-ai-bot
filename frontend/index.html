@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaPulse AI - Intelligent Finance Bot</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        <header class="main-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i data-lucide="trending-up"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>AlphaPulse <span>AI</span></h1>
+                    <p>Automated Market Analysis</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Geladen</span>
+                </div>
+                <div class="last-update">
+                    Aktualisiert: <span id="last-update-time">-</span>
+                </div>
+                <button id="refresh-btn" class="btn btn-primary">
+                    <i data-lucide="refresh-cw" class="icon-spin-hover"></i>
+                    <span>Analysieren</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <main class="dashboard-content">
+            
+            <!-- Overall Stats Widgets -->
+            <section class="overview-stats">
+                <div class="stat-card glass-panel">
+                    <div class="stat-icon sentiment">
+                        <i data-lucide="brain"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Markt-Sentiment</h3>
+                        <p class="stat-value" id="market-sentiment-val">Neutral</p>
+                        <span class="stat-desc">Durchschnittliches KI-News-Sentiment</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card glass-panel">
+                    <div class="stat-icon assets">
+                        <i data-lucide="bar-chart-2"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Überwachte Assets</h3>
+                        <p class="stat-value" id="total-assets-val">0</p>
+                        <span class="stat-desc">5 Aktien & 3 Kryptowährungen</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-panel highlight">
+                    <div class="stat-icon top-pick">
+                        <i data-lucide="award"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Top Empfehlung</h3>
+                        <p class="stat-value text-green" id="top-pick-val">-</p>
+                        <span class="stat-desc">Höchster KI-Konfidenz-Score</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Columns Layout -->
+            <div class="dashboard-grid">
+                
+                <!-- Left Column: Asset List -->
+                <section class="assets-list-section glass-panel">
+                    <div class="section-header">
+                        <h2>Märkte & Prognosen</h2>
+                        <div class="filter-tabs">
+                            <button class="tab-btn active" data-filter="all">Alle</button>
+                            <button class="tab-btn" data-filter="stock">Aktien</button>
+                            <button class="tab-btn" data-filter="crypto">Kryptos</button>
+                        </div>
+                    </div>
+                    
+                    <div class="assets-container" id="assets-list">
+                        <!-- Wird dynamisch befüllt -->
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Lade Marktdaten...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right Column: Detailed View -->
+                <section class="detail-section glass-panel" id="detail-panel">
+                    <!-- Standardmäßig wird hier ein Hinweis angezeigt, bis ein Asset ausgewählt ist -->
+                    <div class="no-selection-state" id="no-selection-msg">
+                        <i data-lucide="info" class="info-large"></i>
+                        <h3>Wählen Sie ein Asset aus</h3>
+                        <p>Klicken Sie links auf eine Aktie oder Kryptowährung, um die detaillierte KI-Prognose, Kurs-Charts und aktuelle Nachrichten anzuzeigen.</p>
+                    </div>
+
+                    <!-- Haupt-Detail-Inhalt (standardmäßig ausgeblendet) -->
+                    <div class="detail-content hidden" id="detail-content">
+                        <!-- Asset Header -->
+                        <div class="detail-header">
+                            <div>
+                                <div class="detail-title-row">
+                                    <h2 id="detail-asset-name">Apple Inc.</h2>
+                                    <span class="asset-type-badge" id="detail-asset-type">Stock</span>
+                                </div>
+                                <p class="detail-ticker" id="detail-asset-symbol">AAPL</p>
+                            </div>
+                            <div class="detail-price-info">
+                                <div class="detail-price" id="detail-asset-price">$180.25</div>
+                                <div class="detail-change" id="detail-asset-change">+1.25% (24h)</div>
+                            </div>
+                        </div>
+
+                        <!-- Recommendations Card -->
+                        <div class="recommendation-hero">
+                            <div class="rec-score-ring">
+                                <svg class="progress-ring" width="120" height="120">
+                                    <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                    <circle class="progress-ring__circle" id="score-ring-progress" stroke="var(--accent-color)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                                </svg>
+                                <div class="score-ring-content">
+                                    <span class="score-num" id="detail-score">85%</span>
+                                    <span class="score-label">Konfidenz</span>
+                                </div>
+                            </div>
+                            
+                            <div class="rec-summary-text">
+                                <div class="rec-badge" id="detail-rec-badge">Starker Kauf</div>
+                                <div class="rec-meta">
+                                    <span>Risiko: <strong id="detail-risk">Mittel</strong></span>
+                                    <span class="separator">•</span>
+                                    <span>Sentiment: <strong id="detail-sentiment">Positiv</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs for Chart / AI / News -->
+                        <div class="detail-tabs">
+                            <button class="detail-tabactive active" data-tab="chart-tab">
+                                <i data-lucide="line-chart"></i> Kursverlauf
+                            </button>
+                            <button class="detail-tabactive" data-tab="ai-tab">
+                                <i data-lucide="cpu"></i> KI-Prognose
+                            </button>
+                            <button class="detail-tabactive" data-tab="news-tab">
+                                <i data-lucide="newspaper"></i> Nachrichten
+                            </button>
+                        </div>
+
+                        <!-- Tab Contents -->
+                        <div class="tab-panes">
+                            <!-- Chart Tab -->
+                            <div class="tab-pane active" id="chart-tab">
+                                <div class="chart-container">
+                                    <canvas id="priceChart"></canvas>
+                                </div>
+                                <div class="tech-indicators-grid">
+                                    <div class="indicator-card">
+                                        <span class="ind-label">RSI (14)</span>
+                                        <span class="ind-value" id="ind-rsi">45.2</span>
+                                    </div>
+                                    <div class="indicator-card">
+                                        <span class="ind-label">Trend (SMA 20/50)</span>
+                                        <span class="ind-value" id="ind-trend">Bullish</span>
+                                    </div>
+                                    <div class="indicator-card">
+                                        <span class="ind-label">MACD (12, 26, 9)</span>
+                                        <span class="ind-value" id="ind-macd">0.824</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AI Analysis Tab -->
+                            <div class="tab-pane" id="ai-tab">
+                                <div class="ai-report-panel">
+                                    <h4>KI-Analysten-Bericht</h4>
+                                    <p class="ai-text-explanation" id="detail-ai-explanation">
+                                        Lade KI-Prognose...
+                                    </p>
+                                    
+                                    <div class="drivers-risks-container">
+                                        <div class="driver-box">
+                                            <h5><i data-lucide="trending-up" class="text-green"></i> Haupttreiber</h5>
+                                            <ul id="detail-ai-drivers">
+                                                <!-- Dynamisch -->
+                                            </ul>
+                                        </div>
+                                        <div class="risk-box">
+                                            <h5><i data-lucide="alert-triangle" class="text-red"></i> Risikofaktoren</h5>
+                                            <ul id="detail-ai-risks">
+                                                <!-- Dynamisch -->
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- News Tab -->
+                            <div class="tab-pane" id="news-tab">
+                                <div class="news-list" id="detail-news-list">
+                                    <!-- Dynamisch -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+            </div>
+        </main>
+    </div>
+
+    <!-- JS laden -->
+    <script src="/app.js"></script>
+</body>
+</html>

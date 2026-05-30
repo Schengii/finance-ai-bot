@@ -1,0 +1,4384 @@
+{
+  "last_updated": "2026-05-30 13:54",
+  "predictions": {
+    "AAPL": {
+      "symbol": "AAPL",
+      "name": "Apple Inc.",
+      "type": "stock",
+      "price": 312.06,
+      "price_change_1d": -0.14,
+      "price_change_7d": 2.32,
+      "price_change_30d": 15.61,
+      "rsi": 84.28,
+      "technical_trend": "Bullish",
+      "recommendation": "Verkauf",
+      "confidence": 75,
+      "sentiment_score": -0.4,
+      "risk_level": "Mittel",
+      "ai_explanation": "Mit einem RSI von 84.28 befindet sich AAPL im überkauften Bereich. Gewinnmitnahmen sind wahrscheinlich.",
+      "key_drivers": [
+        "Kurzfristiges Momentum stößt an Grenzen"
+      ],
+      "key_risks": [
+        "Gefahr von Gewinnmitnahmen"
+      ],
+      "last_updated": "2026-05-30 13:54",
+      "news": [
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-01-21",
+          "price": 247.19,
+          "volume": 54641700
+        },
+        {
+          "date": "2026-01-22",
+          "price": 247.89,
+          "volume": 39708300
+        },
+        {
+          "date": "2026-01-23",
+          "price": 247.58,
+          "volume": 41689000
+        },
+        {
+          "date": "2026-01-26",
+          "price": 254.94,
+          "volume": 55969200
+        },
+        {
+          "date": "2026-01-27",
+          "price": 257.79,
+          "volume": 49648300
+        },
+        {
+          "date": "2026-01-28",
+          "price": 255.96,
+          "volume": 41288000
+        },
+        {
+          "date": "2026-01-29",
+          "price": 257.8,
+          "volume": 67253000
+        },
+        {
+          "date": "2026-01-30",
+          "price": 259.0,
+          "volume": 92443400
+        },
+        {
+          "date": "2026-02-02",
+          "price": 269.51,
+          "volume": 73913400
+        },
+        {
+          "date": "2026-02-03",
+          "price": 268.98,
+          "volume": 64394700
+        },
+        {
+          "date": "2026-02-04",
+          "price": 275.98,
+          "volume": 90545700
+        },
+        {
+          "date": "2026-02-05",
+          "price": 275.4,
+          "volume": 52977400
+        },
+        {
+          "date": "2026-02-06",
+          "price": 277.6,
+          "volume": 50453400
+        },
+        {
+          "date": "2026-02-09",
+          "price": 274.37,
+          "volume": 44623400
+        },
+        {
+          "date": "2026-02-10",
+          "price": 273.43,
+          "volume": 34376900
+        },
+        {
+          "date": "2026-02-11",
+          "price": 275.25,
+          "volume": 51931300
+        },
+        {
+          "date": "2026-02-12",
+          "price": 261.49,
+          "volume": 81077200
+        },
+        {
+          "date": "2026-02-13",
+          "price": 255.54,
+          "volume": 56290700
+        },
+        {
+          "date": "2026-02-17",
+          "price": 263.64,
+          "volume": 58469100
+        },
+        {
+          "date": "2026-02-18",
+          "price": 264.11,
+          "volume": 34203300
+        },
+        {
+          "date": "2026-02-19",
+          "price": 260.34,
+          "volume": 30845300
+        },
+        {
+          "date": "2026-02-20",
+          "price": 264.34,
+          "volume": 42070500
+        },
+        {
+          "date": "2026-02-23",
+          "price": 265.93,
+          "volume": 37308200
+        },
+        {
+          "date": "2026-02-24",
+          "price": 271.89,
+          "volume": 47014600
+        },
+        {
+          "date": "2026-02-25",
+          "price": 273.98,
+          "volume": 33714300
+        },
+        {
+          "date": "2026-02-26",
+          "price": 272.7,
+          "volume": 32345100
+        },
+        {
+          "date": "2026-02-27",
+          "price": 263.94,
+          "volume": 72366500
+        },
+        {
+          "date": "2026-03-02",
+          "price": 264.48,
+          "volume": 41827900
+        },
+        {
+          "date": "2026-03-03",
+          "price": 263.51,
+          "volume": 38568900
+        },
+        {
+          "date": "2026-03-04",
+          "price": 262.28,
+          "volume": 39803100
+        },
+        {
+          "date": "2026-03-05",
+          "price": 260.05,
+          "volume": 49658600
+        },
+        {
+          "date": "2026-03-06",
+          "price": 257.22,
+          "volume": 41120000
+        },
+        {
+          "date": "2026-03-09",
+          "price": 259.64,
+          "volume": 38218500
+        },
+        {
+          "date": "2026-03-10",
+          "price": 260.59,
+          "volume": 30590800
+        },
+        {
+          "date": "2026-03-11",
+          "price": 260.57,
+          "volume": 26218900
+        },
+        {
+          "date": "2026-03-12",
+          "price": 255.52,
+          "volume": 40794000
+        },
+        {
+          "date": "2026-03-13",
+          "price": 249.89,
+          "volume": 36930000
+        },
+        {
+          "date": "2026-03-16",
+          "price": 252.59,
+          "volume": 32074200
+        },
+        {
+          "date": "2026-03-17",
+          "price": 254.0,
+          "volume": 32361600
+        },
+        {
+          "date": "2026-03-18",
+          "price": 249.71,
+          "volume": 35757900
+        },
+        {
+          "date": "2026-03-19",
+          "price": 248.73,
+          "volume": 34864100
+        },
+        {
+          "date": "2026-03-20",
+          "price": 247.76,
+          "volume": 88331100
+        },
+        {
+          "date": "2026-03-23",
+          "price": 251.26,
+          "volume": 40546100
+        },
+        {
+          "date": "2026-03-24",
+          "price": 251.41,
+          "volume": 45152300
+        },
+        {
+          "date": "2026-03-25",
+          "price": 252.39,
+          "volume": 28476700
+        },
+        {
+          "date": "2026-03-26",
+          "price": 252.66,
+          "volume": 41796700
+        },
+        {
+          "date": "2026-03-27",
+          "price": 248.57,
+          "volume": 47900000
+        },
+        {
+          "date": "2026-03-30",
+          "price": 246.4,
+          "volume": 39446200
+        },
+        {
+          "date": "2026-03-31",
+          "price": 253.56,
+          "volume": 49598100
+        },
+        {
+          "date": "2026-04-01",
+          "price": 255.39,
+          "volume": 40059400
+        },
+        {
+          "date": "2026-04-02",
+          "price": 255.68,
+          "volume": 31289400
+        },
+        {
+          "date": "2026-04-06",
+          "price": 258.62,
+          "volume": 29329900
+        },
+        {
+          "date": "2026-04-07",
+          "price": 253.27,
+          "volume": 62148000
+        },
+        {
+          "date": "2026-04-08",
+          "price": 258.66,
+          "volume": 41032800
+        },
+        {
+          "date": "2026-04-09",
+          "price": 260.25,
+          "volume": 28121600
+        },
+        {
+          "date": "2026-04-10",
+          "price": 260.24,
+          "volume": 31291500
+        },
+        {
+          "date": "2026-04-13",
+          "price": 258.96,
+          "volume": 36234700
+        },
+        {
+          "date": "2026-04-14",
+          "price": 258.59,
+          "volume": 48370700
+        },
+        {
+          "date": "2026-04-15",
+          "price": 266.18,
+          "volume": 49913500
+        },
+        {
+          "date": "2026-04-16",
+          "price": 263.16,
+          "volume": 43323100
+        },
+        {
+          "date": "2026-04-17",
+          "price": 269.98,
+          "volume": 61436200
+        },
+        {
+          "date": "2026-04-20",
+          "price": 272.8,
+          "volume": 36590200
+        },
+        {
+          "date": "2026-04-21",
+          "price": 265.93,
+          "volume": 50209800
+        },
+        {
+          "date": "2026-04-22",
+          "price": 272.92,
+          "volume": 43249200
+        },
+        {
+          "date": "2026-04-23",
+          "price": 273.18,
+          "volume": 33399600
+        },
+        {
+          "date": "2026-04-24",
+          "price": 270.81,
+          "volume": 38157100
+        },
+        {
+          "date": "2026-04-27",
+          "price": 267.36,
+          "volume": 41466800
+        },
+        {
+          "date": "2026-04-28",
+          "price": 270.46,
+          "volume": 40018900
+        },
+        {
+          "date": "2026-04-29",
+          "price": 269.92,
+          "volume": 30047900
+        },
+        {
+          "date": "2026-04-30",
+          "price": 271.1,
+          "volume": 91848200
+        },
+        {
+          "date": "2026-05-01",
+          "price": 279.88,
+          "volume": 79915400
+        },
+        {
+          "date": "2026-05-04",
+          "price": 276.58,
+          "volume": 46668400
+        },
+        {
+          "date": "2026-05-05",
+          "price": 283.92,
+          "volume": 49311700
+        },
+        {
+          "date": "2026-05-06",
+          "price": 287.25,
+          "volume": 58336100
+        },
+        {
+          "date": "2026-05-07",
+          "price": 287.18,
+          "volume": 45224300
+        },
+        {
+          "date": "2026-05-08",
+          "price": 293.05,
+          "volume": 52692800
+        },
+        {
+          "date": "2026-05-11",
+          "price": 292.68,
+          "volume": 42247300
+        },
+        {
+          "date": "2026-05-12",
+          "price": 294.8,
+          "volume": 45748100
+        },
+        {
+          "date": "2026-05-13",
+          "price": 298.87,
+          "volume": 52684300
+        },
+        {
+          "date": "2026-05-14",
+          "price": 298.21,
+          "volume": 35324900
+        },
+        {
+          "date": "2026-05-15",
+          "price": 300.23,
+          "volume": 54862800
+        },
+        {
+          "date": "2026-05-18",
+          "price": 297.84,
+          "volume": 34483000
+        },
+        {
+          "date": "2026-05-19",
+          "price": 298.97,
+          "volume": 42243600
+        },
+        {
+          "date": "2026-05-20",
+          "price": 302.25,
+          "volume": 38229800
+        },
+        {
+          "date": "2026-05-21",
+          "price": 304.99,
+          "volume": 42965100
+        },
+        {
+          "date": "2026-05-22",
+          "price": 308.82,
+          "volume": 43670200
+        },
+        {
+          "date": "2026-05-26",
+          "price": 308.33,
+          "volume": 48000500
+        },
+        {
+          "date": "2026-05-27",
+          "price": 310.85,
+          "volume": 50430900
+        },
+        {
+          "date": "2026-05-28",
+          "price": 312.51,
+          "volume": 48220400
+        },
+        {
+          "date": "2026-05-29",
+          "price": 312.06,
+          "volume": 69982800
+        }
+      ]
+    },
+    "MSFT": {
+      "symbol": "MSFT",
+      "name": "Microsoft Corp.",
+      "type": "stock",
+      "price": 450.24,
+      "price_change_1d": 5.45,
+      "price_change_7d": 7.43,
+      "price_change_30d": 6.3,
+      "rsi": 71.71,
+      "technical_trend": "Bullish",
+      "recommendation": "Verkauf",
+      "confidence": 75,
+      "sentiment_score": -0.4,
+      "risk_level": "Mittel",
+      "ai_explanation": "Mit einem RSI von 71.71 befindet sich MSFT im überkauften Bereich. Gewinnmitnahmen sind wahrscheinlich.",
+      "key_drivers": [
+        "Kurzfristiges Momentum stößt an Grenzen"
+      ],
+      "key_risks": [
+        "Gefahr von Gewinnmitnahmen"
+      ],
+      "last_updated": "2026-05-30 13:54",
+      "news": [
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-01-21",
+          "price": 442.14,
+          "volume": 37980500
+        },
+        {
+          "date": "2026-01-22",
+          "price": 449.14,
+          "volume": 25349400
+        },
+        {
+          "date": "2026-01-23",
+          "price": 463.88,
+          "volume": 38000200
+        },
+        {
+          "date": "2026-01-26",
+          "price": 468.19,
+          "volume": 29291200
+        },
+        {
+          "date": "2026-01-27",
+          "price": 478.45,
+          "volume": 29213900
+        },
+        {
+          "date": "2026-01-28",
+          "price": 479.49,
+          "volume": 36875400
+        },
+        {
+          "date": "2026-01-29",
+          "price": 431.58,
+          "volume": 128855300
+        },
+        {
+          "date": "2026-01-30",
+          "price": 428.38,
+          "volume": 58566800
+        },
+        {
+          "date": "2026-02-02",
+          "price": 421.49,
+          "volume": 42219900
+        },
+        {
+          "date": "2026-02-03",
+          "price": 409.39,
+          "volume": 61424100
+        },
+        {
+          "date": "2026-02-04",
+          "price": 412.35,
+          "volume": 45012400
+        },
+        {
+          "date": "2026-02-05",
+          "price": 391.92,
+          "volume": 66289200
+        },
+        {
+          "date": "2026-02-06",
+          "price": 399.36,
+          "volume": 53515300
+        },
+        {
+          "date": "2026-02-09",
+          "price": 411.77,
+          "volume": 45480500
+        },
+        {
+          "date": "2026-02-10",
+          "price": 411.44,
+          "volume": 44857900
+        },
+        {
+          "date": "2026-02-11",
+          "price": 402.58,
+          "volume": 42491000
+        },
+        {
+          "date": "2026-02-12",
+          "price": 400.06,
+          "volume": 40802400
+        },
+        {
+          "date": "2026-02-13",
+          "price": 399.54,
+          "volume": 34091600
+        },
+        {
+          "date": "2026-02-17",
+          "price": 395.1,
+          "volume": 32078800
+        },
+        {
+          "date": "2026-02-18",
+          "price": 397.83,
+          "volume": 23223400
+        },
+        {
+          "date": "2026-02-19",
+          "price": 397.6,
+          "volume": 28234000
+        },
+        {
+          "date": "2026-02-20",
+          "price": 396.37,
+          "volume": 34015200
+        },
+        {
+          "date": "2026-02-23",
+          "price": 383.64,
+          "volume": 43238300
+        },
+        {
+          "date": "2026-02-24",
+          "price": 388.16,
+          "volume": 33884700
+        },
+        {
+          "date": "2026-02-25",
+          "price": 399.73,
+          "volume": 43625500
+        },
+        {
+          "date": "2026-02-26",
+          "price": 400.85,
+          "volume": 34405900
+        },
+        {
+          "date": "2026-02-27",
+          "price": 391.89,
+          "volume": 51367200
+        },
+        {
+          "date": "2026-03-02",
+          "price": 397.69,
+          "volume": 35474900
+        },
+        {
+          "date": "2026-03-03",
+          "price": 403.06,
+          "volume": 38199200
+        },
+        {
+          "date": "2026-03-04",
+          "price": 404.32,
+          "volume": 35808000
+        },
+        {
+          "date": "2026-03-05",
+          "price": 409.79,
+          "volume": 39001300
+        },
+        {
+          "date": "2026-03-06",
+          "price": 408.08,
+          "volume": 31123900
+        },
+        {
+          "date": "2026-03-09",
+          "price": 408.53,
+          "volume": 30131900
+        },
+        {
+          "date": "2026-03-10",
+          "price": 404.88,
+          "volume": 31706400
+        },
+        {
+          "date": "2026-03-11",
+          "price": 404.0,
+          "volume": 25512100
+        },
+        {
+          "date": "2026-03-12",
+          "price": 400.99,
+          "volume": 27263900
+        },
+        {
+          "date": "2026-03-13",
+          "price": 394.7,
+          "volume": 26848000
+        },
+        {
+          "date": "2026-03-16",
+          "price": 399.09,
+          "volume": 27733700
+        },
+        {
+          "date": "2026-03-17",
+          "price": 398.55,
+          "volume": 26228300
+        },
+        {
+          "date": "2026-03-18",
+          "price": 390.94,
+          "volume": 25908500
+        },
+        {
+          "date": "2026-03-19",
+          "price": 388.18,
+          "volume": 25138800
+        },
+        {
+          "date": "2026-03-20",
+          "price": 381.04,
+          "volume": 50853200
+        },
+        {
+          "date": "2026-03-23",
+          "price": 382.17,
+          "volume": 29680100
+        },
+        {
+          "date": "2026-03-24",
+          "price": 371.93,
+          "volume": 42733600
+        },
+        {
+          "date": "2026-03-25",
+          "price": 370.24,
+          "volume": 31181200
+        },
+        {
+          "date": "2026-03-26",
+          "price": 365.18,
+          "volume": 36836600
+        },
+        {
+          "date": "2026-03-27",
+          "price": 356.0,
+          "volume": 37883400
+        },
+        {
+          "date": "2026-03-30",
+          "price": 358.18,
+          "volume": 44797000
+        },
+        {
+          "date": "2026-03-31",
+          "price": 369.37,
+          "volume": 45244400
+        },
+        {
+          "date": "2026-04-01",
+          "price": 368.57,
+          "volume": 29417200
+        },
+        {
+          "date": "2026-04-02",
+          "price": 372.65,
+          "volume": 24099100
+        },
+        {
+          "date": "2026-04-06",
+          "price": 372.07,
+          "volume": 16146600
+        },
+        {
+          "date": "2026-04-07",
+          "price": 371.49,
+          "volume": 21443300
+        },
+        {
+          "date": "2026-04-08",
+          "price": 373.52,
+          "volume": 33064800
+        },
+        {
+          "date": "2026-04-09",
+          "price": 372.26,
+          "volume": 30435300
+        },
+        {
+          "date": "2026-04-10",
+          "price": 370.07,
+          "volume": 28111100
+        },
+        {
+          "date": "2026-04-13",
+          "price": 383.54,
+          "volume": 35745800
+        },
+        {
+          "date": "2026-04-14",
+          "price": 392.26,
+          "volume": 37504500
+        },
+        {
+          "date": "2026-04-15",
+          "price": 410.33,
+          "volume": 45063400
+        },
+        {
+          "date": "2026-04-16",
+          "price": 419.35,
+          "volume": 41642400
+        },
+        {
+          "date": "2026-04-17",
+          "price": 421.88,
+          "volume": 48568200
+        },
+        {
+          "date": "2026-04-20",
+          "price": 417.17,
+          "volume": 27582200
+        },
+        {
+          "date": "2026-04-21",
+          "price": 423.24,
+          "volume": 32048500
+        },
+        {
+          "date": "2026-04-22",
+          "price": 431.98,
+          "volume": 29378200
+        },
+        {
+          "date": "2026-04-23",
+          "price": 414.85,
+          "volume": 38308000
+        },
+        {
+          "date": "2026-04-24",
+          "price": 423.7,
+          "volume": 27457400
+        },
+        {
+          "date": "2026-04-27",
+          "price": 423.9,
+          "volume": 30867300
+        },
+        {
+          "date": "2026-04-28",
+          "price": 428.32,
+          "volume": 30438100
+        },
+        {
+          "date": "2026-04-29",
+          "price": 423.54,
+          "volume": 38288300
+        },
+        {
+          "date": "2026-04-30",
+          "price": 406.9,
+          "volume": 70909400
+        },
+        {
+          "date": "2026-05-01",
+          "price": 413.54,
+          "volume": 31372400
+        },
+        {
+          "date": "2026-05-04",
+          "price": 412.73,
+          "volume": 28066500
+        },
+        {
+          "date": "2026-05-05",
+          "price": 410.49,
+          "volume": 25700900
+        },
+        {
+          "date": "2026-05-06",
+          "price": 413.07,
+          "volume": 30285900
+        },
+        {
+          "date": "2026-05-07",
+          "price": 419.86,
+          "volume": 34942400
+        },
+        {
+          "date": "2026-05-08",
+          "price": 414.22,
+          "volume": 33383800
+        },
+        {
+          "date": "2026-05-11",
+          "price": 411.77,
+          "volume": 35657900
+        },
+        {
+          "date": "2026-05-12",
+          "price": 406.89,
+          "volume": 38594200
+        },
+        {
+          "date": "2026-05-13",
+          "price": 404.33,
+          "volume": 29667100
+        },
+        {
+          "date": "2026-05-14",
+          "price": 408.55,
+          "volume": 27077500
+        },
+        {
+          "date": "2026-05-15",
+          "price": 421.01,
+          "volume": 50771200
+        },
+        {
+          "date": "2026-05-18",
+          "price": 422.62,
+          "volume": 32564100
+        },
+        {
+          "date": "2026-05-19",
+          "price": 416.52,
+          "volume": 33018700
+        },
+        {
+          "date": "2026-05-20",
+          "price": 420.15,
+          "volume": 27864000
+        },
+        {
+          "date": "2026-05-21",
+          "price": 419.09,
+          "volume": 31393500
+        },
+        {
+          "date": "2026-05-22",
+          "price": 418.57,
+          "volume": 22390300
+        },
+        {
+          "date": "2026-05-26",
+          "price": 416.03,
+          "volume": 30398000
+        },
+        {
+          "date": "2026-05-27",
+          "price": 412.67,
+          "volume": 28901500
+        },
+        {
+          "date": "2026-05-28",
+          "price": 426.99,
+          "volume": 47250500
+        },
+        {
+          "date": "2026-05-29",
+          "price": 450.24,
+          "volume": 79522600
+        }
+      ]
+    },
+    "NVDA": {
+      "symbol": "NVDA",
+      "name": "NVIDIA Corp.",
+      "type": "stock",
+      "price": 211.14,
+      "price_change_1d": -1.45,
+      "price_change_7d": -3.81,
+      "price_change_30d": 0.9,
+      "rsi": 46.25,
+      "technical_trend": "Neutral",
+      "recommendation": "Halten",
+      "confidence": 60,
+      "sentiment_score": 0.1,
+      "risk_level": "Gering",
+      "ai_explanation": "NVDA konsolidiert sich derzeit auf aktuellem Niveau. Es gibt momentan keine klaren technischen oder nachrichtenbasierten Impulse für signifikante Bewegungen.",
+      "key_drivers": [
+        "Seitwärtsbewegung stabilisiert Kurs"
+      ],
+      "key_risks": [
+        "Mangel an kurzfristigen Katalysatoren"
+      ],
+      "last_updated": "2026-05-30 13:54",
+      "news": [
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-01-21",
+          "price": 183.31,
+          "volume": 200381000
+        },
+        {
+          "date": "2026-01-22",
+          "price": 184.83,
+          "volume": 139636600
+        },
+        {
+          "date": "2026-01-23",
+          "price": 187.66,
+          "volume": 142748100
+        },
+        {
+          "date": "2026-01-26",
+          "price": 186.46,
+          "volume": 124799600
+        },
+        {
+          "date": "2026-01-27",
+          "price": 188.51,
+          "volume": 143711600
+        },
+        {
+          "date": "2026-01-28",
+          "price": 191.51,
+          "volume": 148552700
+        },
+        {
+          "date": "2026-01-29",
+          "price": 192.5,
+          "volume": 171764400
+        },
+        {
+          "date": "2026-01-30",
+          "price": 191.12,
+          "volume": 179489500
+        },
+        {
+          "date": "2026-02-02",
+          "price": 185.6,
+          "volume": 165794100
+        },
+        {
+          "date": "2026-02-03",
+          "price": 180.33,
+          "volume": 204019600
+        },
+        {
+          "date": "2026-02-04",
+          "price": 174.18,
+          "volume": 207014100
+        },
+        {
+          "date": "2026-02-05",
+          "price": 171.87,
+          "volume": 206312900
+        },
+        {
+          "date": "2026-02-06",
+          "price": 185.4,
+          "volume": 231346200
+        },
+        {
+          "date": "2026-02-09",
+          "price": 190.03,
+          "volume": 196387400
+        },
+        {
+          "date": "2026-02-10",
+          "price": 188.53,
+          "volume": 136764800
+        },
+        {
+          "date": "2026-02-11",
+          "price": 190.04,
+          "volume": 144192700
+        },
+        {
+          "date": "2026-02-12",
+          "price": 186.93,
+          "volume": 189932500
+        },
+        {
+          "date": "2026-02-13",
+          "price": 182.8,
+          "volume": 161888000
+        },
+        {
+          "date": "2026-02-17",
+          "price": 184.96,
+          "volume": 162276900
+        },
+        {
+          "date": "2026-02-18",
+          "price": 187.97,
+          "volume": 164749100
+        },
+        {
+          "date": "2026-02-19",
+          "price": 187.89,
+          "volume": 126554500
+        },
+        {
+          "date": "2026-02-20",
+          "price": 189.81,
+          "volume": 178422300
+        },
+        {
+          "date": "2026-02-23",
+          "price": 191.54,
+          "volume": 171584800
+        },
+        {
+          "date": "2026-02-24",
+          "price": 192.84,
+          "volume": 175123600
+        },
+        {
+          "date": "2026-02-25",
+          "price": 195.55,
+          "volume": 250637100
+        },
+        {
+          "date": "2026-02-26",
+          "price": 184.88,
+          "volume": 360807900
+        },
+        {
+          "date": "2026-02-27",
+          "price": 177.18,
+          "volume": 311636500
+        },
+        {
+          "date": "2026-03-02",
+          "price": 182.47,
+          "volume": 209095300
+        },
+        {
+          "date": "2026-03-03",
+          "price": 180.04,
+          "volume": 178099400
+        },
+        {
+          "date": "2026-03-04",
+          "price": 183.03,
+          "volume": 177731200
+        },
+        {
+          "date": "2026-03-05",
+          "price": 183.33,
+          "volume": 198779700
+        },
+        {
+          "date": "2026-03-06",
+          "price": 177.81,
+          "volume": 189021900
+        },
+        {
+          "date": "2026-03-09",
+          "price": 182.64,
+          "volume": 177213600
+        },
+        {
+          "date": "2026-03-10",
+          "price": 184.76,
+          "volume": 179118500
+        },
+        {
+          "date": "2026-03-11",
+          "price": 186.03,
+          "volume": 145280400
+        },
+        {
+          "date": "2026-03-12",
+          "price": 183.14,
+          "volume": 155762700
+        },
+        {
+          "date": "2026-03-13",
+          "price": 180.25,
+          "volume": 160988400
+        },
+        {
+          "date": "2026-03-16",
+          "price": 183.22,
+          "volume": 217307400
+        },
+        {
+          "date": "2026-03-17",
+          "price": 181.93,
+          "volume": 182497800
+        },
+        {
+          "date": "2026-03-18",
+          "price": 180.4,
+          "volume": 156683100
+        },
+        {
+          "date": "2026-03-19",
+          "price": 178.56,
+          "volume": 170968500
+        },
+        {
+          "date": "2026-03-20",
+          "price": 172.7,
+          "volume": 241323500
+        },
+        {
+          "date": "2026-03-23",
+          "price": 175.64,
+          "volume": 182836300
+        },
+        {
+          "date": "2026-03-24",
+          "price": 175.2,
+          "volume": 147667800
+        },
+        {
+          "date": "2026-03-25",
+          "price": 178.68,
+          "volume": 162602100
+        },
+        {
+          "date": "2026-03-26",
+          "price": 171.24,
+          "volume": 186152200
+        },
+        {
+          "date": "2026-03-27",
+          "price": 167.52,
+          "volume": 196212700
+        },
+        {
+          "date": "2026-03-30",
+          "price": 165.17,
+          "volume": 185627000
+        },
+        {
+          "date": "2026-03-31",
+          "price": 174.4,
+          "volume": 226181300
+        },
+        {
+          "date": "2026-04-01",
+          "price": 175.75,
+          "volume": 168132000
+        },
+        {
+          "date": "2026-04-02",
+          "price": 177.39,
+          "volume": 143143200
+        },
+        {
+          "date": "2026-04-06",
+          "price": 177.64,
+          "volume": 107564300
+        },
+        {
+          "date": "2026-04-07",
+          "price": 178.1,
+          "volume": 132534900
+        },
+        {
+          "date": "2026-04-08",
+          "price": 182.08,
+          "volume": 147732700
+        },
+        {
+          "date": "2026-04-09",
+          "price": 183.91,
+          "volume": 116428500
+        },
+        {
+          "date": "2026-04-10",
+          "price": 188.63,
+          "volume": 160459500
+        },
+        {
+          "date": "2026-04-13",
+          "price": 189.31,
+          "volume": 133648200
+        },
+        {
+          "date": "2026-04-14",
+          "price": 196.51,
+          "volume": 161307000
+        },
+        {
+          "date": "2026-04-15",
+          "price": 198.87,
+          "volume": 185338400
+        },
+        {
+          "date": "2026-04-16",
+          "price": 198.35,
+          "volume": 134012900
+        },
+        {
+          "date": "2026-04-17",
+          "price": 201.68,
+          "volume": 160324400
+        },
+        {
+          "date": "2026-04-20",
+          "price": 202.06,
+          "volume": 119381400
+        },
+        {
+          "date": "2026-04-21",
+          "price": 199.88,
+          "volume": 107945300
+        },
+        {
+          "date": "2026-04-22",
+          "price": 202.5,
+          "volume": 107501000
+        },
+        {
+          "date": "2026-04-23",
+          "price": 199.64,
+          "volume": 113561800
+        },
+        {
+          "date": "2026-04-24",
+          "price": 208.27,
+          "volume": 214134400
+        },
+        {
+          "date": "2026-04-27",
+          "price": 216.61,
+          "volume": 187172400
+        },
+        {
+          "date": "2026-04-28",
+          "price": 213.17,
+          "volume": 180275400
+        },
+        {
+          "date": "2026-04-29",
+          "price": 209.25,
+          "volume": 123711800
+        },
+        {
+          "date": "2026-04-30",
+          "price": 199.57,
+          "volume": 225239200
+        },
+        {
+          "date": "2026-05-01",
+          "price": 198.45,
+          "volume": 128647000
+        },
+        {
+          "date": "2026-05-04",
+          "price": 198.48,
+          "volume": 125368100
+        },
+        {
+          "date": "2026-05-05",
+          "price": 196.5,
+          "volume": 113406600
+        },
+        {
+          "date": "2026-05-06",
+          "price": 207.83,
+          "volume": 188362800
+        },
+        {
+          "date": "2026-05-07",
+          "price": 211.5,
+          "volume": 168307900
+        },
+        {
+          "date": "2026-05-08",
+          "price": 215.2,
+          "volume": 136421400
+        },
+        {
+          "date": "2026-05-11",
+          "price": 219.44,
+          "volume": 160685800
+        },
+        {
+          "date": "2026-05-12",
+          "price": 220.78,
+          "volume": 159176600
+        },
+        {
+          "date": "2026-05-13",
+          "price": 225.83,
+          "volume": 150405400
+        },
+        {
+          "date": "2026-05-14",
+          "price": 235.74,
+          "volume": 180782900
+        },
+        {
+          "date": "2026-05-15",
+          "price": 225.32,
+          "volume": 180977600
+        },
+        {
+          "date": "2026-05-18",
+          "price": 222.32,
+          "volume": 146280900
+        },
+        {
+          "date": "2026-05-19",
+          "price": 220.61,
+          "volume": 140948200
+        },
+        {
+          "date": "2026-05-20",
+          "price": 223.47,
+          "volume": 184201600
+        },
+        {
+          "date": "2026-05-21",
+          "price": 219.51,
+          "volume": 203381800
+        },
+        {
+          "date": "2026-05-22",
+          "price": 215.33,
+          "volume": 169275700
+        },
+        {
+          "date": "2026-05-26",
+          "price": 214.86,
+          "volume": 187202600
+        },
+        {
+          "date": "2026-05-27",
+          "price": 212.6,
+          "volume": 167601200
+        },
+        {
+          "date": "2026-05-28",
+          "price": 214.25,
+          "volume": 143996000
+        },
+        {
+          "date": "2026-05-29",
+          "price": 211.14,
+          "volume": 288291500
+        }
+      ]
+    },
+    "TSLA": {
+      "symbol": "TSLA",
+      "name": "Tesla Inc.",
+      "type": "stock",
+      "price": 435.79,
+      "price_change_1d": -1.43,
+      "price_change_7d": 4.29,
+      "price_change_30d": 16.9,
+      "rsi": 52.96,
+      "technical_trend": "Bullish",
+      "recommendation": "Halten",
+      "confidence": 60,
+      "sentiment_score": 0.1,
+      "risk_level": "Gering",
+      "ai_explanation": "TSLA konsolidiert sich derzeit auf aktuellem Niveau. Es gibt momentan keine klaren technischen oder nachrichtenbasierten Impulse für signifikante Bewegungen.",
+      "key_drivers": [
+        "Seitwärtsbewegung stabilisiert Kurs"
+      ],
+      "key_risks": [
+        "Mangel an kurzfristigen Katalysatoren"
+      ],
+      "last_updated": "2026-05-30 13:54",
+      "news": [
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-01-21",
+          "price": 431.44,
+          "volume": 68124000
+        },
+        {
+          "date": "2026-01-22",
+          "price": 449.36,
+          "volume": 71546700
+        },
+        {
+          "date": "2026-01-23",
+          "price": 449.06,
+          "volume": 56771400
+        },
+        {
+          "date": "2026-01-26",
+          "price": 435.2,
+          "volume": 49397400
+        },
+        {
+          "date": "2026-01-27",
+          "price": 430.9,
+          "volume": 37733100
+        },
+        {
+          "date": "2026-01-28",
+          "price": 431.46,
+          "volume": 54857400
+        },
+        {
+          "date": "2026-01-29",
+          "price": 416.56,
+          "volume": 81686100
+        },
+        {
+          "date": "2026-01-30",
+          "price": 430.41,
+          "volume": 82626100
+        },
+        {
+          "date": "2026-02-02",
+          "price": 421.81,
+          "volume": 58739500
+        },
+        {
+          "date": "2026-02-03",
+          "price": 421.96,
+          "volume": 56886500
+        },
+        {
+          "date": "2026-02-04",
+          "price": 406.01,
+          "volume": 74606900
+        },
+        {
+          "date": "2026-02-05",
+          "price": 397.21,
+          "volume": 72819800
+        },
+        {
+          "date": "2026-02-06",
+          "price": 411.11,
+          "volume": 62677100
+        },
+        {
+          "date": "2026-02-09",
+          "price": 417.32,
+          "volume": 54484300
+        },
+        {
+          "date": "2026-02-10",
+          "price": 425.21,
+          "volume": 64450200
+        },
+        {
+          "date": "2026-02-11",
+          "price": 428.27,
+          "volume": 57362000
+        },
+        {
+          "date": "2026-02-12",
+          "price": 417.07,
+          "volume": 61933400
+        },
+        {
+          "date": "2026-02-13",
+          "price": 417.44,
+          "volume": 51434100
+        },
+        {
+          "date": "2026-02-17",
+          "price": 410.63,
+          "volume": 59678800
+        },
+        {
+          "date": "2026-02-18",
+          "price": 411.32,
+          "volume": 45921400
+        },
+        {
+          "date": "2026-02-19",
+          "price": 411.71,
+          "volume": 51019600
+        },
+        {
+          "date": "2026-02-20",
+          "price": 411.82,
+          "volume": 57912200
+        },
+        {
+          "date": "2026-02-23",
+          "price": 399.83,
+          "volume": 69680000
+        },
+        {
+          "date": "2026-02-24",
+          "price": 409.38,
+          "volume": 58579500
+        },
+        {
+          "date": "2026-02-25",
+          "price": 417.4,
+          "volume": 54809700
+        },
+        {
+          "date": "2026-02-26",
+          "price": 408.58,
+          "volume": 53602500
+        },
+        {
+          "date": "2026-02-27",
+          "price": 402.51,
+          "volume": 56890100
+        },
+        {
+          "date": "2026-03-02",
+          "price": 403.32,
+          "volume": 55088300
+        },
+        {
+          "date": "2026-03-03",
+          "price": 392.43,
+          "volume": 62617300
+        },
+        {
+          "date": "2026-03-04",
+          "price": 405.94,
+          "volume": 68305500
+        },
+        {
+          "date": "2026-03-05",
+          "price": 405.55,
+          "volume": 51925900
+        },
+        {
+          "date": "2026-03-06",
+          "price": 396.73,
+          "volume": 64054600
+        },
+        {
+          "date": "2026-03-09",
+          "price": 398.68,
+          "volume": 67018900
+        },
+        {
+          "date": "2026-03-10",
+          "price": 399.24,
+          "volume": 59258700
+        },
+        {
+          "date": "2026-03-11",
+          "price": 407.82,
+          "volume": 62559900
+        },
+        {
+          "date": "2026-03-12",
+          "price": 395.01,
+          "volume": 60973800
+        },
+        {
+          "date": "2026-03-13",
+          "price": 391.2,
+          "volume": 58504100
+        },
+        {
+          "date": "2026-03-16",
+          "price": 395.56,
+          "volume": 58068300
+        },
+        {
+          "date": "2026-03-17",
+          "price": 399.27,
+          "volume": 46890500
+        },
+        {
+          "date": "2026-03-18",
+          "price": 392.78,
+          "volume": 50853100
+        },
+        {
+          "date": "2026-03-19",
+          "price": 380.3,
+          "volume": 67078300
+        },
+        {
+          "date": "2026-03-20",
+          "price": 367.96,
+          "volume": 78628600
+        },
+        {
+          "date": "2026-03-23",
+          "price": 380.85,
+          "volume": 74606000
+        },
+        {
+          "date": "2026-03-24",
+          "price": 383.03,
+          "volume": 60004900
+        },
+        {
+          "date": "2026-03-25",
+          "price": 385.95,
+          "volume": 55157300
+        },
+        {
+          "date": "2026-03-26",
+          "price": 372.11,
+          "volume": 55522900
+        },
+        {
+          "date": "2026-03-27",
+          "price": 361.83,
+          "volume": 62065700
+        },
+        {
+          "date": "2026-03-30",
+          "price": 355.28,
+          "volume": 67954400
+        },
+        {
+          "date": "2026-03-31",
+          "price": 371.75,
+          "volume": 75534900
+        },
+        {
+          "date": "2026-04-01",
+          "price": 381.26,
+          "volume": 58683800
+        },
+        {
+          "date": "2026-04-02",
+          "price": 360.59,
+          "volume": 83031200
+        },
+        {
+          "date": "2026-04-06",
+          "price": 352.82,
+          "volume": 77697600
+        },
+        {
+          "date": "2026-04-07",
+          "price": 346.65,
+          "volume": 74515400
+        },
+        {
+          "date": "2026-04-08",
+          "price": 343.25,
+          "volume": 78838600
+        },
+        {
+          "date": "2026-04-09",
+          "price": 345.62,
+          "volume": 62164000
+        },
+        {
+          "date": "2026-04-10",
+          "price": 348.95,
+          "volume": 51336000
+        },
+        {
+          "date": "2026-04-13",
+          "price": 352.42,
+          "volume": 53617500
+        },
+        {
+          "date": "2026-04-14",
+          "price": 364.2,
+          "volume": 59979600
+        },
+        {
+          "date": "2026-04-15",
+          "price": 391.95,
+          "volume": 113810400
+        },
+        {
+          "date": "2026-04-16",
+          "price": 388.9,
+          "volume": 63515100
+        },
+        {
+          "date": "2026-04-17",
+          "price": 400.62,
+          "volume": 90640000
+        },
+        {
+          "date": "2026-04-20",
+          "price": 392.5,
+          "volume": 64603900
+        },
+        {
+          "date": "2026-04-21",
+          "price": 386.42,
+          "volume": 50530600
+        },
+        {
+          "date": "2026-04-22",
+          "price": 387.51,
+          "volume": 62362800
+        },
+        {
+          "date": "2026-04-23",
+          "price": 373.72,
+          "volume": 93969500
+        },
+        {
+          "date": "2026-04-24",
+          "price": 376.3,
+          "volume": 62893300
+        },
+        {
+          "date": "2026-04-27",
+          "price": 378.67,
+          "volume": 66735800
+        },
+        {
+          "date": "2026-04-28",
+          "price": 376.02,
+          "volume": 50864400
+        },
+        {
+          "date": "2026-04-29",
+          "price": 372.8,
+          "volume": 45384800
+        },
+        {
+          "date": "2026-04-30",
+          "price": 381.63,
+          "volume": 51076000
+        },
+        {
+          "date": "2026-05-01",
+          "price": 390.82,
+          "volume": 65338300
+        },
+        {
+          "date": "2026-05-04",
+          "price": 392.51,
+          "volume": 48765100
+        },
+        {
+          "date": "2026-05-05",
+          "price": 389.37,
+          "volume": 47780600
+        },
+        {
+          "date": "2026-05-06",
+          "price": 398.73,
+          "volume": 53465400
+        },
+        {
+          "date": "2026-05-07",
+          "price": 411.79,
+          "volume": 64294200
+        },
+        {
+          "date": "2026-05-08",
+          "price": 428.35,
+          "volume": 65050000
+        },
+        {
+          "date": "2026-05-11",
+          "price": 445.0,
+          "volume": 78376100
+        },
+        {
+          "date": "2026-05-12",
+          "price": 433.45,
+          "volume": 60569300
+        },
+        {
+          "date": "2026-05-13",
+          "price": 445.27,
+          "volume": 68283200
+        },
+        {
+          "date": "2026-05-14",
+          "price": 443.3,
+          "volume": 46070400
+        },
+        {
+          "date": "2026-05-15",
+          "price": 422.24,
+          "volume": 52688700
+        },
+        {
+          "date": "2026-05-18",
+          "price": 409.99,
+          "volume": 52474200
+        },
+        {
+          "date": "2026-05-19",
+          "price": 404.11,
+          "volume": 46500600
+        },
+        {
+          "date": "2026-05-20",
+          "price": 417.26,
+          "volume": 45294700
+        },
+        {
+          "date": "2026-05-21",
+          "price": 417.85,
+          "volume": 42636900
+        },
+        {
+          "date": "2026-05-22",
+          "price": 426.01,
+          "volume": 46104700
+        },
+        {
+          "date": "2026-05-26",
+          "price": 433.59,
+          "volume": 45658900
+        },
+        {
+          "date": "2026-05-27",
+          "price": 440.36,
+          "volume": 44656500
+        },
+        {
+          "date": "2026-05-28",
+          "price": 442.1,
+          "volume": 32435000
+        },
+        {
+          "date": "2026-05-29",
+          "price": 435.79,
+          "volume": 45059400
+        }
+      ]
+    },
+    "AMZN": {
+      "symbol": "AMZN",
+      "name": "Amazon.com Inc.",
+      "type": "stock",
+      "price": 270.64,
+      "price_change_1d": -1.23,
+      "price_change_7d": 0.81,
+      "price_change_30d": 2.89,
+      "rsi": 47.86,
+      "technical_trend": "Bullish",
+      "recommendation": "Halten",
+      "confidence": 60,
+      "sentiment_score": 0.1,
+      "risk_level": "Gering",
+      "ai_explanation": "AMZN konsolidiert sich derzeit auf aktuellem Niveau. Es gibt momentan keine klaren technischen oder nachrichtenbasierten Impulse für signifikante Bewegungen.",
+      "key_drivers": [
+        "Seitwärtsbewegung stabilisiert Kurs"
+      ],
+      "key_risks": [
+        "Mangel an kurzfristigen Katalysatoren"
+      ],
+      "last_updated": "2026-05-30 13:54",
+      "news": [
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-01-21",
+          "price": 231.31,
+          "volume": 47276100
+        },
+        {
+          "date": "2026-01-22",
+          "price": 234.34,
+          "volume": 31913300
+        },
+        {
+          "date": "2026-01-23",
+          "price": 239.16,
+          "volume": 33778500
+        },
+        {
+          "date": "2026-01-26",
+          "price": 238.42,
+          "volume": 32825500
+        },
+        {
+          "date": "2026-01-27",
+          "price": 244.68,
+          "volume": 38029200
+        },
+        {
+          "date": "2026-01-28",
+          "price": 243.01,
+          "volume": 40882700
+        },
+        {
+          "date": "2026-01-29",
+          "price": 241.73,
+          "volume": 47229600
+        },
+        {
+          "date": "2026-01-30",
+          "price": 239.3,
+          "volume": 46585000
+        },
+        {
+          "date": "2026-02-02",
+          "price": 242.96,
+          "volume": 37546100
+        },
+        {
+          "date": "2026-02-03",
+          "price": 238.62,
+          "volume": 53831300
+        },
+        {
+          "date": "2026-02-04",
+          "price": 232.99,
+          "volume": 51299900
+        },
+        {
+          "date": "2026-02-05",
+          "price": 222.69,
+          "volume": 103509200
+        },
+        {
+          "date": "2026-02-06",
+          "price": 210.32,
+          "volume": 179210900
+        },
+        {
+          "date": "2026-02-09",
+          "price": 208.72,
+          "volume": 91178400
+        },
+        {
+          "date": "2026-02-10",
+          "price": 206.96,
+          "volume": 67175000
+        },
+        {
+          "date": "2026-02-11",
+          "price": 204.08,
+          "volume": 65545500
+        },
+        {
+          "date": "2026-02-12",
+          "price": 199.6,
+          "volume": 83975400
+        },
+        {
+          "date": "2026-02-13",
+          "price": 198.79,
+          "volume": 66321600
+        },
+        {
+          "date": "2026-02-17",
+          "price": 201.15,
+          "volume": 69879200
+        },
+        {
+          "date": "2026-02-18",
+          "price": 204.79,
+          "volume": 51003300
+        },
+        {
+          "date": "2026-02-19",
+          "price": 204.86,
+          "volume": 35669600
+        },
+        {
+          "date": "2026-02-20",
+          "price": 210.11,
+          "volume": 65881600
+        },
+        {
+          "date": "2026-02-23",
+          "price": 205.27,
+          "volume": 53581500
+        },
+        {
+          "date": "2026-02-24",
+          "price": 208.56,
+          "volume": 41137200
+        },
+        {
+          "date": "2026-02-25",
+          "price": 210.64,
+          "volume": 41346400
+        },
+        {
+          "date": "2026-02-26",
+          "price": 207.92,
+          "volume": 47756800
+        },
+        {
+          "date": "2026-02-27",
+          "price": 210.0,
+          "volume": 57422800
+        },
+        {
+          "date": "2026-03-02",
+          "price": 208.39,
+          "volume": 46001000
+        },
+        {
+          "date": "2026-03-03",
+          "price": 208.73,
+          "volume": 43184900
+        },
+        {
+          "date": "2026-03-04",
+          "price": 216.82,
+          "volume": 54731100
+        },
+        {
+          "date": "2026-03-05",
+          "price": 218.94,
+          "volume": 60943400
+        },
+        {
+          "date": "2026-03-06",
+          "price": 213.21,
+          "volume": 51152700
+        },
+        {
+          "date": "2026-03-09",
+          "price": 213.49,
+          "volume": 54642900
+        },
+        {
+          "date": "2026-03-10",
+          "price": 214.33,
+          "volume": 35678800
+        },
+        {
+          "date": "2026-03-11",
+          "price": 212.65,
+          "volume": 34199300
+        },
+        {
+          "date": "2026-03-12",
+          "price": 209.53,
+          "volume": 44349500
+        },
+        {
+          "date": "2026-03-13",
+          "price": 207.67,
+          "volume": 35662100
+        },
+        {
+          "date": "2026-03-16",
+          "price": 211.74,
+          "volume": 42209300
+        },
+        {
+          "date": "2026-03-17",
+          "price": 215.2,
+          "volume": 44969900
+        },
+        {
+          "date": "2026-03-18",
+          "price": 209.87,
+          "volume": 37846600
+        },
+        {
+          "date": "2026-03-19",
+          "price": 208.76,
+          "volume": 36440600
+        },
+        {
+          "date": "2026-03-20",
+          "price": 205.37,
+          "volume": 63694600
+        },
+        {
+          "date": "2026-03-23",
+          "price": 210.14,
+          "volume": 44277400
+        },
+        {
+          "date": "2026-03-24",
+          "price": 207.24,
+          "volume": 35351400
+        },
+        {
+          "date": "2026-03-25",
+          "price": 211.71,
+          "volume": 36388800
+        },
+        {
+          "date": "2026-03-26",
+          "price": 207.54,
+          "volume": 46746000
+        },
+        {
+          "date": "2026-03-27",
+          "price": 199.34,
+          "volume": 56009800
+        },
+        {
+          "date": "2026-03-30",
+          "price": 200.95,
+          "volume": 46373800
+        },
+        {
+          "date": "2026-03-31",
+          "price": 208.27,
+          "volume": 58470100
+        },
+        {
+          "date": "2026-04-01",
+          "price": 210.57,
+          "volume": 45955400
+        },
+        {
+          "date": "2026-04-02",
+          "price": 209.77,
+          "volume": 31453000
+        },
+        {
+          "date": "2026-04-06",
+          "price": 212.79,
+          "volume": 25385500
+        },
+        {
+          "date": "2026-04-07",
+          "price": 213.77,
+          "volume": 28154600
+        },
+        {
+          "date": "2026-04-08",
+          "price": 221.25,
+          "volume": 51092700
+        },
+        {
+          "date": "2026-04-09",
+          "price": 233.65,
+          "volume": 65964200
+        },
+        {
+          "date": "2026-04-10",
+          "price": 238.38,
+          "volume": 56912800
+        },
+        {
+          "date": "2026-04-13",
+          "price": 239.89,
+          "volume": 42166200
+        },
+        {
+          "date": "2026-04-14",
+          "price": 249.02,
+          "volume": 72685000
+        },
+        {
+          "date": "2026-04-15",
+          "price": 248.5,
+          "volume": 43045200
+        },
+        {
+          "date": "2026-04-16",
+          "price": 249.7,
+          "volume": 41895700
+        },
+        {
+          "date": "2026-04-17",
+          "price": 250.56,
+          "volume": 52029300
+        },
+        {
+          "date": "2026-04-20",
+          "price": 248.28,
+          "volume": 39463100
+        },
+        {
+          "date": "2026-04-21",
+          "price": 249.91,
+          "volume": 42922400
+        },
+        {
+          "date": "2026-04-22",
+          "price": 255.36,
+          "volume": 36065100
+        },
+        {
+          "date": "2026-04-23",
+          "price": 255.08,
+          "volume": 39091400
+        },
+        {
+          "date": "2026-04-24",
+          "price": 263.99,
+          "volume": 53777400
+        },
+        {
+          "date": "2026-04-27",
+          "price": 261.12,
+          "volume": 44906800
+        },
+        {
+          "date": "2026-04-28",
+          "price": 259.7,
+          "volume": 42204400
+        },
+        {
+          "date": "2026-04-29",
+          "price": 263.04,
+          "volume": 72367900
+        },
+        {
+          "date": "2026-04-30",
+          "price": 265.06,
+          "volume": 100974900
+        },
+        {
+          "date": "2026-05-01",
+          "price": 268.26,
+          "volume": 50825200
+        },
+        {
+          "date": "2026-05-04",
+          "price": 272.05,
+          "volume": 49083700
+        },
+        {
+          "date": "2026-05-05",
+          "price": 273.55,
+          "volume": 41908500
+        },
+        {
+          "date": "2026-05-06",
+          "price": 274.99,
+          "volume": 44552000
+        },
+        {
+          "date": "2026-05-07",
+          "price": 271.17,
+          "volume": 35892900
+        },
+        {
+          "date": "2026-05-08",
+          "price": 272.68,
+          "volume": 34732700
+        },
+        {
+          "date": "2026-05-11",
+          "price": 268.99,
+          "volume": 38176700
+        },
+        {
+          "date": "2026-05-12",
+          "price": 265.82,
+          "volume": 36776200
+        },
+        {
+          "date": "2026-05-13",
+          "price": 270.13,
+          "volume": 39670900
+        },
+        {
+          "date": "2026-05-14",
+          "price": 267.22,
+          "volume": 31338400
+        },
+        {
+          "date": "2026-05-15",
+          "price": 264.14,
+          "volume": 40770300
+        },
+        {
+          "date": "2026-05-18",
+          "price": 264.86,
+          "volume": 33690800
+        },
+        {
+          "date": "2026-05-19",
+          "price": 259.34,
+          "volume": 40340700
+        },
+        {
+          "date": "2026-05-20",
+          "price": 265.01,
+          "volume": 34933200
+        },
+        {
+          "date": "2026-05-21",
+          "price": 268.46,
+          "volume": 36591700
+        },
+        {
+          "date": "2026-05-22",
+          "price": 266.32,
+          "volume": 27535500
+        },
+        {
+          "date": "2026-05-26",
+          "price": 265.29,
+          "volume": 38028100
+        },
+        {
+          "date": "2026-05-27",
+          "price": 271.85,
+          "volume": 40061900
+        },
+        {
+          "date": "2026-05-28",
+          "price": 274.0,
+          "volume": 40630400
+        },
+        {
+          "date": "2026-05-29",
+          "price": 270.64,
+          "volume": 54699300
+        }
+      ]
+    },
+    "BTC-USD": {
+      "symbol": "BTC-USD",
+      "name": "Bitcoin",
+      "type": "crypto",
+      "price": 73480.9,
+      "price_change_1d": 0.15,
+      "price_change_7d": -4.92,
+      "price_change_30d": -8.91,
+      "rsi": 26.81,
+      "technical_trend": "Bearish",
+      "recommendation": "Starker Kauf",
+      "confidence": 82,
+      "sentiment_score": 0.6,
+      "risk_level": "Mittel",
+      "ai_explanation": "Der RSI von 26.81 deutet darauf hin, dass BTC-USD stark überverkauft ist. Es gibt eine gute technische Kaufgelegenheit für eine kurzfristige Erholung.",
+      "key_drivers": [
+        "Überverkaufter Zustand (RSI)",
+        "Stabile fundamentale Unterstützung"
+      ],
+      "key_risks": [
+        "Möglicher anhaltender Abwärtstrend"
+      ],
+      "last_updated": "2026-05-30 13:54",
+      "news": [
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-03-02",
+          "price": 68775.85,
+          "volume": 56698092052
+        },
+        {
+          "date": "2026-03-03",
+          "price": 68293.65,
+          "volume": 47947999049
+        },
+        {
+          "date": "2026-03-04",
+          "price": 72710.58,
+          "volume": 75073101274
+        },
+        {
+          "date": "2026-03-05",
+          "price": 70841.12,
+          "volume": 51172841727
+        },
+        {
+          "date": "2026-03-06",
+          "price": 68136.49,
+          "volume": 43776962871
+        },
+        {
+          "date": "2026-03-07",
+          "price": 67272.59,
+          "volume": 23258701211
+        },
+        {
+          "date": "2026-03-08",
+          "price": 65969.78,
+          "volume": 33195080116
+        },
+        {
+          "date": "2026-03-09",
+          "price": 68402.38,
+          "volume": 49499875378
+        },
+        {
+          "date": "2026-03-10",
+          "price": 69926.92,
+          "volume": 54003996096
+        },
+        {
+          "date": "2026-03-11",
+          "price": 70204.88,
+          "volume": 45236859848
+        },
+        {
+          "date": "2026-03-12",
+          "price": 70493.46,
+          "volume": 40871848129
+        },
+        {
+          "date": "2026-03-13",
+          "price": 70968.27,
+          "volume": 61167226505
+        },
+        {
+          "date": "2026-03-14",
+          "price": 71214.62,
+          "volume": 22283546496
+        },
+        {
+          "date": "2026-03-15",
+          "price": 72789.91,
+          "volume": 27991268669
+        },
+        {
+          "date": "2026-03-16",
+          "price": 74861.09,
+          "volume": 55572438409
+        },
+        {
+          "date": "2026-03-17",
+          "price": 73922.48,
+          "volume": 49500721728
+        },
+        {
+          "date": "2026-03-18",
+          "price": 71245.58,
+          "volume": 46229011155
+        },
+        {
+          "date": "2026-03-19",
+          "price": 69912.79,
+          "volume": 44631433398
+        },
+        {
+          "date": "2026-03-20",
+          "price": 70522.59,
+          "volume": 38299078407
+        },
+        {
+          "date": "2026-03-21",
+          "price": 68711.52,
+          "volume": 21109354718
+        },
+        {
+          "date": "2026-03-22",
+          "price": 67845.21,
+          "volume": 30108051508
+        },
+        {
+          "date": "2026-03-23",
+          "price": 70914.86,
+          "volume": 51508669357
+        },
+        {
+          "date": "2026-03-24",
+          "price": 70517.86,
+          "volume": 40181522399
+        },
+        {
+          "date": "2026-03-25",
+          "price": 71309.88,
+          "volume": 35409791747
+        },
+        {
+          "date": "2026-03-26",
+          "price": 68791.62,
+          "volume": 38962070215
+        },
+        {
+          "date": "2026-03-27",
+          "price": 66338.38,
+          "volume": 46483453594
+        },
+        {
+          "date": "2026-03-28",
+          "price": 66319.7,
+          "volume": 20924883455
+        },
+        {
+          "date": "2026-03-29",
+          "price": 65954.92,
+          "volume": 21645889785
+        },
+        {
+          "date": "2026-03-30",
+          "price": 66691.45,
+          "volume": 37694994180
+        },
+        {
+          "date": "2026-03-31",
+          "price": 68233.31,
+          "volume": 42997691338
+        },
+        {
+          "date": "2026-04-01",
+          "price": 68078.55,
+          "volume": 36465393617
+        },
+        {
+          "date": "2026-04-02",
+          "price": 66888.57,
+          "volume": 39323384518
+        },
+        {
+          "date": "2026-04-03",
+          "price": 66931.1,
+          "volume": 22815543346
+        },
+        {
+          "date": "2026-04-04",
+          "price": 67290.52,
+          "volume": 15878814963
+        },
+        {
+          "date": "2026-04-05",
+          "price": 68981.9,
+          "volume": 22972648674
+        },
+        {
+          "date": "2026-04-06",
+          "price": 68859.83,
+          "volume": 39542143229
+        },
+        {
+          "date": "2026-04-07",
+          "price": 71940.7,
+          "volume": 44650511480
+        },
+        {
+          "date": "2026-04-08",
+          "price": 71123.36,
+          "volume": 42444631703
+        },
+        {
+          "date": "2026-04-09",
+          "price": 71767.83,
+          "volume": 38799581473
+        },
+        {
+          "date": "2026-04-10",
+          "price": 72979.05,
+          "volume": 37722595732
+        },
+        {
+          "date": "2026-04-11",
+          "price": 73054.27,
+          "volume": 23287073965
+        },
+        {
+          "date": "2026-04-12",
+          "price": 70753.41,
+          "volume": 29882740487
+        },
+        {
+          "date": "2026-04-13",
+          "price": 74484.64,
+          "volume": 52278211554
+        },
+        {
+          "date": "2026-04-14",
+          "price": 74181.61,
+          "volume": 53540826530
+        },
+        {
+          "date": "2026-04-15",
+          "price": 74805.08,
+          "volume": 38090174312
+        },
+        {
+          "date": "2026-04-16",
+          "price": 75152.13,
+          "volume": 41312783855
+        },
+        {
+          "date": "2026-04-17",
+          "price": 77126.88,
+          "volume": 54137194839
+        },
+        {
+          "date": "2026-04-18",
+          "price": 75726.21,
+          "volume": 26014416776
+        },
+        {
+          "date": "2026-04-19",
+          "price": 73856.35,
+          "volume": 30931515195
+        },
+        {
+          "date": "2026-04-20",
+          "price": 75872.52,
+          "volume": 39674447916
+        },
+        {
+          "date": "2026-04-21",
+          "price": 76352.77,
+          "volume": 36453522626
+        },
+        {
+          "date": "2026-04-22",
+          "price": 78203.1,
+          "volume": 48336654537
+        },
+        {
+          "date": "2026-04-23",
+          "price": 78268.95,
+          "volume": 40354900916
+        },
+        {
+          "date": "2026-04-24",
+          "price": 77455.31,
+          "volume": 32784213526
+        },
+        {
+          "date": "2026-04-25",
+          "price": 77612.02,
+          "volume": 16702933134
+        },
+        {
+          "date": "2026-04-26",
+          "price": 78657.54,
+          "volume": 21482934750
+        },
+        {
+          "date": "2026-04-27",
+          "price": 77366.62,
+          "volume": 38135631927
+        },
+        {
+          "date": "2026-04-28",
+          "price": 76350.67,
+          "volume": 32056900880
+        },
+        {
+          "date": "2026-04-29",
+          "price": 75776.13,
+          "volume": 41460907886
+        },
+        {
+          "date": "2026-04-30",
+          "price": 76304.32,
+          "volume": 29497862305
+        },
+        {
+          "date": "2026-05-01",
+          "price": 78179.0,
+          "volume": 39164328894
+        },
+        {
+          "date": "2026-05-02",
+          "price": 78657.25,
+          "volume": 16761531851
+        },
+        {
+          "date": "2026-05-03",
+          "price": 78538.23,
+          "volume": 20544392639
+        },
+        {
+          "date": "2026-05-04",
+          "price": 79827.91,
+          "volume": 54325085296
+        },
+        {
+          "date": "2026-05-05",
+          "price": 80927.05,
+          "volume": 39700107376
+        },
+        {
+          "date": "2026-05-06",
+          "price": 81427.53,
+          "volume": 41751540000
+        },
+        {
+          "date": "2026-05-07",
+          "price": 80009.99,
+          "volume": 36931193154
+        },
+        {
+          "date": "2026-05-08",
+          "price": 80186.77,
+          "volume": 33789351540
+        },
+        {
+          "date": "2026-05-09",
+          "price": 80664.37,
+          "volume": 18102086996
+        },
+        {
+          "date": "2026-05-10",
+          "price": 82138.93,
+          "volume": 26965971077
+        },
+        {
+          "date": "2026-05-11",
+          "price": 81728.3,
+          "volume": 32409774919
+        },
+        {
+          "date": "2026-05-12",
+          "price": 80477.49,
+          "volume": 32186688600
+        },
+        {
+          "date": "2026-05-13",
+          "price": 79277.12,
+          "volume": 34075428359
+        },
+        {
+          "date": "2026-05-14",
+          "price": 81051.25,
+          "volume": 43731663431
+        },
+        {
+          "date": "2026-05-15",
+          "price": 79065.68,
+          "volume": 38183347368
+        },
+        {
+          "date": "2026-05-16",
+          "price": 78131.44,
+          "volume": 25895799905
+        },
+        {
+          "date": "2026-05-17",
+          "price": 77429.35,
+          "volume": 20900166465
+        },
+        {
+          "date": "2026-05-18",
+          "price": 76954.17,
+          "volume": 41520471808
+        },
+        {
+          "date": "2026-05-19",
+          "price": 76750.91,
+          "volume": 26031898332
+        },
+        {
+          "date": "2026-05-20",
+          "price": 77457.77,
+          "volume": 26668360936
+        },
+        {
+          "date": "2026-05-21",
+          "price": 77539.17,
+          "volume": 27141485404
+        },
+        {
+          "date": "2026-05-22",
+          "price": 75488.24,
+          "volume": 27859040109
+        },
+        {
+          "date": "2026-05-23",
+          "price": 76673.37,
+          "volume": 29973220002
+        },
+        {
+          "date": "2026-05-24",
+          "price": 76981.12,
+          "volume": 20572738918
+        },
+        {
+          "date": "2026-05-25",
+          "price": 77279.93,
+          "volume": 19808387601
+        },
+        {
+          "date": "2026-05-26",
+          "price": 75825.73,
+          "volume": 35999475458
+        },
+        {
+          "date": "2026-05-27",
+          "price": 74344.7,
+          "volume": 33802172927
+        },
+        {
+          "date": "2026-05-28",
+          "price": 73536.55,
+          "volume": 40148145327
+        },
+        {
+          "date": "2026-05-29",
+          "price": 73372.52,
+          "volume": 34457929250
+        },
+        {
+          "date": "2026-05-30",
+          "price": 73480.9,
+          "volume": 31197362176
+        }
+      ]
+    },
+    "ETH-USD": {
+      "symbol": "ETH-USD",
+      "name": "Ethereum",
+      "type": "crypto",
+      "price": 2014.79,
+      "price_change_1d": 0.14,
+      "price_change_7d": -4.57,
+      "price_change_30d": -13.41,
+      "rsi": 26.66,
+      "technical_trend": "Bearish",
+      "recommendation": "Starker Kauf",
+      "confidence": 82,
+      "sentiment_score": 0.6,
+      "risk_level": "Mittel",
+      "ai_explanation": "Der RSI von 26.66 deutet darauf hin, dass ETH-USD stark überverkauft ist. Es gibt eine gute technische Kaufgelegenheit für eine kurzfristige Erholung.",
+      "key_drivers": [
+        "Überverkaufter Zustand (RSI)",
+        "Stabile fundamentale Unterstützung"
+      ],
+      "key_risks": [
+        "Möglicher anhaltender Abwärtstrend"
+      ],
+      "last_updated": "2026-05-30 13:54",
+      "news": [
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-03-02",
+          "price": 2027.27,
+          "volume": 26235436166
+        },
+        {
+          "date": "2026-03-03",
+          "price": 1982.77,
+          "volume": 24100196312
+        },
+        {
+          "date": "2026-03-04",
+          "price": 2126.51,
+          "volume": 33610946768
+        },
+        {
+          "date": "2026-03-05",
+          "price": 2071.61,
+          "volume": 22383576284
+        },
+        {
+          "date": "2026-03-06",
+          "price": 1978.75,
+          "volume": 19733648079
+        },
+        {
+          "date": "2026-03-07",
+          "price": 1969.46,
+          "volume": 10236899078
+        },
+        {
+          "date": "2026-03-08",
+          "price": 1936.6,
+          "volume": 16314032554
+        },
+        {
+          "date": "2026-03-09",
+          "price": 1992.94,
+          "volume": 24015826480
+        },
+        {
+          "date": "2026-03-10",
+          "price": 2037.12,
+          "volume": 23552353781
+        },
+        {
+          "date": "2026-03-11",
+          "price": 2051.57,
+          "volume": 19031715359
+        },
+        {
+          "date": "2026-03-12",
+          "price": 2073.14,
+          "volume": 20624954899
+        },
+        {
+          "date": "2026-03-13",
+          "price": 2092.56,
+          "volume": 29345212033
+        },
+        {
+          "date": "2026-03-14",
+          "price": 2097.09,
+          "volume": 10073411269
+        },
+        {
+          "date": "2026-03-15",
+          "price": 2177.48,
+          "volume": 15333885132
+        },
+        {
+          "date": "2026-03-16",
+          "price": 2351.18,
+          "volume": 38938369545
+        },
+        {
+          "date": "2026-03-17",
+          "price": 2318.05,
+          "volume": 26737564550
+        },
+        {
+          "date": "2026-03-18",
+          "price": 2203.67,
+          "volume": 25617966362
+        },
+        {
+          "date": "2026-03-19",
+          "price": 2137.42,
+          "volume": 24090913749
+        },
+        {
+          "date": "2026-03-20",
+          "price": 2146.5,
+          "volume": 17970488517
+        },
+        {
+          "date": "2026-03-21",
+          "price": 2076.69,
+          "volume": 8654913047
+        },
+        {
+          "date": "2026-03-22",
+          "price": 2053.05,
+          "volume": 16438149794
+        },
+        {
+          "date": "2026-03-23",
+          "price": 2152.15,
+          "volume": 28509077302
+        },
+        {
+          "date": "2026-03-24",
+          "price": 2155.7,
+          "volume": 18389631713
+        },
+        {
+          "date": "2026-03-25",
+          "price": 2168.02,
+          "volume": 17086301657
+        },
+        {
+          "date": "2026-03-26",
+          "price": 2059.58,
+          "volume": 18628112246
+        },
+        {
+          "date": "2026-03-27",
+          "price": 1991.27,
+          "volume": 19453998121
+        },
+        {
+          "date": "2026-03-28",
+          "price": 1992.69,
+          "volume": 8641221084
+        },
+        {
+          "date": "2026-03-29",
+          "price": 1982.56,
+          "volume": 9451184647
+        },
+        {
+          "date": "2026-03-30",
+          "price": 2023.51,
+          "volume": 17840662425
+        },
+        {
+          "date": "2026-03-31",
+          "price": 2104.71,
+          "volume": 21278561395
+        },
+        {
+          "date": "2026-04-01",
+          "price": 2138.74,
+          "volume": 19542997434
+        },
+        {
+          "date": "2026-04-02",
+          "price": 2056.85,
+          "volume": 18847170816
+        },
+        {
+          "date": "2026-04-03",
+          "price": 2053.39,
+          "volume": 9609678843
+        },
+        {
+          "date": "2026-04-04",
+          "price": 2065.35,
+          "volume": 6926913517
+        },
+        {
+          "date": "2026-04-05",
+          "price": 2109.0,
+          "volume": 9928800793
+        },
+        {
+          "date": "2026-04-06",
+          "price": 2107.76,
+          "volume": 19097527675
+        },
+        {
+          "date": "2026-04-07",
+          "price": 2241.81,
+          "volume": 22588914083
+        },
+        {
+          "date": "2026-04-08",
+          "price": 2190.34,
+          "volume": 21469476310
+        },
+        {
+          "date": "2026-04-09",
+          "price": 2189.14,
+          "volume": 17218638798
+        },
+        {
+          "date": "2026-04-10",
+          "price": 2245.15,
+          "volume": 17131968712
+        },
+        {
+          "date": "2026-04-11",
+          "price": 2285.39,
+          "volume": 12620960384
+        },
+        {
+          "date": "2026-04-12",
+          "price": 2192.2,
+          "volume": 15307071617
+        },
+        {
+          "date": "2026-04-13",
+          "price": 2370.71,
+          "volume": 23709131572
+        },
+        {
+          "date": "2026-04-14",
+          "price": 2323.31,
+          "volume": 25185167270
+        },
+        {
+          "date": "2026-04-15",
+          "price": 2359.44,
+          "volume": 17004367348
+        },
+        {
+          "date": "2026-04-16",
+          "price": 2348.65,
+          "volume": 20602833116
+        },
+        {
+          "date": "2026-04-17",
+          "price": 2421.07,
+          "volume": 26467618336
+        },
+        {
+          "date": "2026-04-18",
+          "price": 2351.1,
+          "volume": 14400085617
+        },
+        {
+          "date": "2026-04-19",
+          "price": 2264.92,
+          "volume": 17083701612
+        },
+        {
+          "date": "2026-04-20",
+          "price": 2315.21,
+          "volume": 19084768822
+        },
+        {
+          "date": "2026-04-21",
+          "price": 2327.97,
+          "volume": 16107716719
+        },
+        {
+          "date": "2026-04-22",
+          "price": 2376.09,
+          "volume": 22465555335
+        },
+        {
+          "date": "2026-04-23",
+          "price": 2331.51,
+          "volume": 19909161913
+        },
+        {
+          "date": "2026-04-24",
+          "price": 2315.69,
+          "volume": 13371168064
+        },
+        {
+          "date": "2026-04-25",
+          "price": 2318.83,
+          "volume": 6545621782
+        },
+        {
+          "date": "2026-04-26",
+          "price": 2369.73,
+          "volume": 10622966933
+        },
+        {
+          "date": "2026-04-27",
+          "price": 2303.06,
+          "volume": 17879618684
+        },
+        {
+          "date": "2026-04-28",
+          "price": 2289.42,
+          "volume": 12761522276
+        },
+        {
+          "date": "2026-04-29",
+          "price": 2253.42,
+          "volume": 21884731493
+        },
+        {
+          "date": "2026-04-30",
+          "price": 2256.25,
+          "volume": 12309496389
+        },
+        {
+          "date": "2026-05-01",
+          "price": 2295.09,
+          "volume": 13243880777
+        },
+        {
+          "date": "2026-05-02",
+          "price": 2316.23,
+          "volume": 6905015549
+        },
+        {
+          "date": "2026-05-03",
+          "price": 2321.64,
+          "volume": 9861070993
+        },
+        {
+          "date": "2026-05-04",
+          "price": 2346.4,
+          "volume": 25497505008
+        },
+        {
+          "date": "2026-05-05",
+          "price": 2361.18,
+          "volume": 17739612383
+        },
+        {
+          "date": "2026-05-06",
+          "price": 2350.8,
+          "volume": 22745786496
+        },
+        {
+          "date": "2026-05-07",
+          "price": 2291.11,
+          "volume": 23409823896
+        },
+        {
+          "date": "2026-05-08",
+          "price": 2306.97,
+          "volume": 20013463010
+        },
+        {
+          "date": "2026-05-09",
+          "price": 2326.73,
+          "volume": 12217205123
+        },
+        {
+          "date": "2026-05-10",
+          "price": 2369.04,
+          "volume": 19587186882
+        },
+        {
+          "date": "2026-05-11",
+          "price": 2339.36,
+          "volume": 15525623296
+        },
+        {
+          "date": "2026-05-12",
+          "price": 2274.64,
+          "volume": 16145394773
+        },
+        {
+          "date": "2026-05-13",
+          "price": 2257.58,
+          "volume": 15193768365
+        },
+        {
+          "date": "2026-05-14",
+          "price": 2280.93,
+          "volume": 17563432027
+        },
+        {
+          "date": "2026-05-15",
+          "price": 2223.33,
+          "volume": 18146855938
+        },
+        {
+          "date": "2026-05-16",
+          "price": 2179.75,
+          "volume": 11451672017
+        },
+        {
+          "date": "2026-05-17",
+          "price": 2127.65,
+          "volume": 10143205921
+        },
+        {
+          "date": "2026-05-18",
+          "price": 2128.52,
+          "volume": 19890789125
+        },
+        {
+          "date": "2026-05-19",
+          "price": 2109.96,
+          "volume": 12030742868
+        },
+        {
+          "date": "2026-05-20",
+          "price": 2126.98,
+          "volume": 12076799234
+        },
+        {
+          "date": "2026-05-21",
+          "price": 2131.41,
+          "volume": 14344389472
+        },
+        {
+          "date": "2026-05-22",
+          "price": 2064.64,
+          "volume": 13229489284
+        },
+        {
+          "date": "2026-05-23",
+          "price": 2115.95,
+          "volume": 16650709488
+        },
+        {
+          "date": "2026-05-24",
+          "price": 2097.99,
+          "volume": 10602558120
+        },
+        {
+          "date": "2026-05-25",
+          "price": 2111.37,
+          "volume": 10167436482
+        },
+        {
+          "date": "2026-05-26",
+          "price": 2070.86,
+          "volume": 15924080901
+        },
+        {
+          "date": "2026-05-27",
+          "price": 2022.2,
+          "volume": 14534289020
+        },
+        {
+          "date": "2026-05-28",
+          "price": 2007.55,
+          "volume": 18109844096
+        },
+        {
+          "date": "2026-05-29",
+          "price": 2011.98,
+          "volume": 14941194039
+        },
+        {
+          "date": "2026-05-30",
+          "price": 2014.79,
+          "volume": 13457300480
+        }
+      ]
+    },
+    "SOL-USD": {
+      "symbol": "SOL-USD",
+      "name": "Solana",
+      "type": "crypto",
+      "price": 82.25,
+      "price_change_1d": 0.39,
+      "price_change_7d": -3.25,
+      "price_change_30d": -11.7,
+      "rsi": 34.43,
+      "technical_trend": "Neutral",
+      "recommendation": "Starker Kauf",
+      "confidence": 82,
+      "sentiment_score": 0.6,
+      "risk_level": "Mittel",
+      "ai_explanation": "Der RSI von 34.43 deutet darauf hin, dass SOL-USD stark überverkauft ist. Es gibt eine gute technische Kaufgelegenheit für eine kurzfristige Erholung.",
+      "key_drivers": [
+        "Überverkaufter Zustand (RSI)",
+        "Stabile fundamentale Unterstützung"
+      ],
+      "key_risks": [
+        "Möglicher anhaltender Abwärtstrend"
+      ],
+      "last_updated": "2026-05-30 13:54",
+      "news": [
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        },
+        {
+          "title": "",
+          "publisher": "",
+          "link": "",
+          "time": "2026-05-30 13:54",
+          "summary": ""
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-03-02",
+          "price": 86.63,
+          "volume": 5455789912
+        },
+        {
+          "date": "2026-03-03",
+          "price": 87.02,
+          "volume": 4835947541
+        },
+        {
+          "date": "2026-03-04",
+          "price": 90.83,
+          "volume": 6907739136
+        },
+        {
+          "date": "2026-03-05",
+          "price": 88.69,
+          "volume": 4462211662
+        },
+        {
+          "date": "2026-03-06",
+          "price": 84.68,
+          "volume": 3739561333
+        },
+        {
+          "date": "2026-03-07",
+          "price": 83.18,
+          "volume": 1916017174
+        },
+        {
+          "date": "2026-03-08",
+          "price": 81.62,
+          "volume": 2686950610
+        },
+        {
+          "date": "2026-03-09",
+          "price": 84.94,
+          "volume": 4216355210
+        },
+        {
+          "date": "2026-03-10",
+          "price": 85.84,
+          "volume": 4341777505
+        },
+        {
+          "date": "2026-03-11",
+          "price": 86.56,
+          "volume": 3960189193
+        },
+        {
+          "date": "2026-03-12",
+          "price": 86.87,
+          "volume": 3741395035
+        },
+        {
+          "date": "2026-03-13",
+          "price": 88.15,
+          "volume": 5722483290
+        },
+        {
+          "date": "2026-03-14",
+          "price": 88.07,
+          "volume": 2167169768
+        },
+        {
+          "date": "2026-03-15",
+          "price": 92.25,
+          "volume": 3277177955
+        },
+        {
+          "date": "2026-03-16",
+          "price": 96.22,
+          "volume": 6507301442
+        },
+        {
+          "date": "2026-03-17",
+          "price": 94.71,
+          "volume": 4239635773
+        },
+        {
+          "date": "2026-03-18",
+          "price": 90.07,
+          "volume": 4331839385
+        },
+        {
+          "date": "2026-03-19",
+          "price": 88.92,
+          "volume": 3654219084
+        },
+        {
+          "date": "2026-03-20",
+          "price": 89.85,
+          "volume": 3090719128
+        },
+        {
+          "date": "2026-03-21",
+          "price": 87.47,
+          "volume": 1903136993
+        },
+        {
+          "date": "2026-03-22",
+          "price": 86.13,
+          "volume": 2979255573
+        },
+        {
+          "date": "2026-03-23",
+          "price": 91.42,
+          "volume": 5416789599
+        },
+        {
+          "date": "2026-03-24",
+          "price": 90.82,
+          "volume": 4147126404
+        },
+        {
+          "date": "2026-03-25",
+          "price": 91.71,
+          "volume": 3750957246
+        },
+        {
+          "date": "2026-03-26",
+          "price": 86.44,
+          "volume": 4280339140
+        },
+        {
+          "date": "2026-03-27",
+          "price": 83.02,
+          "volume": 3694287477
+        },
+        {
+          "date": "2026-03-28",
+          "price": 82.02,
+          "volume": 2278504599
+        },
+        {
+          "date": "2026-03-29",
+          "price": 81.42,
+          "volume": 2398386905
+        },
+        {
+          "date": "2026-03-30",
+          "price": 82.44,
+          "volume": 3987544544
+        },
+        {
+          "date": "2026-03-31",
+          "price": 83.11,
+          "volume": 4833199759
+        },
+        {
+          "date": "2026-04-01",
+          "price": 81.2,
+          "volume": 5093477642
+        },
+        {
+          "date": "2026-04-02",
+          "price": 78.95,
+          "volume": 4928225665
+        },
+        {
+          "date": "2026-04-03",
+          "price": 80.37,
+          "volume": 2994787677
+        },
+        {
+          "date": "2026-04-04",
+          "price": 80.81,
+          "volume": 2127989928
+        },
+        {
+          "date": "2026-04-05",
+          "price": 81.85,
+          "volume": 2423711503
+        },
+        {
+          "date": "2026-04-06",
+          "price": 80.15,
+          "volume": 3541988994
+        },
+        {
+          "date": "2026-04-07",
+          "price": 85.65,
+          "volume": 5460070540
+        },
+        {
+          "date": "2026-04-08",
+          "price": 82.58,
+          "volume": 4682919248
+        },
+        {
+          "date": "2026-04-09",
+          "price": 83.3,
+          "volume": 4470806838
+        },
+        {
+          "date": "2026-04-10",
+          "price": 84.83,
+          "volume": 12723244529
+        },
+        {
+          "date": "2026-04-11",
+          "price": 84.95,
+          "volume": 11558630681
+        },
+        {
+          "date": "2026-04-12",
+          "price": 81.54,
+          "volume": 3897286488
+        },
+        {
+          "date": "2026-04-13",
+          "price": 86.66,
+          "volume": 4977932541
+        },
+        {
+          "date": "2026-04-14",
+          "price": 83.77,
+          "volume": 5728418790
+        },
+        {
+          "date": "2026-04-15",
+          "price": 84.92,
+          "volume": 4650021670
+        },
+        {
+          "date": "2026-04-16",
+          "price": 88.99,
+          "volume": 6215173056
+        },
+        {
+          "date": "2026-04-17",
+          "price": 88.87,
+          "volume": 6454981141
+        },
+        {
+          "date": "2026-04-18",
+          "price": 86.2,
+          "volume": 3619028688
+        },
+        {
+          "date": "2026-04-19",
+          "price": 83.58,
+          "volume": 4429065589
+        },
+        {
+          "date": "2026-04-20",
+          "price": 85.33,
+          "volume": 4326731566
+        },
+        {
+          "date": "2026-04-21",
+          "price": 86.03,
+          "volume": 4083758344
+        },
+        {
+          "date": "2026-04-22",
+          "price": 86.92,
+          "volume": 5098022834
+        },
+        {
+          "date": "2026-04-23",
+          "price": 86.14,
+          "volume": 4738760145
+        },
+        {
+          "date": "2026-04-24",
+          "price": 86.23,
+          "volume": 3681485520
+        },
+        {
+          "date": "2026-04-25",
+          "price": 86.15,
+          "volume": 2482382785
+        },
+        {
+          "date": "2026-04-26",
+          "price": 86.97,
+          "volume": 2965743271
+        },
+        {
+          "date": "2026-04-27",
+          "price": 84.82,
+          "volume": 4759031980
+        },
+        {
+          "date": "2026-04-28",
+          "price": 84.04,
+          "volume": 3290032033
+        },
+        {
+          "date": "2026-04-29",
+          "price": 83.03,
+          "volume": 4529973017
+        },
+        {
+          "date": "2026-04-30",
+          "price": 83.02,
+          "volume": 3355884138
+        },
+        {
+          "date": "2026-05-01",
+          "price": 83.72,
+          "volume": 3514127644
+        },
+        {
+          "date": "2026-05-02",
+          "price": 84.28,
+          "volume": 2492556942
+        },
+        {
+          "date": "2026-05-03",
+          "price": 83.9,
+          "volume": 2703436374
+        },
+        {
+          "date": "2026-05-04",
+          "price": 84.09,
+          "volume": 5375059086
+        },
+        {
+          "date": "2026-05-05",
+          "price": 86.32,
+          "volume": 4431996628
+        },
+        {
+          "date": "2026-05-06",
+          "price": 89.15,
+          "volume": 5689603384
+        },
+        {
+          "date": "2026-05-07",
+          "price": 88.4,
+          "volume": 4791004890
+        },
+        {
+          "date": "2026-05-08",
+          "price": 91.95,
+          "volume": 4607631630
+        },
+        {
+          "date": "2026-05-09",
+          "price": 93.15,
+          "volume": 3739835286
+        },
+        {
+          "date": "2026-05-10",
+          "price": 96.43,
+          "volume": 4711429504
+        },
+        {
+          "date": "2026-05-11",
+          "price": 97.35,
+          "volume": 5304012390
+        },
+        {
+          "date": "2026-05-12",
+          "price": 94.28,
+          "volume": 4206766577
+        },
+        {
+          "date": "2026-05-13",
+          "price": 91.09,
+          "volume": 4567512131
+        },
+        {
+          "date": "2026-05-14",
+          "price": 92.15,
+          "volume": 4117442304
+        },
+        {
+          "date": "2026-05-15",
+          "price": 89.2,
+          "volume": 3954608210
+        },
+        {
+          "date": "2026-05-16",
+          "price": 86.54,
+          "volume": 3093543960
+        },
+        {
+          "date": "2026-05-17",
+          "price": 85.17,
+          "volume": 2900109291
+        },
+        {
+          "date": "2026-05-18",
+          "price": 85.3,
+          "volume": 3814216398
+        },
+        {
+          "date": "2026-05-19",
+          "price": 84.21,
+          "volume": 2746890424
+        },
+        {
+          "date": "2026-05-20",
+          "price": 86.04,
+          "volume": 3466596442
+        },
+        {
+          "date": "2026-05-21",
+          "price": 87.16,
+          "volume": 3835849177
+        },
+        {
+          "date": "2026-05-22",
+          "price": 84.31,
+          "volume": 3382830764
+        },
+        {
+          "date": "2026-05-23",
+          "price": 85.66,
+          "volume": 4032785357
+        },
+        {
+          "date": "2026-05-24",
+          "price": 85.25,
+          "volume": 3092213910
+        },
+        {
+          "date": "2026-05-25",
+          "price": 85.01,
+          "volume": 2786627394
+        },
+        {
+          "date": "2026-05-26",
+          "price": 83.59,
+          "volume": 3652722719
+        },
+        {
+          "date": "2026-05-27",
+          "price": 82.37,
+          "volume": 3313099113
+        },
+        {
+          "date": "2026-05-28",
+          "price": 81.99,
+          "volume": 3669754717
+        },
+        {
+          "date": "2026-05-29",
+          "price": 81.93,
+          "volume": 3340907091
+        },
+        {
+          "date": "2026-05-30",
+          "price": 82.25,
+          "volume": 3144311808
+        }
+      ]
+    }
+  }
+}

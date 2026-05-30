@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+yfinance
+google-generativeai
+apscheduler
+pandas
+beautifulsoup4
+requests
+python-dotenv
+aiofiles
