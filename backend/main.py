@@ -3,6 +3,8 @@ import sys
 import json
 import logging
 # pyrefly: ignore [missing-import]
+import yfinance as yf
+# pyrefly: ignore [missing-import]
 import uvicorn
 
 # Übergeordnetes Verzeichnis zum Python-Pfad hinzufügen
@@ -89,6 +91,55 @@ def get_predictions():
     except Exception as e:
         logger.error(f"Fehler beim Laden der Prognosen: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden der Analysedaten.")
+
+@app.get("/api/history/{symbol}")
+def get_asset_history(symbol: str, period: str = "30d"):
+    """Holt historische Kursdaten für ein bestimmtes Intervall."""
+    yf_period = "3mo"
+    yf_interval = "1d"
+    
+    if period == "24h":
+        yf_period = "1d"
+        yf_interval = "15m"
+    elif period == "7d":
+        yf_period = "7d"
+        yf_interval = "1h"
+    elif period == "30d":
+        yf_period = "1mo"
+        yf_interval = "1d"
+    elif period == "1y":
+        yf_period = "1y"
+        yf_interval = "1d"
+    elif period == "5y":
+        yf_period = "5y"
+        yf_interval = "1wk"
+    elif period == "10y":
+        yf_period = "10y"
+        yf_interval = "1mo"
+        
+    try:
+        ticker = yf.Ticker(symbol)
+        df = ticker.history(period=yf_period, interval=yf_interval)
+        if df.empty:
+            raise HTTPException(status_code=404, detail="Keine historischen Daten gefunden.")
+            
+        history = []
+        for index, row in df.iterrows():
+            if period in ["24h", "7d"]:
+                date_str = index.strftime('%Y-%m-%d %H:%M')
+            else:
+                date_str = index.strftime('%Y-%m-%d')
+                
+            history.append({
+                "date": date_str,
+                "price": round(float(row['Close']), 2),
+                "volume": int(row['Volume']) if 'Volume' in row else 0
+            })
+        return {"symbol": symbol, "period": period, "history": history}
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Historie für {symbol} ({period}): {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/refresh")
 def trigger_refresh(background_tasks: BackgroundTasks):

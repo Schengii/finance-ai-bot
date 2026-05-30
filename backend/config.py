@@ -23,9 +23,14 @@ DEFAULT_ASSETS = [
     {"symbol": "NVDA", "name": "NVIDIA Corp.", "type": "stock"},
     {"symbol": "TSLA", "name": "Tesla Inc.", "type": "stock"},
     {"symbol": "AMZN", "name": "Amazon.com Inc.", "type": "stock"},
+    {"symbol": "GOOGL", "name": "Alphabet Inc.", "type": "stock"},
+    {"symbol": "META", "name": "Meta Platforms Inc.", "type": "stock"},
     {"symbol": "BTC-USD", "name": "Bitcoin", "type": "crypto"},
     {"symbol": "ETH-USD", "name": "Ethereum", "type": "crypto"},
-    {"symbol": "SOL-USD", "name": "Solana", "type": "crypto"}
+    {"symbol": "SOL-USD", "name": "Solana", "type": "crypto"},
+    {"symbol": "GC=F", "name": "Gold", "type": "commodity"},
+    {"symbol": "SI=F", "name": "Silber", "type": "commodity"},
+    {"symbol": "CL=F", "name": "Rohöl", "type": "commodity"}
 ]
 
 # Wie viele Tage historischer Kursdaten geladen werden sollen für Charts & Indikatoren

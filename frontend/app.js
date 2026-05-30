@@ -6,6 +6,9 @@ let appData = {
 let selectedAsset = null;
 let currentFilter = "all";
 let statusPollingInterval = null;
+let selectedPeriod = "30d"; // Ausgewählter Zeitraum
+let historyCache = {}; // Cache für geladene Kursverläufe
+
 
 // Dynamische API-Basis-URL: Falls lokal oder auf abweichendem Port (z.B. Live Server 5500) ausgeführt,
 // verweise auf den FastAPI-Server auf Port 8000. Sonst relative Pfade nutzen.
@@ -20,6 +23,8 @@ const elements = {
     statusText: document.getElementById('status-text'),
     lastUpdateTime: document.getElementById('last-update-time'),
     refreshBtn: document.getElementById('refresh-btn'),
+    timeframeBtns: document.querySelectorAll('#timeframe-selector .tf-btn'),
+    chartContainer: document.querySelector('.chart-container'),
     
     // Overview
     marketSentiment: document.getElementById('market-sentiment-val'),
@@ -81,6 +86,22 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupEventListeners() {
     // Refresh Button
     elements.refreshBtn.addEventListener("click", triggerRefresh);
+    
+    // Timeframe Buttons
+    elements.timeframeBtns.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            elements.timeframeBtns.forEach(b => b.classList.remove("active"));
+            e.currentTarget.classList.add("active");
+            
+            const newPeriod = e.currentTarget.dataset.period;
+            if (newPeriod !== selectedPeriod) {
+                selectedPeriod = newPeriod;
+                if (selectedAsset) {
+                    loadAssetHistory(selectedAsset, selectedPeriod);
+                }
+            }
+        });
+    });
     
     // Filter Tabs
     elements.filterBtns.forEach(btn => {
@@ -203,6 +224,7 @@ async function pollStatus() {
             clearInterval(statusPollingInterval);
             statusPollingInterval = null;
             setUpdatingUI(false);
+            historyCache = {}; // Cache nach Update verwerfen
             fetchData(); // Neue Daten holen
         }
     } catch (error) {
@@ -341,7 +363,7 @@ function renderAssetsList() {
             <div class="card-left">
                 <div class="symbol-row">
                     <span class="card-symbol">${item.symbol}</span>
-                    <span class="card-type">${item.type === 'crypto' ? 'Krypto' : 'Aktie'}</span>
+                    <span class="card-type">${item.type === 'crypto' ? 'Krypto' : (item.type === 'stock' ? 'Aktie' : 'Rohstoff')}</span>
                 </div>
                 <span class="card-name">${item.name}</span>
             </div>
@@ -380,7 +402,7 @@ function selectAsset(symbol) {
     // Top Infos
     elements.assetName.innerText = asset.name;
     elements.assetSymbol.innerText = asset.symbol;
-    elements.assetType.innerText = asset.type === 'crypto' ? 'Kryptowährung' : 'Aktie';
+    elements.assetType.innerText = asset.type === 'crypto' ? 'Kryptowährung' : (asset.type === 'stock' ? 'Aktie' : 'Rohstoff');
     elements.assetPrice.innerText = formatCurrency(asset.price, asset.type);
     
     const priceChange = (asset.price_change_1d !== undefined && asset.price_change_1d !== null) ? asset.price_change_1d : 0;
@@ -484,8 +506,12 @@ function selectAsset(symbol) {
         `;
     }
     
-    // Render Chart.js
-    renderChart(asset.history, asset.symbol, colorHex);
+    // Render Chart based on selected timeframe
+    if (selectedPeriod === "30d" && asset.history) {
+        renderChart(asset.history, asset.symbol, colorHex);
+    } else {
+        loadAssetHistory(symbol, selectedPeriod);
+    }
 }
 
 // Update SVG Progress Ring
@@ -515,7 +541,17 @@ function renderChart(historyData, symbol, accentColor) {
     
     const labels = historyData.map(h => {
         const d = new Date(h.date);
-        return d.toLocaleDateString("de-DE", { month: "short", day: "numeric" });
+        if (selectedPeriod === "24h") {
+            return d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+        } else if (selectedPeriod === "7d") {
+            const weekday = d.toLocaleDateString("de-DE", { weekday: "short" });
+            const time = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+            return `${weekday} ${time}`;
+        } else if (selectedPeriod === "5y" || selectedPeriod === "10y") {
+            return d.toLocaleDateString("de-DE", { year: "numeric", month: "short" });
+        } else {
+            return d.toLocaleDateString("de-DE", { month: "short", day: "numeric" });
+        }
     });
     const prices = historyData.map(h => h.price);
     
@@ -629,4 +665,79 @@ function hexToRgb(hex) {
         g: parseInt(result[2], 16),
         b: parseInt(result[3], 16)
     } : { r: 99, g: 102, b: 241 };
+}
+
+async function loadAssetHistory(symbol, period) {
+    // Prüfe Cache
+    if (historyCache[symbol] && historyCache[symbol][period]) {
+        const cachedData = historyCache[symbol][period];
+        const asset = appData.predictions[symbol];
+        let colorHex = "#f59e0b";
+        if (asset) {
+            if (asset.recommendation === "Starker Kauf") colorHex = "#10b981";
+            else if (asset.recommendation === "Kauf") colorHex = "#34d399";
+            else if (asset.recommendation === "Verkauf") colorHex = "#f43f5e";
+            else if (asset.recommendation === "Starker Verkauf") colorHex = "#e11d48";
+        }
+        renderChart(cachedData, symbol, colorHex);
+        return;
+    }
+    
+    showChartLoading(true);
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/history/${symbol}?period=${period}`);
+        if (!response.ok) {
+            throw new Error(`Fehler beim Laden der Kursdaten (HTTP ${response.status})`);
+        }
+        const data = await response.json();
+        
+        // Im Cache sichern
+        if (!historyCache[symbol]) historyCache[symbol] = {};
+        historyCache[symbol][period] = data.history;
+        
+        const asset = appData.predictions[symbol];
+        let colorHex = "#f59e0b";
+        if (asset) {
+            if (asset.recommendation === "Starker Kauf") colorHex = "#10b981";
+            else if (asset.recommendation === "Kauf") colorHex = "#34d399";
+            else if (asset.recommendation === "Verkauf") colorHex = "#f43f5e";
+            else if (asset.recommendation === "Starker Verkauf") colorHex = "#e11d48";
+        }
+        
+        if (selectedAsset === symbol && selectedPeriod === period) {
+            renderChart(data.history, symbol, colorHex);
+        }
+    } catch (error) {
+        console.error("Fehler beim Laden der historischen Kursdaten:", error);
+        // Fallback: Nutze die in den Predictions eingebettete Standard-Historie
+        const asset = appData.predictions[symbol];
+        if (asset && asset.history) {
+            let colorHex = "#f59e0b";
+            if (asset.recommendation === "Starker Kauf") colorHex = "#10b981";
+            else if (asset.recommendation === "Kauf") colorHex = "#34d399";
+            else if (asset.recommendation === "Verkauf") colorHex = "#f43f5e";
+            else if (asset.recommendation === "Starker Verkauf") colorHex = "#e11d48";
+            renderChart(asset.history, symbol, colorHex);
+        }
+    } finally {
+        showChartLoading(false);
+    }
+}
+
+function showChartLoading(isLoading) {
+    let overlay = document.getElementById('chart-loading-overlay');
+    if (isLoading) {
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'chart-loading-overlay';
+            overlay.className = 'chart-loading-overlay';
+            overlay.innerHTML = `<div class="spinner"></div>`;
+            elements.chartContainer.appendChild(overlay);
+        }
+    } else {
+        if (overlay) {
+            overlay.remove();
+        }
+    }
 }

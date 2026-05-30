@@ -93,6 +93,7 @@
                             <button class="tab-btn active" data-filter="all">Alle</button>
                             <button class="tab-btn" data-filter="stock">Aktien</button>
                             <button class="tab-btn" data-filter="crypto">Kryptos</button>
+                            <button class="tab-btn" data-filter="commodity">Rohstoffe</button>
                         </div>
                     </div>
                     
@@ -171,6 +172,16 @@
                         <div class="tab-panes">
                             <!-- Chart Tab -->
                             <div class="tab-pane active" id="chart-tab">
+                                <div class="chart-header-actions">
+                                    <div class="timeframe-selector" id="timeframe-selector">
+                                        <button class="tf-btn" data-period="24h">24h</button>
+                                        <button class="tf-btn" data-period="7d">7d</button>
+                                        <button class="tf-btn active" data-period="30d">30d</button>
+                                        <button class="tf-btn" data-period="1y">1y</button>
+                                        <button class="tf-btn" data-period="5y">5y</button>
+                                        <button class="tf-btn" data-period="10y">10y</button>
+                                    </div>
+                                </div>
                                 <div class="chart-container">
                                     <canvas id="priceChart"></canvas>
                                 </div>
