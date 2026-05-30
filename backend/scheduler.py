@@ -26,64 +26,66 @@ def run_update_cycle():
     is_updating = True
     logger.info("Starte Aktualisierungszyklus...")
     
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
-    
-    # Vorhandene Daten laden, um sie bei Fehlern beizubehalten
-    existing_data = {}
-    if DATA_FILE.exists():
-        try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                existing_data = json.load(f).get("predictions", {})
-        except Exception as e:
-            logger.error(f"Fehler beim Laden bestehender Daten: {e}")
+    try:
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+        
+        # Vorhandene Daten laden, um sie bei Fehlern beizubehalten
+        existing_data = {}
+        if DATA_FILE.exists():
+            try:
+                with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f).get("predictions", {})
+            except Exception as e:
+                logger.error(f"Fehler beim Laden bestehender Daten: {e}")
 
-    predictions = {}
-    
-    for asset in DEFAULT_ASSETS:
-        symbol = asset["symbol"]
-        try:
-            # 1. Marktdaten abrufen
-            market_data = fetch_market_data(symbol)
-            if not market_data:
-                logger.error(f"Konnte Marktdaten für {symbol} nicht laden. Verwende alte Daten falls vorhanden.")
+        predictions = {}
+        
+        for asset in DEFAULT_ASSETS:
+            symbol = asset["symbol"]
+            try:
+                # 1. Marktdaten abrufen
+                market_data = fetch_market_data(symbol)
+                if not market_data:
+                    logger.error(f"Konnte Marktdaten für {symbol} nicht laden. Verwende alte Daten falls vorhanden.")
+                    if symbol in existing_data:
+                        predictions[symbol] = existing_data[symbol]
+                    continue
+                    
+                market_data["last_updated"] = timestamp
+                
+                # 2. Nachrichten abrufen
+                news_items = fetch_news(symbol, asset["name"])
+                
+                # 3. KI-Prognose generieren
+                prediction = analyze_asset_with_ai(asset, market_data, news_items)
+                
+                # Ergänze die Nachrichten und den Chartverlauf in dem gespeicherten Objekt
+                prediction["news"] = news_items
+                prediction["history"] = market_data["history"]
+                
+                predictions[symbol] = prediction
+                logger.info(f"Analyse für {symbol} erfolgreich abgeschlossen.")
+                
+            except Exception as e:
+                logger.error(f"Unerwarteter Fehler bei der Analyse von {symbol}: {e}")
                 if symbol in existing_data:
                     predictions[symbol] = existing_data[symbol]
-                continue
-                
-            market_data["last_updated"] = timestamp
-            
-            # 2. Nachrichten abrufen
-            news_items = fetch_news(symbol, asset["name"])
-            
-            # 3. KI-Prognose generieren
-            prediction = analyze_asset_with_ai(asset, market_data, news_items)
-            
-            # Ergänze die Nachrichten und den Chartverlauf in dem gespeicherten Objekt
-            prediction["news"] = news_items
-            prediction["history"] = market_data["history"]
-            
-            predictions[symbol] = prediction
-            logger.info(f"Analyse für {symbol} erfolgreich abgeschlossen.")
-            
-        except Exception as e:
-            logger.error(f"Unerwarteter Fehler bei der Analyse von {symbol}: {e}")
-            if symbol in existing_data:
-                predictions[symbol] = existing_data[symbol]
-                
-    # Speichern der Daten
-    output_data = {
-        "last_updated": timestamp,
-        "predictions": predictions
-    }
-    
-    try:
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump(output_data, f, ensure_ascii=False, indent=2)
-        logger.info(f"Aktualisierungszyklus abgeschlossen. Daten in {DATA_FILE} gespeichert.")
-    except Exception as e:
-        logger.error(f"Fehler beim Speichern der Prognosedaten: {e}")
+                    
+        # Speichern der Daten
+        output_data = {
+            "last_updated": timestamp,
+            "predictions": predictions
+        }
         
-    is_updating = False
+        try:
+            with open(DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump(output_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"Aktualisierungszyklus abgeschlossen. Daten in {DATA_FILE} gespeichert.")
+        except Exception as e:
+            logger.error(f"Fehler beim Speichern der Prognosedaten: {e}")
+    finally:
+        is_updating = False
+
 
 def start_scheduler():
     """Initialisiert und startet den Hintergrund-Scheduler."""

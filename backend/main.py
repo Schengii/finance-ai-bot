@@ -15,14 +15,19 @@ from fastapi.middleware.cors import CORSMiddleware
 # pyrefly: ignore [missing-import]
 from fastapi.staticfiles import StaticFiles
 # pyrefly: ignore [missing-import]
-from backend.config import DATA_FILE
+from backend.config import DATA_FILE, DATA_DIR
 # pyrefly: ignore [missing-import]
 from backend import scheduler
 
-# Logging konfigurieren
+# Logging konfigurieren (sowohl Konsole als auch Datei)
+log_file = DATA_DIR / "backend.log"
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
 )
 logger = logging.getLogger(__name__)
 

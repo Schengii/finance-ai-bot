@@ -7,6 +7,13 @@ let selectedAsset = null;
 let currentFilter = "all";
 let statusPollingInterval = null;
 
+// Dynamische API-Basis-URL: Falls lokal oder auf abweichendem Port (z.B. Live Server 5500) ausgeführt,
+// verweise auf den FastAPI-Server auf Port 8000. Sonst relative Pfade nutzen.
+const API_BASE = (window.location.protocol === 'file:' || window.location.port !== '8000') 
+    ? 'http://127.0.0.1:8000' 
+    : '';
+
+
 // DOM Elements
 const elements = {
     statusDot: document.getElementById('status-dot'),
@@ -105,7 +112,10 @@ function setupEventListeners() {
 // Fetch Data from API
 async function fetchData() {
     try {
-        const response = await fetch("/api/predictions");
+        const response = await fetch(`${API_BASE}/api/predictions`);
+        if (!response.ok) {
+            throw new Error(`Server antwortete mit Status: ${response.status}`);
+        }
         const data = await response.json();
         
         if (data.predictions && Object.keys(data.predictions).length > 0) {
@@ -153,7 +163,10 @@ async function fetchData() {
 // Server Status & Polling
 async function checkServerStatus() {
     try {
-        const response = await fetch("/api/status");
+        const response = await fetch(`${API_BASE}/api/status`);
+        if (!response.ok) {
+            throw new Error(`Server-Status-Anfrage fehlgeschlagen (HTTP ${response.status})`);
+        }
         const status = await response.json();
         
         if (status.is_updating) {
@@ -171,12 +184,18 @@ async function checkServerStatus() {
         }
     } catch (error) {
         console.error("Fehler beim Prüfen des Serverstatus:", error);
+        if (!statusPollingInterval) {
+            setUpdatingUI(false);
+        }
     }
 }
 
 async function pollStatus() {
     try {
-        const response = await fetch("/api/status");
+        const response = await fetch(`${API_BASE}/api/status`);
+        if (!response.ok) {
+            throw new Error(`Server-Status-Anfrage fehlgeschlagen (HTTP ${response.status})`);
+        }
         const status = await response.json();
         
         if (!status.is_updating) {
@@ -210,17 +229,23 @@ function setUpdatingUI(isUpdating) {
 async function triggerRefresh() {
     try {
         setUpdatingUI(true);
-        const response = await fetch("/api/refresh", { method: "POST" });
+        const response = await fetch(`${API_BASE}/api/refresh`, { method: "POST" });
+        if (!response.ok) {
+            throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+        }
         const result = await response.json();
         
         if (result.status === "started" || result.status === "updating") {
             if (!statusPollingInterval) {
                 statusPollingInterval = setInterval(pollStatus, 3000);
             }
+        } else {
+            setUpdatingUI(false);
         }
     } catch (error) {
         console.error("Fehler beim Starten des Updates:", error);
         setUpdatingUI(false);
+        alert("Fehler beim Starten des Updates: " + error.message);
     }
 }
 
@@ -233,7 +258,7 @@ function updateOverviewWidgets() {
     
     // 2. Average Sentiment
     let totalSentiment = 0;
-    list.forEach(a => totalSentiment += a.sentiment_score);
+    list.forEach(a => totalSentiment += (a.sentiment_score !== undefined && a.sentiment_score !== null ? a.sentiment_score : 0));
     const avgSentiment = list.length > 0 ? totalSentiment / list.length : 0;
     
     let sentimentLabel = "Neutral";
@@ -253,7 +278,7 @@ function updateOverviewWidgets() {
     }
     
     elements.marketSentiment.className = `stat-value ${sentimentColorClass}`;
-    elements.marketSentiment.innerText = `${sentimentLabel} (${(avgSentiment).toFixed(2)})`;
+    elements.marketSentiment.innerText = `${sentimentLabel} (${avgSentiment.toFixed(2)})`;
     
     // 3. Top Pick (Highest Confidence Buy/Strong Buy)
     let bestPick = null;
@@ -300,8 +325,9 @@ function renderAssetsList() {
         card.className = `asset-card ${selectedAsset === item.symbol ? 'selected' : ''}`;
         card.dataset.symbol = item.symbol;
         
-        const changeClass = item.price_change_1d >= 0 ? "text-green" : "text-red";
-        const sign = item.price_change_1d >= 0 ? "+" : "";
+        const priceChange = (item.price_change_1d !== undefined && item.price_change_1d !== null) ? item.price_change_1d : 0;
+        const changeClass = priceChange >= 0 ? "text-green" : "text-red";
+        const sign = priceChange >= 0 ? "+" : "";
         
         let recBadgeClass = "badge-hold";
         if (item.recommendation === "Starker Kauf") recBadgeClass = "badge-strong-buy";
@@ -319,8 +345,8 @@ function renderAssetsList() {
             </div>
             <div class="card-right">
                 <span class="card-price">${formatCurrency(item.price, item.type)}</span>
-                <span class="card-change ${changeClass}">${sign}${item.price_change_1d.toFixed(2)}%</span>
-                <span class="card-badge ${recBadgeClass}">${item.recommendation}</span>
+                <span class="card-change ${changeClass}">${sign}${priceChange.toFixed(2)}%</span>
+                <span class="card-badge ${recBadgeClass}">${item.recommendation || "Halten"}</span>
             </div>
         `;
         
@@ -355,13 +381,14 @@ function selectAsset(symbol) {
     elements.assetType.innerText = asset.type === 'crypto' ? 'Kryptowährung' : 'Aktie';
     elements.assetPrice.innerText = formatCurrency(asset.price, asset.type);
     
-    const changeClass = asset.price_change_1d >= 0 ? "text-green" : "text-red";
-    const sign = asset.price_change_1d >= 0 ? "+" : "";
+    const priceChange = (asset.price_change_1d !== undefined && asset.price_change_1d !== null) ? asset.price_change_1d : 0;
+    const changeClass = priceChange >= 0 ? "text-green" : "text-red";
+    const sign = priceChange >= 0 ? "+" : "";
     elements.assetChange.className = `detail-change ${changeClass}`;
-    elements.assetChange.innerText = `${sign}${asset.price_change_1d.toFixed(2)}% (24h)`;
+    elements.assetChange.innerText = `${sign}${priceChange.toFixed(2)}% (24h)`;
     
     // Recommendation Hero
-    elements.recBadge.innerText = asset.recommendation;
+    elements.recBadge.innerText = asset.recommendation || "Halten";
     // Set Badge Color
     let recClass = "badge-hold";
     let colorHex = "#f59e0b";
@@ -374,30 +401,35 @@ function selectAsset(symbol) {
     elements.recBadge.style.color = colorHex;
     
     // Confidence ring update
-    elements.scoreText.innerText = `${asset.confidence}%`;
-    updateConfidenceRing(asset.confidence, colorHex);
+    const confidence = (asset.confidence !== undefined && asset.confidence !== null) ? asset.confidence : 50;
+    elements.scoreText.innerText = `${confidence}%`;
+    updateConfidenceRing(confidence, colorHex);
     
     // Risk & Sentiment
-    elements.riskText.innerText = asset.risk_level;
+    elements.riskText.innerText = asset.risk_level || "Mittel";
     
     let sentimentLabel = "Neutral";
-    if (asset.sentiment_score > 0.3) sentimentLabel = "Sehr Positiv";
-    else if (asset.sentiment_score > 0.05) sentimentLabel = "Positiv";
-    else if (asset.sentiment_score < -0.3) sentimentLabel = "Sehr Negativ";
-    else if (asset.sentiment_score < -0.05) sentimentLabel = "Negativ";
-    elements.sentimentText.innerText = `${sentimentLabel} (${asset.sentiment_score.toFixed(2)})`;
+    const sentimentScore = (asset.sentiment_score !== undefined && asset.sentiment_score !== null) ? asset.sentiment_score : 0.0;
+    if (sentimentScore > 0.3) sentimentLabel = "Sehr Positiv";
+    else if (sentimentScore > 0.05) sentimentLabel = "Positiv";
+    else if (sentimentScore < -0.3) sentimentLabel = "Sehr Negativ";
+    else if (sentimentScore < -0.05) sentimentLabel = "Negativ";
+    elements.sentimentText.innerText = `${sentimentLabel} (${sentimentScore.toFixed(2)})`;
     
     // Technical Indicators
-    elements.indRsi.innerText = asset.rsi.toFixed(1);
+    const rsiVal = (asset.rsi !== undefined && asset.rsi !== null) ? asset.rsi : 50.0;
+    elements.indRsi.innerText = rsiVal.toFixed(1);
     
     let rsiLabel = "Neutral";
-    if (asset.rsi < 30) rsiLabel = "Überverkauft";
-    else if (asset.rsi > 70) rsiLabel = "Überkauft";
-    elements.indRsi.className = `ind-value ${asset.rsi < 30 ? 'text-green' : (asset.rsi > 70 ? 'text-red' : '')}`;
+    if (rsiVal < 30) rsiLabel = "Überverkauft";
+    else if (rsiVal > 70) rsiLabel = "Überkauft";
+    elements.indRsi.className = `ind-value ${rsiVal < 30 ? 'text-green' : (rsiVal > 70 ? 'text-red' : '')}`;
     
-    elements.indTrend.innerText = asset.technical_trend;
+    elements.indTrend.innerText = asset.technical_trend || "Neutral";
     elements.indTrend.className = `ind-value ${asset.technical_trend === 'Bullish' ? 'text-green' : (asset.technical_trend === 'Bearish' ? 'text-red' : '')}`;
-    elements.indMacd.innerText = asset.macd.toFixed(3);
+    
+    const macdVal = (asset.macd !== undefined && asset.macd !== null) ? asset.macd : 0.0;
+    elements.indMacd.innerText = macdVal.toFixed(3);
     
     // AI Explanation
     elements.aiExplanation.innerText = asset.ai_explanation;
@@ -469,6 +501,15 @@ function updateConfidenceRing(percent, color) {
 // Render Chart
 function renderChart(historyData, symbol, accentColor) {
     if (!historyData || historyData.length === 0) return;
+    
+    if (typeof Chart === 'undefined') {
+        console.error("Chart.js is not loaded.");
+        const chartContainer = document.querySelector('.chart-container');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);">Chart.js-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.</div>';
+        }
+        return;
+    }
     
     const labels = historyData.map(h => {
         const d = new Date(h.date);
@@ -567,6 +608,9 @@ function renderChart(historyData, symbol, accentColor) {
 
 // Helpers
 function formatCurrency(value, type) {
+    if (value === undefined || value === null || isNaN(value)) {
+        return "$ --";
+    }
     return value.toLocaleString(type === "crypto" ? "en-US" : "de-DE", {
         style: "currency",
         currency: "USD",
