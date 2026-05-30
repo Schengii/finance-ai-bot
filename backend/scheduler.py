@@ -93,7 +93,18 @@ def start_scheduler():
     logger.info(f"Hintergrund-Scheduler gestartet (Intervall: {UPDATE_INTERVAL_HOURS} Stunden).")
     
     # Führe einen ersten Lauf asynchron aus, falls die Datei noch nicht existiert
-    if not DATA_FILE.exists():
-        logger.info("Keine bestehenden Daten gefunden. Starte initialen Update-Zyklus...")
+    # ODER falls die Datei existiert, aber leer/ungültig ist.
+    should_update = not DATA_FILE.exists()
+    if not should_update:
+        try:
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if not data.get("predictions"):
+                    should_update = True
+        except Exception:
+            should_update = True
+            
+    if should_update:
+        logger.info("Keine oder leere/ungültige bestehende Daten gefunden. Starte initialen Update-Zyklus...")
         import threading
         threading.Thread(target=run_update_cycle).start()

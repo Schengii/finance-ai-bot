@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # pyrefly: ignore [missing-import]
 from fastapi.staticfiles import StaticFiles
 from backend.config import DATA_FILE
-from backend.scheduler import start_scheduler, run_update_cycle, is_updating
+from backend import scheduler
 
 # Logging konfigurieren
 logging.basicConfig(
@@ -36,7 +36,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     """Wird beim Starten des Servers ausgeführt und initialisiert den Scheduler."""
-    start_scheduler()
+    scheduler.start_scheduler()
 
 @app.get("/api/status")
 def get_status():
@@ -51,7 +51,7 @@ def get_status():
             logger.error(f"Fehler beim Lesen des Update-Zeitstempels: {e}")
             
     return {
-        "is_updating": is_updating,
+        "is_updating": scheduler.is_updating,
         "last_updated": last_updated
     }
 
@@ -76,12 +76,11 @@ def get_predictions():
 @app.post("/api/refresh")
 def trigger_refresh(background_tasks: BackgroundTasks):
     """Löst eine manuelle Aktualisierung der Marktdaten und KI-Analysen aus."""
-    global is_updating
-    if is_updating:
+    if scheduler.is_updating:
         return {"status": "updating", "message": "Aktualisierung läuft bereits."}
         
     # Führe Aktualisierung im Hintergrund aus
-    background_tasks.add_task(run_update_cycle)
+    background_tasks.add_task(scheduler.run_update_cycle)
     return {"status": "started", "message": "Aktualisierungszyklus gestartet."}
 
 # Finde den Pfad zum Frontend-Ordner

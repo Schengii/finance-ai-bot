@@ -23,7 +23,11 @@ def calculate_rsi(prices, period=14):
     
     rs = gain / loss
     rsi = 100 - (100 / (1 + rs))
-    return float(rsi.iloc[-1])
+    
+    val = rsi.iloc[-1]
+    if pd.isna(val) or np.isnan(val) or np.isinf(val):
+        return 50.0
+    return float(val)
 
 def calculate_macd(prices):
     """Berechnet MACD und Signal-Linie."""
@@ -36,7 +40,15 @@ def calculate_macd(prices):
     signal = macd.ewm(span=9, adjust=False).mean()
     hist = macd - signal
     
-    return float(macd.iloc[-1]), float(signal.iloc[-1]), float(hist.iloc[-1])
+    m = macd.iloc[-1]
+    s = signal.iloc[-1]
+    h = hist.iloc[-1]
+    
+    if pd.isna(m) or np.isnan(m) or np.isinf(m): m = 0.0
+    if pd.isna(s) or np.isnan(s) or np.isinf(s): s = 0.0
+    if pd.isna(h) or np.isnan(h) or np.isinf(h): h = 0.0
+    
+    return float(m), float(s), float(h)
 
 def fetch_market_data(symbol, days=90):
     """Holt historische Daten und berechnet technische Indikatoren."""
@@ -123,25 +135,69 @@ def fetch_news(symbol, name):
         
         if yf_news:
             for item in yf_news[:10]: # Maximal 10 Nachrichten
-                title = item.get("title", "").strip()
-                if title:  # Nur hinzufügen, wenn der Titel nicht leer ist!
-                    pub_time = item.get("providerPublishTime", 0)
-                    dt = datetime.fromtimestamp(pub_time) if pub_time else datetime.now()
-                    
-                    formatted_news.append({
-                        "title": title,
-                        "publisher": item.get("publisher", ""),
-                        "link": item.get("link", ""),
-                        "time": dt.strftime('%Y-%m-%d %H:%M'),
-                        "summary": item.get("summary", "") or ""
-                    })
+                # Support both old flat structure and new nested 'content' structure
+                content = item.get("content", {}) if isinstance(item.get("content"), dict) else item
+                
+                title = content.get("title")
+                if not title:
+                    continue
+                title = str(title).strip()
+                if not title:
+                    continue
+                
+                # Publisher
+                publisher = content.get("publisher") or item.get("publisher") or ""
+                publisher = str(publisher).strip()
+                
+                # Link
+                link = content.get("link") or item.get("link") or ""
+                link = str(link).strip()
+                
+                # Summary
+                summary = content.get("summary") or item.get("summary") or ""
+                summary = str(summary).strip()
+                
+                # Time / Date
+                pub_time = content.get("providerPublishTime") or item.get("providerPublishTime") or content.get("pubDate")
+                
+                dt_str = ""
+                if pub_time:
+                    if isinstance(pub_time, (int, float)):
+                        try:
+                            dt_str = datetime.fromtimestamp(pub_time).strftime('%Y-%m-%d %H:%M')
+                        except Exception:
+                            dt_str = str(pub_time)
+                    else:
+                        # It is likely a string (ISO format or similar)
+                        dt_str = str(pub_time)
+                        # Try to format it nicer if possible
+                        try:
+                            # e.g., '2026-05-30T13:54:00Z'
+                            if 'T' in dt_str:
+                                t_part = dt_str.split('T')
+                                date_part = t_part[0]
+                                time_part = t_part[1][:5]
+                                dt_str = f"{date_part} {time_part}"
+                        except Exception:
+                            pass
+                else:
+                    dt_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+                
+                formatted_news.append({
+                    "title": title,
+                    "publisher": publisher,
+                    "link": link,
+                    "time": dt_str,
+                    "summary": summary
+                })
         
         # Fallback: Wenn Yahoo Finance keine Nachrichten liefert, Google News RSS nutzen
         if not formatted_news:
             import urllib.request
             import xml.etree.ElementTree as ET
+            from email.utils import parsedate_to_datetime
             
-            query = name.replace(" ", "+")
+            query = str(name).replace(" ", "+") if name else symbol
             url = f"https://news.google.com/rss/search?q={query}&hl=de&gl=DE&ceid=DE:de"
             
             logger.info(f"Fallback auf Google News RSS für {name}...")
@@ -155,17 +211,35 @@ def fetch_news(symbol, name):
                 link = item.find('link').text if item.find('link') is not None else ""
                 pub_date = item.find('pubDate').text if item.find('pubDate') is not None else ""
                 
+                # Versuche den Publisher aus dem source-Tag auszulesen
+                source_elem = item.find('source')
+                publisher = source_elem.text if source_elem is not None else "Google News"
+                publisher = str(publisher).strip()
+                
+                # Datumsformat bereinigen
+                pub_date_str = ""
+                if pub_date:
+                    try:
+                        dt = parsedate_to_datetime(pub_date)
+                        pub_date_str = dt.strftime('%Y-%m-%d %H:%M')
+                    except Exception:
+                        pub_date_str = pub_date
+                else:
+                    pub_date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+                
                 # Einfache Bereinigung des Titels von Quellenangaben am Ende
                 if " - " in title:
                     title = " - ".join(title.split(" - ")[:-1])
-                    
-                formatted_news.append({
-                    "title": title,
-                    "publisher": "Google News RSS",
-                    "link": link,
-                    "time": pub_date,
-                    "summary": ""
-                })
+                title = str(title).strip()
+                
+                if title:
+                    formatted_news.append({
+                        "title": title,
+                        "publisher": publisher,
+                        "link": link,
+                        "time": pub_date_str,
+                        "summary": ""
+                    })
                 
     except Exception as e:
         logger.error(f"Fehler beim Laden der Nachrichten für {symbol}: {e}")
