@@ -1,18 +1,46 @@
 import os
 import json
 import logging
-# pyrefly: ignore [missing-import]
-import google.generativeai as genai
-# pyrefly: ignore [missing-import]
 from backend.config import GEMINI_API_KEY
 
 logger = logging.getLogger(__name__)
 
-# Konfiguriere das Gemini SDK, falls der API-Key gesetzt ist
+# Try importing the new google-genai SDK first
+try:
+    # pyrefly: ignore [missing-import]
+    from google import genai
+    # pyrefly: ignore [missing-import]
+    from google.genai import types
+    HAS_NEW_GENAI = True
+except ImportError:
+    HAS_NEW_GENAI = False
+
+# Fallback to the legacy google-generativeai SDK
+try:
+    # pyrefly: ignore [missing-import]
+    import google.generativeai as legacy_genai
+    HAS_LEGACY_GENAI = True
+except ImportError:
+    HAS_LEGACY_GENAI = False
+
+# Initialize Client
+client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    if HAS_NEW_GENAI:
+        try:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            logger.info("Gemini SDK (google-genai) erfolgreich mit API-Key initialisiert.")
+        except Exception as e:
+            logger.error(f"Fehler beim Initialisieren des neuen Gemini SDKs: {e}")
+    elif HAS_LEGACY_GENAI:
+        try:
+            legacy_genai.configure(api_key=GEMINI_API_KEY)
+            logger.info("Gemini SDK (google-generativeai, veraltet) mit API-Key konfiguriert.")
+        except Exception as e:
+            logger.error(f"Fehler beim Konfigurieren des veralteten Gemini SDKs: {e}")
 else:
     logger.warning("Kein GEMINI_API_KEY in der Konfiguration gefunden. Der Bot läuft im Demo-Modus mit simulierten KI-Prognosen.")
+
 
 def get_mock_prediction(asset_info, market_data):
     """Erstellt eine plausible simulierte Prognose für den Demo-Modus."""
@@ -77,13 +105,14 @@ def get_mock_prediction(asset_info, market_data):
 def analyze_asset_with_ai(asset_info, market_data, news_items):
     """
     Analysiert Kurse, technische Indikatoren und Nachrichten mit Gemini 
+
     und liefert eine fundierte Anlageempfehlung.
     """
     symbol = asset_info["symbol"]
     name = asset_info["name"]
     
-    # Falls kein API-Key hinterlegt ist, nutze Mock-Daten
-    if not GEMINI_API_KEY:
+    # Falls kein API-Key hinterlegt oder kein SDK installiert ist, nutze Mock-Daten
+    if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
         prediction = get_mock_prediction(asset_info, market_data)
         return prediction
 
@@ -135,15 +164,30 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
 """
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        
-        generation_config = {
-            "response_mime_type": "application/json",
-            "temperature": 0.2
-        }
-        
-        response = model.generate_content(prompt, generation_config=generation_config)
-        result_json = json.loads(response.text.strip())
+        if HAS_NEW_GENAI and client:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                )
+            )
+            response_text = response.text
+        elif HAS_LEGACY_GENAI:
+            model = legacy_genai.GenerativeModel("gemini-1.5-flash")
+            
+            generation_config = {
+                "response_mime_type": "application/json",
+                "temperature": 0.2
+            }
+            
+            response = model.generate_content(prompt, generation_config=generation_config)
+            response_text = response.text
+        else:
+            raise RuntimeError("Keine Gemini-Bibliothek installiert.")
+            
+        result_json = json.loads(response_text.strip())
         
         # Kombiniere KI-Antwort mit Marktdaten
         prediction = {

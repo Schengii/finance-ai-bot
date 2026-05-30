@@ -19,16 +19,6 @@ from backend.config import DATA_FILE, DATA_DIR
 # pyrefly: ignore [missing-import]
 from backend import scheduler
 
-# Logging konfigurieren (sowohl Konsole als auch Datei)
-log_file = DATA_DIR / "backend.log"
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Finance AI Bot API", version="1.0.0")
@@ -45,6 +35,24 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     """Wird beim Starten des Servers ausgeführt und initialisiert den Scheduler."""
+    # Logging-Konfiguration anpassen, nachdem uvicorn gestartet ist
+    log_file = DATA_DIR / "backend.log"
+    root_logger = logging.getLogger()
+    
+    # Entferne bestehende Handler, um Duplikate zu vermeiden
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+        
+    # Füge unsere Handler hinzu
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    root_logger.addHandler(file_handler)
+    
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    root_logger.addHandler(stream_handler)
+    
+    logger.info("Logging-System in backend.log umgeleitet.")
     scheduler.start_scheduler()
 
 @app.get("/api/status")

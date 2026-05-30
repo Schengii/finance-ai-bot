@@ -228,6 +228,8 @@ function setUpdatingUI(isUpdating) {
 
 async function triggerRefresh() {
     try {
+        console.log("DEBUG: triggerRefresh wurde aufgerufen!");
+        alert("DEBUG: Klick registriert! Sende Anfrage an den Server...");
         setUpdatingUI(true);
         const response = await fetch(`${API_BASE}/api/refresh`, { method: "POST" });
         if (!response.ok) {

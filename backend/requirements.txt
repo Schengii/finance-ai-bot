@@ -2,6 +2,7 @@ fastapi
 uvicorn
 yfinance
 google-generativeai
+google-genai
 apscheduler
 pandas
 beautifulsoup4
