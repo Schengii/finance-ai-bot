@@ -2,7 +2,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# pyrefly: ignore [missing-import]
 from backend.data_fetcher import fetch_market_data, fetch_news
+# pyrefly: ignore [missing-import]
 from backend.ai_analyzer import analyze_asset_with_ai
 
 def main():

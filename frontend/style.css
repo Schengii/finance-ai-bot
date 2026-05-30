@@ -8,6 +8,7 @@
     
     /* Brand Accent Colors */
     --accent: #6366f1; /* Electric Indigo */
+    --accent-color: #6366f1;
     --accent-glow: rgba(99, 102, 241, 0.3);
     
     /* Sentiment / Recommendation Colors */

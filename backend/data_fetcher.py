@@ -1,10 +1,14 @@
 # pyrefly: ignore [missing-import]
 import yfinance as yf
+# pyrefly: ignore [missing-import]
 import pandas as pd
 # pyrefly: ignore [missing-import]
 import numpy as np
 from datetime import datetime, timedelta
 import logging
+import urllib.request
+import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -193,10 +197,6 @@ def fetch_news(symbol, name):
         
         # Fallback: Wenn Yahoo Finance keine Nachrichten liefert, Google News RSS nutzen
         if not formatted_news:
-            import urllib.request
-            import xml.etree.ElementTree as ET
-            from email.utils import parsedate_to_datetime
-            
             query = str(name).replace(" ", "+") if name else symbol
             url = f"https://news.google.com/rss/search?q={query}&hl=de&gl=DE&ceid=DE:de"
             

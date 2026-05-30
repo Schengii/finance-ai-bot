@@ -1,9 +1,14 @@
 import json
 import logging
+import threading
 from datetime import datetime
+# pyrefly: ignore [missing-import]
 from apscheduler.schedulers.background import BackgroundScheduler
+# pyrefly: ignore [missing-import]
 from backend.config import DEFAULT_ASSETS, DATA_FILE, UPDATE_INTERVAL_HOURS
+# pyrefly: ignore [missing-import]
 from backend.data_fetcher import fetch_market_data, fetch_news
+# pyrefly: ignore [missing-import]
 from backend.ai_analyzer import analyze_asset_with_ai
 
 logger = logging.getLogger(__name__)
@@ -106,5 +111,4 @@ def start_scheduler():
             
     if should_update:
         logger.info("Keine oder leere/ungültige bestehende Daten gefunden. Starte initialen Update-Zyklus...")
-        import threading
         threading.Thread(target=run_update_cycle).start()

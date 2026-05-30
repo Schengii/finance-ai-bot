@@ -5,7 +5,6 @@ let appData = {
 };
 let selectedAsset = null;
 let currentFilter = "all";
-let currentTab = "chart-tab";
 let statusPollingInterval = null;
 
 // DOM Elements
@@ -99,7 +98,6 @@ function setupEventListeners() {
                     pane.classList.add("active");
                 }
             });
-            currentTab = targetPane;
         });
     });
 }

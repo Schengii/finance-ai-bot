@@ -3,6 +3,7 @@ import json
 import logging
 # pyrefly: ignore [missing-import]
 import google.generativeai as genai
+# pyrefly: ignore [missing-import]
 from backend.config import GEMINI_API_KEY
 
 logger = logging.getLogger(__name__)

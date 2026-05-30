@@ -2,6 +2,8 @@ import os
 import sys
 import json
 import logging
+# pyrefly: ignore [missing-import]
+import uvicorn
 
 # Übergeordnetes Verzeichnis zum Python-Pfad hinzufügen
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,7 +14,9 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 # pyrefly: ignore [missing-import]
 from fastapi.staticfiles import StaticFiles
+# pyrefly: ignore [missing-import]
 from backend.config import DATA_FILE
+# pyrefly: ignore [missing-import]
 from backend import scheduler
 
 # Logging konfigurieren
@@ -90,5 +94,4 @@ FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=False)
