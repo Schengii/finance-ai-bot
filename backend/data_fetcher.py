@@ -123,16 +123,18 @@ def fetch_news(symbol, name):
         
         if yf_news:
             for item in yf_news[:10]: # Maximal 10 Nachrichten
-                pub_time = item.get("providerPublishTime", 0)
-                dt = datetime.fromtimestamp(pub_time) if pub_time else datetime.now()
-                
-                formatted_news.append({
-                    "title": item.get("title", ""),
-                    "publisher": item.get("publisher", ""),
-                    "link": item.get("link", ""),
-                    "time": dt.strftime('%Y-%m-%d %H:%M'),
-                    "summary": item.get("summary", "") or ""
-                })
+                title = item.get("title", "").strip()
+                if title:  # Nur hinzufügen, wenn der Titel nicht leer ist!
+                    pub_time = item.get("providerPublishTime", 0)
+                    dt = datetime.fromtimestamp(pub_time) if pub_time else datetime.now()
+                    
+                    formatted_news.append({
+                        "title": title,
+                        "publisher": item.get("publisher", ""),
+                        "link": item.get("link", ""),
+                        "time": dt.strftime('%Y-%m-%d %H:%M'),
+                        "summary": item.get("summary", "") or ""
+                    })
         
         # Fallback: Wenn Yahoo Finance keine Nachrichten liefert, Google News RSS nutzen
         if not formatted_news:

@@ -363,7 +363,7 @@ function selectAsset(symbol) {
     elements.assetChange.innerText = `${sign}${asset.price_change_1d.toFixed(2)}% (24h)`;
     
     // Recommendation Hero
-    elements.detailRecBadge.innerText = asset.recommendation;
+    elements.recBadge.innerText = asset.recommendation;
     // Set Badge Color
     let recClass = "badge-hold";
     let colorHex = "#f59e0b";
@@ -372,7 +372,7 @@ function selectAsset(symbol) {
     else if (asset.recommendation === "Verkauf") { recClass = "badge-sell"; colorHex = "#f43f5e"; }
     else if (asset.recommendation === "Starker Verkauf") { recClass = "badge-strong-sell"; colorHex = "#e11d48"; }
     
-    elements.detailRecBadge.className = `rec-badge ${recClass}`;
+    elements.recBadge.className = `rec-badge ${recClass}`;
     elements.recBadge.style.color = colorHex;
     
     // Confidence ring update
