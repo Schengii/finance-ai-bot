@@ -10,6 +10,8 @@ from backend.config import DEFAULT_ASSETS, DATA_FILE, UPDATE_INTERVAL_HOURS
 from backend.data_fetcher import fetch_market_data, fetch_news
 # pyrefly: ignore [missing-import]
 from backend.ai_analyzer import analyze_asset_with_ai
+# pyrefly: ignore [missing-import]
+from backend.db import get_all_assets, save_prediction, get_predictions_from_db, init_db
 
 logger = logging.getLogger(__name__)
 
@@ -29,26 +31,20 @@ def run_update_cycle():
     try:
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
         
-        # Vorhandene Daten laden, um sie bei Fehlern beizubehalten
-        existing_data = {}
-        if DATA_FILE.exists():
-            try:
-                with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                    existing_data = json.load(f).get("predictions", {})
-            except Exception as e:
-                logger.error(f"Fehler beim Laden bestehender Daten: {e}")
-
-        predictions = {}
+        # Assets aus der Datenbank laden (dynamische Watchlist)
+        assets = get_all_assets()
         
-        for asset in DEFAULT_ASSETS:
+        if not assets:
+            logger.warning("Keine Assets in der Watchlist. Überspringe Aktualisierungszyklus.")
+            return
+
+        for asset in assets:
             symbol = asset["symbol"]
             try:
                 # 1. Marktdaten abrufen
                 market_data = fetch_market_data(symbol)
                 if not market_data:
-                    logger.error(f"Konnte Marktdaten für {symbol} nicht laden. Verwende alte Daten falls vorhanden.")
-                    if symbol in existing_data:
-                        predictions[symbol] = existing_data[symbol]
+                    logger.error(f"Konnte Marktdaten für {symbol} nicht laden. Überspringe.")
                     continue
                     
                 market_data["last_updated"] = timestamp
@@ -62,33 +58,34 @@ def run_update_cycle():
                 # Ergänze die Nachrichten und den Chartverlauf in dem gespeicherten Objekt
                 prediction["news"] = news_items
                 prediction["history"] = market_data["history"]
+                prediction["last_updated"] = timestamp
                 
-                predictions[symbol] = prediction
-                logger.info(f"Analyse für {symbol} erfolgreich abgeschlossen.")
+                # 4. In Datenbank speichern (aktuelle Prognose + Historie)
+                save_prediction(prediction)
+                
+                logger.info(f"Analyse für {symbol} erfolgreich abgeschlossen und in DB gespeichert.")
                 
             except Exception as e:
                 logger.error(f"Unerwarteter Fehler bei der Analyse von {symbol}: {e}")
-                if symbol in existing_data:
-                    predictions[symbol] = existing_data[symbol]
                     
-        # Speichern der Daten
-        output_data = {
-            "last_updated": timestamp,
-            "predictions": predictions
-        }
-        
+        # Kompatibilitäts-Fallback: JSON-Datei ebenfalls aktualisieren
         try:
+            db_data = get_predictions_from_db()
+            db_data["last_updated"] = timestamp
             with open(DATA_FILE, 'w', encoding='utf-8') as f:
-                json.dump(output_data, f, ensure_ascii=False, indent=2)
-            logger.info(f"Aktualisierungszyklus abgeschlossen. Daten in {DATA_FILE} gespeichert.")
+                json.dump(db_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"Aktualisierungszyklus abgeschlossen. Daten in DB und {DATA_FILE} gespeichert.")
         except Exception as e:
-            logger.error(f"Fehler beim Speichern der Prognosedaten: {e}")
+            logger.error(f"Fehler beim Schreiben der JSON-Fallback-Datei: {e}")
     finally:
         is_updating = False
 
 
 def start_scheduler():
     """Initialisiert und startet den Hintergrund-Scheduler."""
+    # Datenbank initialisieren
+    init_db()
+    
     scheduler = BackgroundScheduler()
     scheduler.add_job(
         run_update_cycle, 
@@ -99,18 +96,10 @@ def start_scheduler():
     scheduler.start()
     logger.info(f"Hintergrund-Scheduler gestartet (Intervall: {UPDATE_INTERVAL_HOURS} Stunden).")
     
-    # Führe einen ersten Lauf asynchron aus, falls die Datei noch nicht existiert
-    # ODER falls die Datei existiert, aber leer/ungültig ist.
-    should_update = not DATA_FILE.exists()
-    if not should_update:
-        try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                if not data.get("predictions"):
-                    should_update = True
-        except Exception:
-            should_update = True
+    # Führe einen ersten Lauf asynchron aus, falls die DB noch keine Prognosen enthält
+    db_data = get_predictions_from_db()
+    should_update = not db_data["predictions"]
             
     if should_update:
-        logger.info("Keine oder leere/ungültige bestehende Daten gefunden. Starte initialen Update-Zyklus...")
+        logger.info("Keine bestehenden Prognosen in der DB gefunden. Starte initialen Update-Zyklus...")
         threading.Thread(target=run_update_cycle).start()

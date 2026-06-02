@@ -8,3 +8,8 @@
 2026-05-30 15:13:35,116 [INFO] apscheduler.scheduler: Added job "run_update_cycle" to job store "default"
 2026-05-30 15:13:35,117 [INFO] apscheduler.scheduler: Scheduler started
 2026-05-30 15:13:35,118 [INFO] backend.scheduler: Hintergrund-Scheduler gestartet (Intervall: 24 Stunden).
+2026-05-30 15:24:31,056 [INFO] backend.main: Logging-System in backend.log umgeleitet.
+2026-05-30 15:24:31,058 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-30 15:24:31,059 [INFO] apscheduler.scheduler: Added job "run_update_cycle" to job store "default"
+2026-05-30 15:24:31,059 [INFO] apscheduler.scheduler: Scheduler started
+2026-05-30 15:24:31,060 [INFO] backend.scheduler: Hintergrund-Scheduler gestartet (Intervall: 24 Stunden).
