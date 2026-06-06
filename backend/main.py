@@ -95,46 +95,82 @@ def get_predictions():
 
 @app.get("/api/history/{symbol}")
 def get_asset_history(symbol: str, period: str = "30d"):
-    """Holt historische Kursdaten für ein bestimmtes Intervall."""
+    """Holt historische Kursdaten für ein bestimmtes Intervall und berechnet SMA 20/50."""
     yf_period = "3mo"
     yf_interval = "1d"
     
     if period == "24h":
-        yf_period = "1d"
+        yf_period = "5d"
         yf_interval = "15m"
     elif period == "7d":
-        yf_period = "7d"
+        yf_period = "15d"
         yf_interval = "1h"
     elif period == "30d":
-        yf_period = "1mo"
+        yf_period = "3mo"
         yf_interval = "1d"
     elif period == "1y":
-        yf_period = "1y"
+        yf_period = "2y"
         yf_interval = "1d"
     elif period == "5y":
-        yf_period = "5y"
+        yf_period = "7y"
         yf_interval = "1wk"
     elif period == "10y":
-        yf_period = "10y"
+        yf_period = "12y"
         yf_interval = "1mo"
         
     try:
+        import pandas as pd
         ticker = yf.Ticker(symbol)
         df = ticker.history(period=yf_period, interval=yf_interval)
         if df.empty:
             raise HTTPException(status_code=404, detail="Keine historischen Daten gefunden.")
             
+        # Berechne SMA 20 und SMA 50
+        df['sma_20'] = df['Close'].rolling(window=20).mean()
+        df['sma_50'] = df['Close'].rolling(window=50).mean()
+        
+        # Filter auf den tatsächlich angeforderten Zeitraum
+        from datetime import datetime, timedelta
+        now = datetime.now(df.index.tz) if df.index.tz else datetime.now()
+        
+        if period == "24h":
+            cutoff = now - timedelta(hours=24)
+        elif period == "7d":
+            cutoff = now - timedelta(days=7)
+        elif period == "30d":
+            cutoff = now - timedelta(days=30)
+        elif period == "1y":
+            cutoff = now - timedelta(days=365)
+        elif period == "5y":
+            cutoff = now - timedelta(days=5*365)
+        elif period == "10y":
+            cutoff = now - timedelta(days=10*365)
+        else:
+            cutoff = None
+            
+        if cutoff:
+            df_filtered = df[df.index >= cutoff]
+            if df_filtered.empty:
+                df_filtered = df.tail(30 if period == "30d" else (100 if period == "1y" else 24))
+        else:
+            df_filtered = df
+            
         history = []
-        for index, row in df.iterrows():
+        for index, row in df_filtered.iterrows():
             if period in ["24h", "7d"]:
                 date_str = index.strftime('%Y-%m-%d %H:%M')
             else:
                 date_str = index.strftime('%Y-%m-%d')
                 
+            sma_20_val = round(float(row['sma_20']), 2) if 'sma_20' in row and not pd.isna(row['sma_20']) else None
+            sma_50_val = round(float(row['sma_50']), 2) if 'sma_50' in row and not pd.isna(row['sma_50']) else None
+            
             history.append({
                 "date": date_str,
                 "price": round(float(row['Close']), 2),
-                "volume": int(row['Volume']) if 'Volume' in row else 0
+                "volume": int(row['Volume']) if 'Volume' in row else 0,
+                "sma_20": sma_20_val,
+                "sma_50": sma_50_val
             })
         return {"symbol": symbol, "period": period, "history": history}
     except Exception as e:
@@ -396,6 +432,119 @@ def trigger_refresh(background_tasks: BackgroundTasks):
     # Führe Aktualisierung im Hintergrund aus
     background_tasks.add_task(scheduler.run_update_cycle)
     return {"status": "started", "message": "Aktualisierungszyklus gestartet."}
+
+
+@app.get("/api/search/{symbol}")
+def search_ticker(symbol: str):
+    """Sucht nach einem Ticker-Symbol über Yahoo Finance und liefert Name und Typ zurück."""
+    try:
+        symbol_upper = symbol.strip().upper()
+        ticker = yf.Ticker(symbol_upper)
+        info = ticker.info
+        
+        if not info or not info.get('quoteType'):
+            raise HTTPException(status_code=404, detail="Symbol nicht gefunden.")
+            
+        name = info.get('longName') or info.get('shortName') or symbol_upper
+        quote_type = info.get('quoteType').upper()
+        
+        if quote_type == "EQUITY":
+            asset_type = "stock"
+        elif quote_type == "CRYPTOCURRENCY":
+            asset_type = "crypto"
+            if name.endswith(" USD"):
+                name = name[:-4]
+        elif quote_type in ["FUTURE", "COMMODITY"]:
+            asset_type = "commodity"
+            if name == symbol_upper or not name or name == "None":
+                comm_names = {
+                    "GC=F": "Gold",
+                    "SI=F": "Silber",
+                    "CL=F": "Rohöl",
+                    "PL=F": "Platin",
+                    "HG=F": "Kupfer"
+                }
+                name = comm_names.get(symbol_upper, symbol_upper)
+        else:
+            asset_type = "stock"
+            
+        return {
+            "symbol": symbol_upper,
+            "name": name,
+            "type": asset_type
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei Ticker-Suche für {symbol}: {e}")
+        from backend.config import DEFAULT_ASSETS
+        for asset in DEFAULT_ASSETS:
+            if asset["symbol"].upper() == symbol.strip().upper():
+                return asset
+        raise HTTPException(status_code=404, detail="Ticker konnte nicht gefunden werden.")
+
+
+@app.get("/api/accuracy")
+def get_prediction_accuracy():
+    """Berechnet die Genauigkeit der bisherigen KI-Prognosen (Trefferquote)."""
+    try:
+        from backend.db import get_db_connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT h.symbol, h.price AS pred_price, h.recommendation, h.last_updated, p.price AS current_price
+            FROM prediction_history h
+            JOIN predictions p ON h.symbol = p.symbol
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        if not rows:
+            return {
+                "accuracy": 0.0,
+                "total_evaluated": 0,
+                "correct_count": 0,
+                "message": "Nicht genügend historische Daten vorhanden für eine Auswertung."
+            }
+            
+        correct_count = 0
+        total_evaluated = 0
+        
+        for row in rows:
+            pred_price = row["pred_price"]
+            current_price = row["current_price"]
+            rec = row["recommendation"]
+            
+            if not pred_price or not current_price or not rec:
+                continue
+                
+            total_evaluated += 1
+            is_correct = False
+            
+            if rec in ["Kauf", "Starker Kauf"]:
+                if current_price > pred_price:
+                    is_correct = True
+            elif rec in ["Verkauf", "Starker Verkauf"]:
+                if current_price < pred_price:
+                    is_correct = True
+            elif rec == "Halten":
+                pct_diff = abs(current_price - pred_price) / pred_price
+                if pct_diff <= 0.03:
+                    is_correct = True
+                    
+            if is_correct:
+                correct_count += 1
+                
+        accuracy = round((correct_count / total_evaluated) * 100, 1) if total_evaluated > 0 else 0.0
+        
+        return {
+            "accuracy": accuracy,
+            "total_evaluated": total_evaluated,
+            "correct_count": correct_count
+        }
+    except Exception as e:
+        logger.error(f"Fehler beim Berechnen der KI-Genauigkeit: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # Finde den Pfad zum Frontend-Ordner
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")

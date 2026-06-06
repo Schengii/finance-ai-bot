@@ -122,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupEventListeners();
     fetchData();
     checkServerStatus();
+    fetchAccuracy();
 });
 
 // Setup Listeners
@@ -220,6 +221,45 @@ function setupEventListeners() {
 
     if (elements.deleteAssetBtn) {
         elements.deleteAssetBtn.addEventListener("click", handleDeleteAsset);
+    }
+
+    if (elements.addAssetSymbol) {
+        elements.addAssetSymbol.addEventListener("blur", handleAutocompleteSymbol);
+        elements.addAssetSymbol.addEventListener("input", (e) => {
+            const val = e.target.value.trim().toUpperCase();
+            const datalist = document.getElementById('popular-tickers');
+            if (datalist) {
+                const options = Array.from(datalist.options).map(o => o.value);
+                if (options.includes(val)) {
+                    handleAutocompleteSymbol();
+                }
+            }
+        });
+    }
+
+    const sma20Btn = document.getElementById('toggle-sma20');
+    const sma50Btn = document.getElementById('toggle-sma50');
+    
+    if (sma20Btn) {
+        sma20Btn.addEventListener('click', () => {
+            const active = sma20Btn.getAttribute('data-active') === 'true';
+            sma20Btn.setAttribute('data-active', !active ? 'true' : 'false');
+            if (selectedAsset) {
+                const cached = historyCache[selectedAsset]?.[selectedPeriod] || appData.predictions[selectedAsset]?.history;
+                renderChart(cached, selectedAsset, getRecColorHex(appData.predictions[selectedAsset]?.recommendation));
+            }
+        });
+    }
+    
+    if (sma50Btn) {
+        sma50Btn.addEventListener('click', () => {
+            const active = sma50Btn.getAttribute('data-active') === 'true';
+            sma50Btn.setAttribute('data-active', !active ? 'true' : 'false');
+            if (selectedAsset) {
+                const cached = historyCache[selectedAsset]?.[selectedPeriod] || appData.predictions[selectedAsset]?.history;
+                renderChart(cached, selectedAsset, getRecColorHex(appData.predictions[selectedAsset]?.recommendation));
+            }
+        });
     }
 }
 
@@ -324,6 +364,7 @@ async function pollStatus() {
             setUpdatingUI(false);
             historyCache = {}; // Cache nach Update verwerfen
             fetchData(); // Neue Daten holen
+            fetchAccuracy(); // Neue Erfolgsquote holen
         }
     } catch (error) {
         console.error("Fehler beim Pollen des Status:", error);
@@ -669,30 +710,69 @@ function renderChart(historyData, symbol, accentColor) {
     gradient.addColorStop(0, `rgba(${rgbAccent.r}, ${rgbAccent.g}, ${rgbAccent.b}, 0.25)`);
     gradient.addColorStop(1, `rgba(${rgbAccent.r}, ${rgbAccent.g}, ${rgbAccent.b}, 0)`);
     
+    const datasets = [{
+        label: `${symbol} Preis`,
+        data: prices,
+        borderColor: accentColor,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: accentColor,
+        pointHoverBorderColor: '#fff',
+        fill: true,
+        backgroundColor: gradient,
+        tension: 0.15
+    }];
+    
+    const showSma20 = document.getElementById('toggle-sma20')?.getAttribute('data-active') === 'true';
+    const showSma50 = document.getElementById('toggle-sma50')?.getAttribute('data-active') === 'true';
+    
+    if (showSma20) {
+        const sma20Data = historyData.map(h => h.sma_20);
+        datasets.push({
+            label: 'SMA 20',
+            data: sma20Data,
+            borderColor: '#3b82f6',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.1
+        });
+    }
+    
+    if (showSma50) {
+        const sma50Data = historyData.map(h => h.sma_50);
+        datasets.push({
+            label: 'SMA 50',
+            data: sma50Data,
+            borderColor: '#f59e0b',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.1
+        });
+    }
+    
     window.priceChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: `${symbol} Preis`,
-                data: prices,
-                borderColor: accentColor,
-                borderWidth: 2,
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                pointHoverBackgroundColor: accentColor,
-                pointHoverBorderColor: '#fff',
-                fill: true,
-                backgroundColor: gradient,
-                tension: 0.15
-            }]
+            datasets: datasets
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false
+                    display: (showSma20 || showSma50),
+                    position: 'top',
+                    labels: {
+                        color: '#9ca3af',
+                        font: {
+                            family: 'Inter',
+                            size: 10
+                        }
+                    }
                 },
                 tooltip: {
                     mode: 'index',
@@ -702,10 +782,10 @@ function renderChart(historyData, symbol, accentColor) {
                     bodyColor: '#f3f4f6',
                     borderColor: 'rgba(255,255,255,0.08)',
                     borderWidth: 1,
-                    displayColors: false,
+                    displayColors: true,
                     callbacks: {
                         label: function(context) {
-                            return `${context.parsed.y.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} $`;
+                            return `${context.dataset.label}: ${context.parsed.y.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} $`;
                         }
                     }
                 }
@@ -1037,6 +1117,9 @@ function renderPortfolio() {
         elements.portPerformanceCard.style.border = '1px solid rgba(244, 63, 94, 0.2)';
         elements.portPerformanceCard.style.background = 'linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(255, 255, 255, 0.01) 100%)';
     }
+    
+    // Render allocation chart
+    renderAllocationChart();
 }
 
 async function handleAddInvestment(e) {
@@ -1328,5 +1411,212 @@ function updatePortScoreRing(percent, color) {
     const offset = circumference - (percent / 100 * circumference);
     circle.style.strokeDashoffset = offset;
     circle.style.stroke = color;
+}
+
+// ==========================================
+// New Feature Helper & Logic Functions
+// ==========================================
+
+function getRecColorHex(recommendation) {
+    if (recommendation === "Starker Kauf") return "#10b981";
+    if (recommendation === "Kauf") return "#34d399";
+    if (recommendation === "Verkauf") return "#f43f5e";
+    if (recommendation === "Starker Verkauf") return "#e11d48";
+    return "#f59e0b"; // Halten / default
+}
+
+async function handleAutocompleteSymbol() {
+    const symbol = elements.addAssetSymbol.value.trim().toUpperCase();
+    if (!symbol) return;
+    
+    // Check local popular list first
+    const popularAssets = {
+        "AAPL": { name: "Apple Inc.", type: "stock" },
+        "MSFT": { name: "Microsoft Corp.", type: "stock" },
+        "NVDA": { name: "NVIDIA Corp.", type: "stock" },
+        "TSLA": { name: "Tesla Inc.", type: "stock" },
+        "AMZN": { name: "Amazon.com Inc.", type: "stock" },
+        "GOOGL": { name: "Alphabet Inc.", type: "stock" },
+        "META": { name: "Meta Platforms Inc.", type: "stock" },
+        "NFLX": { name: "Netflix Inc.", type: "stock" },
+        "AMD": { name: "Advanced Micro Devices", type: "stock" },
+        "BTC-USD": { name: "Bitcoin", type: "crypto" },
+        "ETH-USD": { name: "Ethereum", type: "crypto" },
+        "SOL-USD": { name: "Solana", type: "crypto" },
+        "GC=F": { name: "Gold", type: "commodity" },
+        "SI=F": { name: "Silber", type: "commodity" },
+        "CL=F": { name: "Rohöl", type: "commodity" }
+    };
+    
+    if (popularAssets[symbol]) {
+        elements.addAssetName.value = popularAssets[symbol].name;
+        elements.addAssetType.value = popularAssets[symbol].type;
+        return;
+    }
+    
+    // Query backend search API
+    try {
+        const response = await fetch(`${API_BASE}/api/search/${symbol}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.name) elements.addAssetName.value = data.name;
+            if (data.type) elements.addAssetType.value = data.type;
+        }
+    } catch (e) {
+        console.error("Fehler beim Autovervollständigen des Symbols:", e);
+    }
+}
+
+async function fetchAccuracy() {
+    try {
+        const response = await fetch(`${API_BASE}/api/accuracy`);
+        const valElem = document.getElementById('ai-accuracy-val');
+        const descElem = document.getElementById('ai-accuracy-desc');
+        if (!valElem || !descElem) return;
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.total_evaluated > 0) {
+                valElem.innerText = `${data.accuracy}%`;
+                descElem.innerText = `Erfolgsquote (${data.correct_count}/${data.total_evaluated} Prognosen)`;
+                
+                valElem.className = "stat-value";
+                if (data.accuracy >= 75) {
+                    valElem.classList.add("text-green");
+                } else if (data.accuracy < 50) {
+                    valElem.classList.add("text-red");
+                }
+            } else {
+                valElem.innerText = "-";
+                descElem.innerText = "Nicht genügend historische Daten";
+            }
+        } else {
+            valElem.innerText = "-";
+            descElem.innerText = "Fehler beim Laden";
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden der KI-Genauigkeit:", e);
+    }
+}
+
+function renderAllocationChart() {
+    const chartCard = document.getElementById('portfolio-chart-card');
+    if (!chartCard) return;
+    
+    if (portfolio.length === 0) {
+        chartCard.classList.add('hidden');
+        return;
+    }
+    
+    chartCard.classList.remove('hidden');
+    
+    const dataMap = {};
+    let totalValue = 0;
+    
+    portfolio.forEach(item => {
+        const asset = appData.predictions[item.symbol];
+        const currentPrice = asset ? asset.price : item.buy_price;
+        const value = item.quantity * currentPrice;
+        
+        if (dataMap[item.symbol]) {
+            dataMap[item.symbol] += value;
+        } else {
+            dataMap[item.symbol] = value;
+        }
+        totalValue += value;
+    });
+    
+    if (totalValue === 0) {
+        chartCard.classList.add('hidden');
+        return;
+    }
+    
+    const labels = Object.keys(dataMap);
+    const values = Object.values(dataMap);
+    const percentages = values.map(v => ((v / totalValue) * 100).toFixed(1));
+    
+    const colorPalette = [
+        '#6366f1', // Electric Indigo
+        '#10b981', // Mint Green
+        '#3b82f6', // Bright Blue
+        '#f59e0b', // Amber
+        '#ec4899', // Pink
+        '#8b5cf6', // Purple
+        '#f43f5e', // Rose Red
+        '#14b8a6', // Teal
+        '#06b6d4', // Cyan
+        '#f97316'  // Orange
+    ];
+    
+    const colors = labels.map((_, i) => colorPalette[i % colorPalette.length]);
+    const ctx = document.getElementById('portfolioAllocationChart').getContext('2d');
+    
+    if (window.portfolioChartInstance) {
+        window.portfolioChartInstance.destroy();
+    }
+    
+    window.portfolioChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors,
+                borderWidth: 1,
+                borderColor: '#0b0f19',
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#9ca3af',
+                        font: {
+                            family: 'Inter',
+                            size: 11
+                        },
+                        boxWidth: 12,
+                        padding: 10,
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map(function(label, i) {
+                                    const percent = percentages[i];
+                                    return {
+                                        text: `${label}: ${percent}%`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        strokeStyle: data.datasets[0].backgroundColor[i],
+                                        lineWidth: 0,
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#f3f4f6',
+                    bodyColor: '#f3f4f6',
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const percent = percentages[context.dataIndex];
+                            return ` ${context.label}: ${value.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} $ (${percent}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
 }
 

@@ -96,6 +96,17 @@
                             <span class="stat-desc">Höchster KI-Konfidenz-Score</span>
                         </div>
                     </div>
+
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon accuracy">
+                            <i data-lucide="target"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>KI-Trefferquote</h3>
+                            <p class="stat-value" id="ai-accuracy-val">-</p>
+                            <span class="stat-desc" id="ai-accuracy-desc">Lade Trefferquote...</span>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Columns Layout -->
@@ -121,7 +132,24 @@
                             <form id="add-asset-form" class="add-asset-form collapsed">
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <input type="text" id="add-asset-symbol" class="glass-input" placeholder="Symbol (z.B. TSLA)" required>
+                                        <input type="text" id="add-asset-symbol" list="popular-tickers" class="glass-input" placeholder="Symbol (z.B. TSLA)" required>
+                                        <datalist id="popular-tickers">
+                                            <option value="AAPL">Apple (Aktie)</option>
+                                            <option value="MSFT">Microsoft (Aktie)</option>
+                                            <option value="NVDA">NVIDIA (Aktie)</option>
+                                            <option value="TSLA">Tesla (Aktie)</option>
+                                            <option value="AMZN">Amazon (Aktie)</option>
+                                            <option value="GOOGL">Alphabet (Aktie)</option>
+                                            <option value="META">Meta (Aktie)</option>
+                                            <option value="NFLX">Netflix (Aktie)</option>
+                                            <option value="AMD">AMD (Aktie)</option>
+                                            <option value="BTC-USD">Bitcoin (Krypto)</option>
+                                            <option value="ETH-USD">Ethereum (Krypto)</option>
+                                            <option value="SOL-USD">Solana (Krypto)</option>
+                                            <option value="GC=F">Gold (Rohstoff)</option>
+                                            <option value="SI=F">Silber (Rohstoff)</option>
+                                            <option value="CL=F">Rohöl (Rohstoff)</option>
+                                        </datalist>
                                     </div>
                                     <div class="form-group">
                                         <input type="text" id="add-asset-name" class="glass-input" placeholder="Name (z.B. Tesla)" required>
@@ -219,6 +247,10 @@
                                 <!-- Chart Tab -->
                                 <div class="tab-pane active" id="chart-tab">
                                     <div class="chart-header-actions">
+                                        <div class="indicator-toggles" id="indicator-toggles">
+                                            <button class="ind-toggle-btn" id="toggle-sma20" data-active="false">SMA 20</button>
+                                            <button class="ind-toggle-btn" id="toggle-sma50" data-active="false">SMA 50</button>
+                                        </div>
                                         <div class="timeframe-selector" id="timeframe-selector">
                                             <button class="tf-btn" data-period="24h">24h</button>
                                             <button class="tf-btn" data-period="7d">7d</button>
@@ -372,6 +404,14 @@
                                     <!-- Dynamisch befüllt -->
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Portfolio Allocation Chart Card -->
+                        <div class="portfolio-chart-card glass-panel hidden" id="portfolio-chart-card">
+                            <h3>Asset-Aufteilung (nach Marktwert)</h3>
+                            <div class="portfolio-chart-container">
+                                <canvas id="portfolioAllocationChart"></canvas>
+                            </div>
                         </div>
                     </section>
 

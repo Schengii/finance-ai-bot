@@ -964,7 +964,8 @@ body {
 /* Timeframe Selector styles */
 .chart-header-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 0.75rem;
 }
 
@@ -1501,6 +1502,78 @@ select.glass-input option {
 
 .icon-compass-accent {
     color: var(--accent);
+}
+
+/* Indicators and Overlay Toggles */
+.indicator-toggles {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.ind-toggle-btn {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.ind-toggle-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.ind-toggle-btn[data-active="true"]#toggle-sma20 {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: #3b82f6;
+    color: #93c5fd;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+}
+
+.ind-toggle-btn[data-active="true"]#toggle-sma50 {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: #f59e0b;
+    color: #fcd34d;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+}
+
+/* KI-Trefferquote card icon color */
+.stat-icon.accuracy {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+    border: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+/* Portfolio Allocation Chart Card */
+.portfolio-chart-card {
+    margin-top: 1.5rem;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.portfolio-chart-card h3 {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.portfolio-chart-container {
+    height: 220px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 
