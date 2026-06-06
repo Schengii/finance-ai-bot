@@ -115,8 +115,8 @@
                         
                         <!-- Watchlist Management Form -->
                         <div class="watchlist-action-area">
-                            <button type="button" id="toggle-add-asset-btn" class="btn btn-secondary btn-sm" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-secondary);">
-                                <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> <span>Asset beobachten</span>
+                            <button type="button" id="toggle-add-asset-btn" class="btn btn-secondary btn-sm btn-watchlist-toggle">
+                                <i data-lucide="plus-circle"></i> <span>Asset beobachten</span>
                             </button>
                             <form id="add-asset-form" class="add-asset-form collapsed">
                                 <div class="form-grid">
@@ -127,15 +127,15 @@
                                         <input type="text" id="add-asset-name" class="glass-input" placeholder="Name (z.B. Tesla)" required>
                                     </div>
                                     <div class="form-group">
-                                        <select id="add-asset-type" class="glass-input" required>
+                                        <select id="add-asset-type" class="glass-input" title="Asset-Typ" required>
                                             <option value="stock">Aktie</option>
                                             <option value="crypto">Kryptowährung</option>
                                             <option value="commodity">Rohstoff</option>
                                         </select>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; margin-top: 0.5rem; font-size: 0.85rem;">
-                                    <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Hinzufügen & Analysieren
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i data-lucide="sparkles"></i> Hinzufügen & Analysieren
                                 </button>
                             </form>
                         </div>
@@ -167,7 +167,7 @@
                                         <h2 id="detail-asset-name">Apple Inc.</h2>
                                         <span class="asset-type-badge" id="detail-asset-type">Stock</span>
                                         <button id="delete-asset-btn" class="btn-delete-asset" title="Aus Watchlist löschen">
-                                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                            <i data-lucide="trash-2"></i>
                                         </button>
                                     </div>
                                     <p class="detail-ticker" id="detail-asset-symbol">AAPL</p>
@@ -289,7 +289,7 @@
                 <!-- Portfolio Stats -->
                 <section class="overview-stats">
                     <div class="stat-card glass-panel">
-                        <div class="stat-icon sentiment" style="background: rgba(99, 102, 241, 0.1); color: var(--accent); border-color: rgba(99, 102, 241, 0.15);">
+                        <div class="stat-icon sentiment portfolio-value">
                             <i data-lucide="dollar-sign"></i>
                         </div>
                         <div class="stat-info">
@@ -325,7 +325,7 @@
                 <!-- Portfolio Grid -->
                 <div class="dashboard-grid">
                     <!-- Left: Holdings Table and Add Form -->
-                    <section class="assets-list-section glass-panel portfolio-left" style="max-height: none; overflow: visible;">
+                    <section class="assets-list-section glass-panel portfolio-left">
                         <div class="section-header">
                             <h2>Meine Investments</h2>
                             <p class="section-subtitle">Erfassen und verwalten Sie Ihre Wertpapiere.</p>
@@ -376,7 +376,7 @@
                     </section>
 
                     <!-- Right: AI Advisor Report -->
-                    <section class="detail-section glass-panel portfolio-right" style="max-height: none;">
+                    <section class="detail-section glass-panel portfolio-right">
                         <div class="section-header">
                             <h2>KI Portfolio-Berater</h2>
                             <p class="section-subtitle">Analysen und Optimierungen basierend auf Ihrer Strategie.</p>
@@ -401,7 +401,7 @@
                             </div>
                         </div>
 
-                        <button id="analyze-portfolio-btn" class="btn btn-primary btn-analyze-portfolio" style="width: 100%; justify-content: center; margin: 1rem 0 1.5rem 0;">
+                        <button id="analyze-portfolio-btn" class="btn btn-primary btn-analyze-portfolio">
                             <i data-lucide="brain"></i> Portfolio analysieren
                         </button>
 
@@ -419,46 +419,46 @@
                                     </div>
                                 </div>
                                 <div class="rec-summary-text">
-                                    <div class="rec-badge" id="port-ai-badge" style="color: var(--accent); background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.2);">KI-Berater</div>
-                                    <p class="ai-portfolio-summary-text" id="port-ai-summary" style="font-size: 0.9rem; line-height: 1.4; color: var(--text-secondary);">
+                                    <div class="rec-badge" id="port-ai-badge">KI-Berater</div>
+                                    <p class="ai-portfolio-summary-text" id="port-ai-summary">
                                         Lade KI-Bericht...
                                     </p>
                                 </div>
                             </div>
 
                             <!-- AI Suggestions list -->
-                            <div class="ai-details-panel" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div class="ai-details-panel">
                                 <div class="ai-report-section">
-                                    <h5 style="font-family: var(--font-heading); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: white;">
+                                    <h5>
                                         <i data-lucide="sparkles" class="text-green"></i> KI-Verbesserungsvorschläge
                                     </h5>
-                                    <ul id="port-ai-suggestions" class="ai-list-bullet" style="list-style-type: none; display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0;">
+                                    <ul id="port-ai-suggestions" class="ai-list-bullet">
                                         <!-- Dynamisch -->
                                     </ul>
                                 </div>
                                 
                                 <div class="ai-report-section">
-                                    <h5 style="font-family: var(--font-heading); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: white;">
-                                        <i data-lucide="calendar" style="color: #3b82f6;"></i> Erwartete Erträge & Dividenden
+                                    <h5>
+                                        <i data-lucide="calendar" class="icon-calendar-blue"></i> Erwartete Erträge & Dividenden
                                     </h5>
-                                    <p class="ai-text-explanation" id="port-ai-dividends" style="border-left: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.05); padding: 1rem; border-radius: 0 8px 8px 0; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary);">
+                                    <p class="ai-text-explanation" id="port-ai-dividends">
                                         Lade Dividenden-Schätzung...
                                     </p>
                                 </div>
                                 
                                 <div class="ai-report-section">
-                                    <h5 style="font-family: var(--font-heading); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: white;">
-                                        <i data-lucide="lightbulb" style="color: #f59e0b;"></i> Nützliche Tipps & Hinweise
+                                    <h5>
+                                        <i data-lucide="lightbulb" class="icon-lightbulb-yellow"></i> Nützliche Tipps & Hinweise
                                     </h5>
-                                    <ul id="port-ai-tips" class="ai-list-bullet" style="list-style-type: none; display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0;">
+                                    <ul id="port-ai-tips" class="ai-list-bullet">
                                         <!-- Dynamisch -->
                                     </ul>
                                 </div>
 
                                 <!-- Dynamic buy/sell percentage forecasts -->
                                 <div class="ai-report-section">
-                                    <h5 style="font-family: var(--font-heading); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; color: white;">
-                                        <i data-lucide="compass" style="color: var(--accent);"></i> Asset-Prognosen (Buy/Sell %)
+                                    <h5>
+                                        <i data-lucide="compass" class="icon-compass-accent"></i> Asset-Prognosen (Buy/Sell %)
                                     </h5>
                                     <div class="holdings-table-container">
                                         <table class="holdings-table forecasts-table">

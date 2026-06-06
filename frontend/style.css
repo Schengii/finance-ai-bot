@@ -80,8 +80,8 @@ body {
 /* Glassmorphism Panel helper */
 .glass-panel {
     background: var(--bg-card);
-    backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 16px;
     box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
@@ -95,6 +95,7 @@ body {
     align-items: center;
     padding: 1rem 1.5rem;
     background: rgba(15, 23, 42, 0.6);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-color);
     border-radius: 16px;
@@ -1007,6 +1008,7 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(11, 15, 25, 0.7);
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -1346,8 +1348,8 @@ select.glass-input option {
 }
 
 .add-asset-form select.glass-input {
-    appearance: none;
     -webkit-appearance: none;
+    appearance: none;
     background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
     background-repeat: no-repeat;
     background-position: right 8px center;
@@ -1385,6 +1387,122 @@ select.glass-input option {
 .btn-delete-asset:active {
     transform: scale(0.95);
 }
+
+/* Watchlist and Portfolio inline style migrations */
+.btn-watchlist-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-secondary);
+}
+
+.btn-watchlist-toggle i {
+    width: 16px;
+    height: 16px;
+}
+
+.add-asset-form button[type="submit"] {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.add-asset-form button[type="submit"] i {
+    width: 14px;
+    height: 14px;
+}
+
+.btn-delete-asset i {
+    width: 16px;
+    height: 16px;
+}
+
+.stat-icon.portfolio-value {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+.portfolio-left {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+.portfolio-right {
+    max-height: none !important;
+}
+
+.btn-analyze-portfolio {
+    width: 100%;
+    justify-content: center;
+    margin: 1rem 0 1.5rem 0;
+}
+
+#port-ai-badge {
+    color: var(--accent);
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.ai-portfolio-summary-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.ai-details-panel {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.ai-report-section h5 {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+.ai-list-bullet {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-left: 0;
+}
+
+.icon-calendar-blue {
+    color: #3b82f6;
+}
+
+#port-ai-dividends {
+    border-left: 3px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+    padding: 1rem;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.icon-lightbulb-yellow {
+    color: #f59e0b;
+}
+
+.icon-compass-accent {
+    color: var(--accent);
+}
+
 
 
 
