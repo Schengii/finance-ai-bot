@@ -101,7 +101,15 @@ const elements = {
     portAiSuggestions: document.getElementById('port-ai-suggestions'),
     portAiDividends: document.getElementById('port-ai-dividends'),
     portAiTips: document.getElementById('port-ai-tips'),
-    portAiForecastsBody: document.getElementById('port-ai-forecasts-body')
+    portAiForecastsBody: document.getElementById('port-ai-forecasts-body'),
+    
+    // Watchlist Elements
+    toggleAddAssetBtn: document.getElementById('toggle-add-asset-btn'),
+    addAssetForm: document.getElementById('add-asset-form'),
+    addAssetSymbol: document.getElementById('add-asset-symbol'),
+    addAssetName: document.getElementById('add-asset-name'),
+    addAssetType: document.getElementById('add-asset-type'),
+    deleteAssetBtn: document.getElementById('delete-asset-btn')
 };
 
 // Initialize Application
@@ -188,6 +196,31 @@ function setupEventListeners() {
     if (elements.analyzePortfolioBtn) {
         elements.analyzePortfolioBtn.addEventListener("click", analyzePortfolioWithAI);
     }
+
+    // Watchlist Event Listeners
+    if (elements.toggleAddAssetBtn && elements.addAssetForm) {
+        elements.toggleAddAssetBtn.addEventListener("click", () => {
+            elements.addAssetForm.classList.toggle("collapsed");
+            const icon = elements.toggleAddAssetBtn.querySelector("i, svg");
+            const text = elements.toggleAddAssetBtn.querySelector("span");
+            if (elements.addAssetForm.classList.contains("collapsed")) {
+                if (icon) icon.setAttribute("data-lucide", "plus-circle");
+                if (text) text.innerText = "Asset beobachten";
+            } else {
+                if (icon) icon.setAttribute("data-lucide", "minus-circle");
+                if (text) text.innerText = "Schließen";
+            }
+            if (window.lucide) window.lucide.createIcons();
+        });
+    }
+
+    if (elements.addAssetForm) {
+        elements.addAssetForm.addEventListener("submit", handleAddAsset);
+    }
+
+    if (elements.deleteAssetBtn) {
+        elements.deleteAssetBtn.addEventListener("click", handleDeleteAsset);
+    }
 }
 
 // Fetch Data from API
@@ -219,7 +252,7 @@ async function fetchData() {
             }
             
             // Initialize and render Portfolio
-            initPortfolio();
+            await initPortfolio();
             populateAssetDropdown();
             renderPortfolio();
         } else {
@@ -302,13 +335,15 @@ function setUpdatingUI(isUpdating) {
         elements.statusDot.className = "status-dot updating";
         elements.statusText.innerText = "Aktualisiere...";
         elements.refreshBtn.disabled = true;
-        elements.refreshBtn.querySelector("i").classList.add("icon-spin-hover");
+        const icon = elements.refreshBtn.querySelector("i, svg");
+        if (icon) icon.classList.add("icon-spin-hover");
         elements.refreshBtn.querySelector("span").innerText = "Berechne...";
     } else {
         elements.statusDot.className = "status-dot";
         elements.statusText.innerText = "Bereit";
         elements.refreshBtn.disabled = false;
-        elements.refreshBtn.querySelector("i").classList.remove("icon-spin-hover");
+        const icon = elements.refreshBtn.querySelector("i, svg");
+        if (icon) icon.classList.remove("icon-spin-hover");
         elements.refreshBtn.querySelector("span").innerText = "Analysieren";
     }
 }
@@ -833,28 +868,56 @@ function switchView(viewId) {
     }
 }
 
-function initPortfolio() {
+async function initPortfolio() {
     if (portfolioInitialized) return;
     
-    const stored = localStorage.getItem('finance_ai_portfolio');
-    if (stored) {
-        try {
-            portfolio = JSON.parse(stored);
-        } catch (e) {
-            console.error("Error parsing stored portfolio, resetting...", e);
-            portfolio = [];
+    try {
+        const response = await fetch(`${API_BASE}/api/portfolio`);
+        if (!response.ok) {
+            throw new Error(`Fehler beim Laden des Portfolios vom Server (HTTP ${response.status})`);
+        }
+        portfolio = await response.json();
+        
+        // Fallback-Seeding falls die DB noch leer ist
+        if (!portfolio || portfolio.length === 0) {
+            console.log("Portfolio ist leer in der DB. Seeding Standard-Werte...");
+            const defaultHoldings = [
+                { symbol: "AAPL", quantity: 10, buy_price: 175.0 },
+                { symbol: "BTC-USD", quantity: 0.1, buy_price: 60000.0 },
+                { symbol: "GC=F", quantity: 2.0, buy_price: 2000.0 }
+            ];
+            for (const item of defaultHoldings) {
+                await fetch(`${API_BASE}/api/portfolio`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                });
+            }
+            // Nochmals abrufen nach dem Seeding
+            const response2 = await fetch(`${API_BASE}/api/portfolio`);
+            portfolio = await response2.json();
+        }
+        
+    } catch (e) {
+        console.error("Fehler beim Initialisieren des Server-Portfolios, Fallback auf localStorage...", e);
+        // Fallback zu localStorage falls Server nicht erreichbar oder Fehler auftritt
+        const stored = localStorage.getItem('finance_ai_portfolio');
+        if (stored) {
+            try {
+                portfolio = JSON.parse(stored);
+            } catch (e2) {
+                portfolio = [];
+            }
+        }
+        if (!portfolio || portfolio.length === 0) {
+            portfolio = [
+                { symbol: "AAPL", quantity: 10, buy_price: 175.0 },
+                { symbol: "BTC-USD", quantity: 0.1, buy_price: 60000.0 },
+                { symbol: "GC=F", quantity: 2.0, buy_price: 2000.0 }
+            ];
         }
     }
     
-    // Seed default portfolio if empty
-    if (!portfolio || portfolio.length === 0) {
-        portfolio = [
-            { symbol: "AAPL", quantity: 10, buy_price: 175.0 },
-            { symbol: "BTC-USD", quantity: 0.1, buy_price: 60000.0 },
-            { symbol: "GC=F", quantity: 2.0, buy_price: 2000.0 }
-        ];
-        localStorage.setItem('finance_ai_portfolio', JSON.stringify(portfolio));
-    }
     portfolioInitialized = true;
 }
 
@@ -976,7 +1039,7 @@ function renderPortfolio() {
     }
 }
 
-function handleAddInvestment(e) {
+async function handleAddInvestment(e) {
     e.preventDefault();
     const symbol = elements.invAsset.value;
     const qty = parseFloat(elements.invQty.value);
@@ -987,30 +1050,160 @@ function handleAddInvestment(e) {
         return;
     }
     
-    const existingIndex = portfolio.findIndex(item => item.symbol === symbol);
-    if (existingIndex > -1) {
-        // Weighted average cost update
-        const existing = portfolio[existingIndex];
-        const totalQty = existing.quantity + qty;
-        const weightedAvgPrice = ((existing.quantity * existing.buy_price) + (qty * buyPrice)) / totalQty;
-        existing.quantity = totalQty;
-        existing.buy_price = weightedAvgPrice;
-    } else {
-        portfolio.push({ symbol, quantity: qty, buy_price: buyPrice });
+    // Check if it's already in the portfolio
+    let finalQty = qty;
+    let finalBuyPrice = buyPrice;
+    
+    const existing = portfolio.find(item => item.symbol === symbol);
+    if (existing) {
+        finalQty = existing.quantity + qty;
+        finalBuyPrice = ((existing.quantity * existing.buy_price) + (qty * buyPrice)) / finalQty;
     }
     
-    localStorage.setItem('finance_ai_portfolio', JSON.stringify(portfolio));
-    renderPortfolio();
+    const item = { symbol, quantity: finalQty, buy_price: finalBuyPrice };
     
-    // Clear inputs
-    elements.invQty.value = '';
-    elements.invPrice.value = '';
+    try {
+        const response = await fetch(`${API_BASE}/api/portfolio`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(item)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Fehler beim Speichern des Investments auf dem Server (HTTP ${response.status})`);
+        }
+        
+        // Reload portfolio from server
+        const reloadResponse = await fetch(`${API_BASE}/api/portfolio`);
+        if (reloadResponse.ok) {
+            portfolio = await reloadResponse.json();
+        }
+        
+        localStorage.setItem('finance_ai_portfolio', JSON.stringify(portfolio));
+        renderPortfolio();
+        
+        // Clear inputs
+        elements.invQty.value = '';
+        elements.invPrice.value = '';
+        
+    } catch (error) {
+        console.error("Fehler beim Hinzufügen des Investments:", error);
+        alert(error.message);
+    }
 }
 
-function deleteHolding(idx) {
-    portfolio.splice(idx, 1);
-    localStorage.setItem('finance_ai_portfolio', JSON.stringify(portfolio));
-    renderPortfolio();
+async function deleteHolding(idx) {
+    const item = portfolio[idx];
+    if (!item) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/portfolio/${item.symbol}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Fehler beim Löschen des Investments auf dem Server (HTTP ${response.status})`);
+        }
+        
+        portfolio.splice(idx, 1);
+        localStorage.setItem('finance_ai_portfolio', JSON.stringify(portfolio));
+        renderPortfolio();
+    } catch (error) {
+        console.error("Fehler beim Löschen des Investments:", error);
+        alert(error.message);
+    }
+}
+
+async function handleAddAsset(e) {
+    e.preventDefault();
+    const symbol = elements.addAssetSymbol.value.trim().toUpperCase();
+    const name = elements.addAssetName.value.trim();
+    const type = elements.addAssetType.value;
+    
+    if (!symbol || !name || !type) {
+        alert("Bitte füllen Sie alle Felder aus.");
+        return;
+    }
+    
+    // Disable form submission button while adding
+    const submitBtn = elements.addAssetForm.querySelector("button[type='submit']");
+    const originalHTML = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 2px; display: inline-block;"></div> Hinzufügen...`;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/assets`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ symbol, name, type })
+        });
+        
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Fehler beim Hinzufügen des Assets.");
+        }
+        
+        // Clear inputs and collapse form
+        elements.addAssetSymbol.value = "";
+        elements.addAssetName.value = "";
+        elements.addAssetForm.classList.add("collapsed");
+        
+        // Reset toggle button state
+        const icon = elements.toggleAddAssetBtn.querySelector("i, svg");
+        const text = elements.toggleAddAssetBtn.querySelector("span");
+        if (icon) icon.setAttribute("data-lucide", "plus-circle");
+        if (text) text.innerText = "Asset beobachten";
+        if (window.lucide) window.lucide.createIcons();
+        
+        // Show status as updating and fetch updated predictions/status
+        setUpdatingUI(true);
+        if (!statusPollingInterval) {
+            statusPollingInterval = setInterval(pollStatus, 3000);
+        }
+        
+        // Refresh local predictions
+        fetchData();
+        
+    } catch (error) {
+        console.error("Fehler beim Hinzufügen des Assets:", error);
+        alert(error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalHTML;
+    }
+}
+
+async function handleDeleteAsset() {
+    if (!selectedAsset) return;
+    
+    const confirmDelete = confirm(`Möchten Sie das Asset ${selectedAsset} wirklich aus der Watchlist löschen?`);
+    if (!confirmDelete) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/assets/${selectedAsset}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Fehler beim Löschen des Assets (HTTP ${response.status})`);
+        }
+        
+        // Clear selected asset and load the list again
+        selectedAsset = null;
+        elements.detailContent.classList.add("hidden");
+        elements.noSelectionMsg.classList.remove("hidden");
+        
+        // Refresh local predictions
+        fetchData();
+        
+    } catch (error) {
+        console.error("Fehler beim Löschen des Assets:", error);
+        alert(error.message);
+    }
 }
 
 async function analyzePortfolioWithAI() {

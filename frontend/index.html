@@ -113,6 +113,33 @@
                             </div>
                         </div>
                         
+                        <!-- Watchlist Management Form -->
+                        <div class="watchlist-action-area">
+                            <button type="button" id="toggle-add-asset-btn" class="btn btn-secondary btn-sm" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-secondary);">
+                                <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> <span>Asset beobachten</span>
+                            </button>
+                            <form id="add-asset-form" class="add-asset-form collapsed">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <input type="text" id="add-asset-symbol" class="glass-input" placeholder="Symbol (z.B. TSLA)" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="text" id="add-asset-name" class="glass-input" placeholder="Name (z.B. Tesla)" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <select id="add-asset-type" class="glass-input" required>
+                                            <option value="stock">Aktie</option>
+                                            <option value="crypto">Kryptowährung</option>
+                                            <option value="commodity">Rohstoff</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; margin-top: 0.5rem; font-size: 0.85rem;">
+                                    <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Hinzufügen & Analysieren
+                                </button>
+                            </form>
+                        </div>
+                        
                         <div class="assets-container" id="assets-list">
                             <!-- Wird dynamisch befüllt -->
                             <div class="loading-state">
@@ -139,6 +166,9 @@
                                     <div class="detail-title-row">
                                         <h2 id="detail-asset-name">Apple Inc.</h2>
                                         <span class="asset-type-badge" id="detail-asset-type">Stock</span>
+                                        <button id="delete-asset-btn" class="btn-delete-asset" title="Aus Watchlist löschen">
+                                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                        </button>
                                     </div>
                                     <p class="detail-ticker" id="detail-asset-symbol">AAPL</p>
                                 </div>

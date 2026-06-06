@@ -81,6 +81,52 @@ def run_update_cycle():
         is_updating = False
 
 
+def analyze_single_asset_background(asset_info):
+    """Führt eine sofortige Analyse für ein einzelnes Asset im Hintergrund aus."""
+    symbol = asset_info["symbol"]
+    name = asset_info["name"]
+    logger.info(f"Starte sofortige Hintergrundanalyse für das neue Asset: {symbol}...")
+    try:
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+        
+        # 1. Marktdaten abrufen
+        market_data = fetch_market_data(symbol)
+        if not market_data:
+            logger.error(f"Konnte Marktdaten für das neue Asset {symbol} nicht laden.")
+            return
+            
+        market_data["last_updated"] = timestamp
+        
+        # 2. Nachrichten abrufen
+        news_items = fetch_news(symbol, name)
+        
+        # 3. KI-Prognose generieren
+        prediction = analyze_asset_with_ai(asset_info, market_data, news_items)
+        
+        # Ergänze die Nachrichten und den Chartverlauf in dem gespeicherten Objekt
+        prediction["news"] = news_items
+        prediction["history"] = market_data["history"]
+        prediction["last_updated"] = timestamp
+        
+        # 4. In Datenbank speichern (aktuelle Prognose + Historie)
+        save_prediction(prediction)
+        
+        logger.info(f"Sofortige Analyse für {symbol} erfolgreich abgeschlossen und in DB gespeichert.")
+        
+        # Kompatibilitäts-Fallback: JSON-Datei ebenfalls aktualisieren
+        try:
+            db_data = get_predictions_from_db()
+            db_data["last_updated"] = timestamp
+            with open(DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump(db_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"Fallback JSON-Datei aktualisiert nach Analyse von {symbol}.")
+        except Exception as e:
+            logger.error(f"Fehler beim Schreiben der JSON-Fallback-Datei: {e}")
+            
+    except Exception as e:
+        logger.error(f"Unerwarteter Fehler bei der sofortigen Analyse von {symbol}: {e}")
+
+
 def start_scheduler():
     """Initialisiert und startet den Hintergrund-Scheduler."""
     # Datenbank initialisieren

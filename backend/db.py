@@ -12,6 +12,7 @@ DB_PATH.parent.mkdir(exist_ok=True)
 def get_db_connection():
     """Gibt eine Verbindung zur SQLite-Datenbank zurück."""
     conn = sqlite3.connect(str(DB_PATH))
+    conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
 

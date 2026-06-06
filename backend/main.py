@@ -64,14 +64,13 @@ async def startup_event():
 def get_status():
     """Gibt den aktuellen Status des Update-Prozesses zurück."""
     last_updated = "Nie"
-    if DATA_FILE.exists():
-        try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                last_updated = data.get("last_updated", "Unbekannt")
-        except Exception as e:
-            logger.error(f"Fehler beim Lesen des Update-Zeitstempels: {e}")
-            
+    try:
+        from backend.db import get_predictions_from_db
+        db_data = get_predictions_from_db()
+        last_updated = db_data.get("last_updated", "Unbekannt") or "Nie"
+    except Exception as e:
+        logger.error(f"Fehler beim Lesen des Update-Zeitstempels aus DB: {e}")
+        
     return {
         "is_updating": scheduler.is_updating,
         "last_updated": last_updated
@@ -79,20 +78,19 @@ def get_status():
 
 @app.get("/api/predictions")
 def get_predictions():
-    """Gibt alle aktuellen Krypto- und Aktienprognosen zurück."""
-    if not DATA_FILE.exists():
-        return {
-            "last_updated": "Nie",
-            "predictions": {},
-            "message": "Es wurden noch keine Daten generiert. Das erste Update läuft im Hintergrund."
-        }
-        
+    """Gibt alle aktuellen Krypto- und Aktienprognosen aus der Datenbank zurück."""
     try:
-        with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return data
+        from backend.db import get_predictions_from_db
+        db_data = get_predictions_from_db()
+        if not db_data or not db_data.get("predictions"):
+            return {
+                "last_updated": "Nie",
+                "predictions": {},
+                "message": "Es wurden noch keine Daten generiert. Das erste Update läuft im Hintergrund."
+            }
+        return db_data
     except Exception as e:
-        logger.error(f"Fehler beim Laden der Prognosen: {e}")
+        logger.error(f"Fehler beim Laden der Prognosen aus der DB: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden der Analysedaten.")
 
 @app.get("/api/history/{symbol}")
@@ -144,6 +142,11 @@ def get_asset_history(symbol: str, period: str = "30d"):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class WatchlistItem(BaseModel):
+    symbol: str
+    name: str
+    type: str
+
 class PortfolioItem(BaseModel):
     symbol: str
     quantity: float
@@ -152,6 +155,113 @@ class PortfolioItem(BaseModel):
 class PortfolioAnalysisRequest(BaseModel):
     holdings: List[PortfolioItem]
     strategy: str
+
+
+@app.get("/api/assets")
+def get_watchlist():
+    """Holt alle überwachten Assets aus der Watchlist."""
+    try:
+        from backend.db import get_all_assets
+        return get_all_assets()
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Watchlist: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden der Watchlist.")
+
+
+@app.post("/api/assets")
+def add_watchlist_item(item: WatchlistItem, background_tasks: BackgroundTasks):
+    """Fügt ein neues Asset zur Watchlist hinzu und stößt dessen Analyse an."""
+    try:
+        from backend.db import add_asset
+        symbol = item.symbol.strip().upper()
+        name = item.name.strip()
+        asset_type = item.type.strip().lower()
+        
+        if not symbol or not name or asset_type not in ["stock", "crypto", "commodity"]:
+            raise HTTPException(status_code=400, detail="Ungültige Asset-Daten.")
+            
+        success = add_asset(symbol, name, asset_type)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Speichern in der Watchlist.")
+            
+        # Asynchrone sofortige Hintergrund-Analyse starten
+        from backend.scheduler import analyze_single_asset_background
+        background_tasks.add_task(analyze_single_asset_background, {
+            "symbol": symbol,
+            "name": name,
+            "type": asset_type
+        })
+        
+        return {"status": "success", "message": f"Asset {symbol} hinzugefügt. Analyse läuft im Hintergrund."}
+    except Exception as e:
+        logger.error(f"Fehler beim Hinzufügen des Assets {item.symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/assets/{symbol}")
+def delete_watchlist_item(symbol: str):
+    """Löscht ein Asset aus der Watchlist."""
+    try:
+        from backend.db import delete_asset, get_predictions_from_db
+        symbol_upper = symbol.strip().upper()
+        success = delete_asset(symbol_upper)
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Fehler beim Löschen von {symbol_upper} aus Watchlist.")
+            
+        # Aktualisiere predictions.json (Kompatibilitäts-Fallback)
+        try:
+            from backend.config import DATA_FILE
+            from datetime import datetime
+            db_data = get_predictions_from_db()
+            db_data["last_updated"] = datetime.now().strftime('%Y-%m-%d %H:%M')
+            with open(DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump(db_data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error(f"Fehler beim Aktualisieren der Fallback-JSON nach Löschung: {e}")
+            
+        return {"status": "success", "message": f"Asset {symbol_upper} gelöscht."}
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Assets {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio")
+def get_portfolio():
+    """Holt das Portfolio des Nutzers aus der Datenbank."""
+    try:
+        from backend.db import get_portfolio_from_db
+        return get_portfolio_from_db()
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des Portfolios: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden des Portfolios.")
+
+
+@app.post("/api/portfolio")
+def add_portfolio_item_route(item: PortfolioItem):
+    """Speichert oder aktualisiert ein Asset im Portfolio."""
+    try:
+        from backend.db import save_portfolio_item
+        success = save_portfolio_item(item.symbol, item.quantity, item.buy_price)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Speichern in der Datenbank.")
+        return {"status": "success", "message": f"Asset {item.symbol} im Portfolio gespeichert."}
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern des Portfolio-Items {item.symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/portfolio/{symbol}")
+def delete_portfolio_item_route(symbol: str):
+    """Löscht ein Asset aus dem Portfolio."""
+    try:
+        from backend.db import delete_portfolio_item
+        success = delete_portfolio_item(symbol)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Löschen in der Datenbank.")
+        return {"status": "success", "message": f"Asset {symbol} aus dem Portfolio gelöscht."}
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Portfolio-Items {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/portfolio/analyze")
 def analyze_portfolio(request: PortfolioAnalysisRequest):

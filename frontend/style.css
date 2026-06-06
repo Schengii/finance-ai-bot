@@ -1286,4 +1286,106 @@ select.glass-input option {
     padding: 0.6rem 0.8rem;
 }
 
+/* Watchlist Form & Management Styles */
+.watchlist-action-area {
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.add-asset-form {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 500px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+}
+
+.add-asset-form.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-color: transparent;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.add-asset-form .form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+}
+
+.add-asset-form .form-group {
+    width: 100%;
+}
+
+.add-asset-form .glass-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: white;
+    outline: none;
+    transition: var(--transition-fast);
+}
+
+.add-asset-form .glass-input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.add-asset-form select.glass-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 30px;
+}
+
+.add-asset-form select.glass-input option {
+    background-color: var(--bg-main);
+    color: white;
+}
+
+/* Delete Asset Button in Detail View */
+.btn-delete-asset {
+    background: transparent;
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    color: var(--color-sell);
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 0.75rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-delete-asset:hover {
+    background: rgba(244, 63, 94, 0.15);
+    border-color: var(--color-sell);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
+}
+
+.btn-delete-asset:active {
+    transform: scale(0.95);
+}
+
+
+
 
