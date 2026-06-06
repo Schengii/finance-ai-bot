@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # pyrefly: ignore [missing-import]
 from fastapi.staticfiles import StaticFiles
 # pyrefly: ignore [missing-import]
-from backend.config import DATA_FILE, DATA_DIR
+from backend.config import DATA_DIR
 # pyrefly: ignore [missing-import]
 from backend import scheduler
 
@@ -208,17 +208,7 @@ def delete_watchlist_item(symbol: str):
         if not success:
             raise HTTPException(status_code=500, detail=f"Fehler beim Löschen von {symbol_upper} aus Watchlist.")
             
-        # Aktualisiere predictions.json (Kompatibilitäts-Fallback)
-        try:
-            from backend.config import DATA_FILE
-            from datetime import datetime
-            db_data = get_predictions_from_db()
-            db_data["last_updated"] = datetime.now().strftime('%Y-%m-%d %H:%M')
-            with open(DATA_FILE, 'w', encoding='utf-8') as f:
-                json.dump(db_data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            logger.error(f"Fehler beim Aktualisieren der Fallback-JSON nach Löschung: {e}")
-            
+
         return {"status": "success", "message": f"Asset {symbol_upper} gelöscht."}
     except Exception as e:
         logger.error(f"Fehler beim Löschen des Assets {symbol}: {e}")

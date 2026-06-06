@@ -22,7 +22,7 @@ def main():
     data = fetch_market_data(symbol, days=30)
     
     if data:
-        print("✓ Marktdaten erfolgreich geladen!")
+        print("[OK] Marktdaten erfolgreich geladen!")
         print(f"      Preis:         {data['current_price']} USD")
         print(f"      Änderung (1d): {data['price_change_1d']}%")
         print(f"      Änderung (7d): {data['price_change_7d']}%")
@@ -33,19 +33,19 @@ def main():
         print(f"      Trend:         {data['technical_trend']}")
         print(f"      Historie:      {len(data['history'])} Tage geladen")
     else:
-        print("✗ FEHLER: Marktdaten konnten nicht geladen werden.")
+        print("[FEHLER] Marktdaten konnten nicht geladen werden.")
         return
         
     # 2. Test News Fetcher
     print(f"\n[2/3] Rufe Nachrichten ab für {symbol} ({name})...")
     news = fetch_news(symbol, name)
     if news:
-        print(f"✓ {len(news)} Nachrichten erfolgreich abgerufen!")
+        print(f"[OK] {len(news)} Nachrichten erfolgreich abgerufen!")
         print(f"      Top-News:      \"{news[0]['title']}\"")
         print(f"      Quelle:        {news[0]['publisher']}")
         print(f"      Veröffentlicht: {news[0]['time']}")
     else:
-        print("✗ FEHLER: Es konnten keine Nachrichten abgerufen werden.")
+        print("[FEHLER] Es konnten keine Nachrichten abgerufen werden.")
         return
         
     # 3. Test AI Analyzer (Mock / Gemini)
@@ -54,7 +54,7 @@ def main():
     prediction = analyze_asset_with_ai(asset_info, data, news)
     
     if prediction:
-        print("✓ KI-Analyse erfolgreich generiert!")
+        print("[OK] KI-Analyse erfolgreich generiert!")
         print(f"      Empfehlung:     {prediction['recommendation']}")
         print(f"      Konfidenz:      {prediction['confidence']}%")
         print(f"      Sentiment-Score: {prediction['sentiment_score']}")
@@ -63,7 +63,7 @@ def main():
         print(f"      Haupttreiber:   {prediction['key_drivers']}")
         print(f"      Hauptrisiken:   {prediction['key_risks']}")
     else:
-        print("✗ FEHLER: KI-Analyse fehlgeschlagen.")
+        print("[FEHLER] KI-Analyse fehlgeschlagen.")
         return
 
     print("\n==================================================")

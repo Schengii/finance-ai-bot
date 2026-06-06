@@ -5,7 +5,7 @@ from datetime import datetime
 # pyrefly: ignore [missing-import]
 from apscheduler.schedulers.background import BackgroundScheduler
 # pyrefly: ignore [missing-import]
-from backend.config import DEFAULT_ASSETS, DATA_FILE, UPDATE_INTERVAL_HOURS
+from backend.config import DEFAULT_ASSETS, UPDATE_INTERVAL_HOURS
 # pyrefly: ignore [missing-import]
 from backend.data_fetcher import fetch_market_data, fetch_news
 # pyrefly: ignore [missing-import]
@@ -68,15 +68,7 @@ def run_update_cycle():
             except Exception as e:
                 logger.error(f"Unerwarteter Fehler bei der Analyse von {symbol}: {e}")
                     
-        # Kompatibilitäts-Fallback: JSON-Datei ebenfalls aktualisieren
-        try:
-            db_data = get_predictions_from_db()
-            db_data["last_updated"] = timestamp
-            with open(DATA_FILE, 'w', encoding='utf-8') as f:
-                json.dump(db_data, f, ensure_ascii=False, indent=2)
-            logger.info(f"Aktualisierungszyklus abgeschlossen. Daten in DB und {DATA_FILE} gespeichert.")
-        except Exception as e:
-            logger.error(f"Fehler beim Schreiben der JSON-Fallback-Datei: {e}")
+        logger.info("Aktualisierungszyklus abgeschlossen. Daten in DB gespeichert.")
     finally:
         is_updating = False
 
@@ -113,16 +105,7 @@ def analyze_single_asset_background(asset_info):
         
         logger.info(f"Sofortige Analyse für {symbol} erfolgreich abgeschlossen und in DB gespeichert.")
         
-        # Kompatibilitäts-Fallback: JSON-Datei ebenfalls aktualisieren
-        try:
-            db_data = get_predictions_from_db()
-            db_data["last_updated"] = timestamp
-            with open(DATA_FILE, 'w', encoding='utf-8') as f:
-                json.dump(db_data, f, ensure_ascii=False, indent=2)
-            logger.info(f"Fallback JSON-Datei aktualisiert nach Analyse von {symbol}.")
-        except Exception as e:
-            logger.error(f"Fehler beim Schreiben der JSON-Fallback-Datei: {e}")
-            
+
     except Exception as e:
         logger.error(f"Unerwarteter Fehler bei der sofortigen Analyse von {symbol}: {e}")
 

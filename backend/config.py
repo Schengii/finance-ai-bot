@@ -10,8 +10,6 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
-# Pfad zur Speicherung der Analyseergebnisse (Legacy, wird noch als Fallback genutzt)
-DATA_FILE = DATA_DIR / "predictions.json"
 
 # SQLite-Datenbank-Pfad
 DB_FILE = DATA_DIR / "finance_bot.db"
