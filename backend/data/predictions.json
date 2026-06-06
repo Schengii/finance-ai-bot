@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-06 11:25",
+  "last_updated": "2026-06-06 11:28",
   "predictions": {
     "AAPL": {
       "symbol": "AAPL",
@@ -12,23 +12,21 @@
       "rsi": 58.28,
       "technical_trend": "Bullish",
       "recommendation": "Kauf",
-      "confidence": 78,
-      "sentiment_score": 0.4,
+      "confidence": 75,
+      "sentiment_score": 0.55,
       "risk_level": "Mittel",
-      "ai_explanation": "Apple Inc. (AAPL) zeigt eine insgesamt bullische Tendenz, gestützt durch eine beeindruckende Kursentwicklung von 7,0% in den letzten 30 Tagen und einem aktuellen Preis, der über den gleitenden Durchschnitten von 20 und 50 Tagen liegt. Der RSI von 58.28 deutet auf eine gesunde, nicht überkaufte Dynamik hin. Die bevorstehende Worldwide Developers Conference (WWDC) wird als signifikanter Katalysator angesehen, insbesondere da Morgan Stanley ein 'AI winner'-Narrativ prognostiziert, das zu einem erheblichen Kursanstieg führen könnte. Obwohl die Einigung in der KI-Klage über 250 Millionen Dollar einen negativen Aspekt darstellt, der die Marketingpraktiken und das Reputationsrisiko beleuchtet, überwiegen die positiven Erwartungen an zukünftige KI-Innovationen und die starke Marktposition von Apple. Der MACD-Wert, der leicht unter seiner Signallinie liegt, deutet auf eine kurzfristige Abschwächung der Dynamik hin, was jedoch den übergeordneten positiven Trend nicht negiert. Angesichts der starken Fundamentaldaten, der positiven Analystenprognosen und der erwarteten Innovationen wird eine Kaufempfehlung ausgesprochen, jedoch mit einem mittleren Risikoprofil aufgrund der hohen Erwartungen und der Bewertung.",
+      "ai_explanation": "Die Aktie von Apple Inc. (AAPL) zeigt einen insgesamt bullischen Trend, gestützt durch technische Indikatoren wie den Kurs über den gleitenden Durchschnitten (SMA 20 und SMA 50) und einen positiven technischen Trend-Typ. Die Performance der letzten 30 Tage mit einem Plus von 7,0% unterstreicht diese Stärke. Die bevorstehende Worldwide Developers Conference (WWDC) wird als signifikanter Katalysator gesehen, insbesondere im Hinblick auf potenzielle KI-Ankündigungen, wobei Morgan Stanley sogar einen \"major AI breakout\" prognostiziert. Dies deutet auf ein erhebliches Aufwärtspotenzial hin. Allerdings gibt es auch Gegenwind: Die jüngste Einigung in einer Sammelklage über 250 Millionen US-Dollar wegen irreführender KI-Marketingaussagen für iPhones wirft einen Schatten auf Apples KI-Strategie und birgt Reputationsrisiken. Obwohl der RSI mit 58.28 neutral ist, zeigt der MACD-Historie einen leichten Rückgang der kurzfristigen Dynamik. Trotz dieser Risiken überwiegen die positiven Erwartungen an die WWDC und die langfristige Stärke des Unternehmens, was eine Kaufempfehlung rechtfertigt, jedoch mit einem mittleren Risikoprofil aufgrund der hohen Erwartungen und der Bewertungsbedenken.",
       "key_drivers": [
-        "Erwartete KI-Ankündigungen auf der WWDC 2024",
-        "Bullische Analystenprognosen (z.B. Morgan Stanley)",
-        "Starke Performance über 30 Tage und über gleitenden Durchschnitten",
-        "Potenzial für neue Produktzyklen durch KI-Integration",
-        "Robuste Markenloyalität und Ökosystem"
+        "Erwartungen an die WWDC und KI-Ankündigungen",
+        "Analystenprognosen für einen \"AI breakout\"",
+        "Starker bullischer technischer Trend",
+        "Kontinuierliches Wachstum im Dienstleistungssektor und Hardware-Innovationen"
       ],
       "key_risks": [
-        "Enttäuschende Ankündigungen auf der WWDC",
-        "Hohe Bewertung und Premium-Pricing",
-        "Regulatorische Prüfungen und rechtliche Herausforderungen (KI-Klage)",
-        "Intensiver Wettbewerb im Technologiesektor",
-        "Kurzfristige Abschwächung der Dynamik laut MACD"
+        "Enttäuschung bei den WWDC-Ankündigungen",
+        "Reputationsschaden durch die KI-Klage und potenzielle weitere rechtliche Auseinandersetzungen",
+        "Hohe Bewertung der Aktie",
+        "Zunehmender Wettbewerb und regulatorischer Druck"
       ],
       "news": [
         {
@@ -554,7 +552,7 @@
           "volume": 65246700
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "NVDA": {
       "symbol": "NVDA",
@@ -566,21 +564,21 @@
       "price_change_30d": -1.2,
       "rsi": 34.33,
       "technical_trend": "Neutral",
-      "recommendation": "Halten",
-      "confidence": 75,
-      "sentiment_score": -0.35,
+      "recommendation": "Kauf",
+      "confidence": 70,
+      "sentiment_score": -0.2,
       "risk_level": "Hoch",
-      "ai_explanation": "Die NVIDIA Aktie (NVDA) hat in den letzten Tagen eine deutliche Schwäche gezeigt, insbesondere durch den starken Rückgang von 6,2% am letzten Handelstag, ausgelöst durch einen branchenweiten Ausverkauf bei Chip-Aktien. Die technischen Indikatoren untermauern diese negative Dynamik: Der Kurs liegt unter dem 20-Tage-Durchschnitt (SMA 20) und der MACD zeigt ein bärisches Signal mit einem negativen Histogramm. Der Relative Stärke Index (RSI) nähert sich mit 34,33 dem überverkauften Bereich, was zwar auf eine mögliche technische Gegenbewegung hindeuten könnte, aber auch den starken Verkaufsdruck unterstreicht. Der Kurs befindet sich zudem kritisch nahe am 50-Tage-Durchschnitt (SMA 50), dessen Unterschreiten ein weiteres bärisches Signal wäre. Während die langfristige Nachfrage nach KI-Rechenleistung, wie durch die SpaceX/Google-Nachricht illustriert, ein starker fundamentaler Treiber für NVIDIA bleibt, überwiegen kurzfristig die negativen Marktsentimente und technischen Signale. Angesichts dieser Gemengelage aus kurzfristiger Schwäche und langfristigem Potenzial wird eine 'Halten'-Empfehlung ausgesprochen, um die weitere Entwicklung abzuwarten und potenzielle Erholungen oder weitere Abwärtsbewegungen zu beobachten.",
+      "ai_explanation": "NVIDIA hat kürzlich einen signifikanten Kursrückgang von 6,2% an einem Tag erlebt, was durch einen allgemeinen Ausverkauf im Chip-Sektor ausgelöst wurde, wie die Nachrichtenlage bestätigt. Die technischen Indikatoren spiegeln diese kurzfristige Schwäche wider: Der Kurs liegt unter dem 20-Tage-SMA, der MACD zeigt ein bärisches Signal, und der RSI nähert sich dem überverkauften Bereich, was auf anhaltenden Verkaufsdruck hindeutet. Trotz dieser kurzfristigen Turbulenzen bleibt die fundamentale Stärke von NVIDIA aufgrund der massiven Nachfrage nach KI-Rechenkapazitäten intakt. Nachrichten über Google, das KI-Kapazitäten von SpaceX mietet, und die Betonung der 'AI-driven power demand' als überzeugendes Investmentthema unterstreichen die langfristig positiven Aussichten für NVIDIA als führenden Anbieter von KI-Hardware. Der aktuelle Rückgang könnte daher eine attraktive Einstiegsgelegenheit für langfristig orientierte Anleger darstellen, die von NVIDIAs dominanter Position im KI-Markt profitieren möchten, auch wenn kurzfristig weitere Volatilität zu erwarten ist.",
       "key_drivers": [
-        "Starke Nachfrage nach KI-Chips und Rechenzentrums-Hardware",
-        "Führungsrolle von NVIDIA in der KI-Technologie und Innovation",
-        "Allgemeine Entwicklung des Technologiesektors und des Gesamtmarktes"
+        "Massive und wachsende Nachfrage nach KI-Rechenkapazitäten",
+        "NVIDIAs führende Position im Bereich KI-Hardware (GPUs)",
+        "Langfristiger Trend der Digitalisierung und Automatisierung"
       ],
       "key_risks": [
-        "Sektorweiter Ausverkauf bei Halbleiteraktien",
-        "Zunehmender Wettbewerb im KI-Hardware-Bereich",
+        "Kurzfristiger Ausverkauf im Chip-Sektor und allgemeine Marktkorrekturen",
+        "Wettbewerb im KI-Hardware-Markt",
         "Makroökonomische Unsicherheiten und Zinsentwicklung",
-        "Hohe Bewertung und Volatilität des Aktienkurses"
+        "Abhängigkeit von wenigen Großkunden oder spezifischen Branchen"
       ],
       "news": [
         {
@@ -605,6 +603,34 @@
           "summary": "Stock market wealth is piling up for the rich."
         },
         {
+          "title": "I Want to Buy Bloom Energy Stock, Just Not at the Current Price. Here's My Income Trade to Potentially Buy it Cheaper.",
+          "publisher": "",
+          "link": "",
+          "time": "2026-06-06 09:20",
+          "summary": "AI-driven power demand is one of my highest conviction investment themes."
+        },
+        {
+          "title": "Frequent Intraday Trading: Understanding the Basics",
+          "publisher": "",
+          "link": "",
+          "time": "2026-06-06 09:20",
+          "summary": "This type of trading comes with risks, particularly if you're trading on margin."
+        },
+        {
+          "title": "The SpaceX IPO Is the Biggest in History. That Doesn't Automatically Make It a Good Investment.",
+          "publisher": "",
+          "link": "",
+          "time": "2026-06-06 09:10",
+          "summary": "The SpaceX IPO is huge in terms of both buzz and size, but neither factor guarantees positive outcomes for investors."
+        },
+        {
+          "title": "JPMorgan sounds the alarm on the runaway cost of AI",
+          "publisher": "",
+          "link": "",
+          "time": "2026-06-06 09:03",
+          "summary": "Every era has a number that stops making sense, a figure so large the brain just files it next to \"infinity\" and moves on. For most of my career, that kind of number lived in government budgets, the sort of sum you nod at without really feeling. Lately it has migrated somewhere stranger. It now ..."
+        },
+        {
           "title": "The Smartest S&P 500 Stocks to Buy With $500 Right Now",
           "publisher": "",
           "link": "",
@@ -624,34 +650,6 @@
           "link": "",
           "time": "2026-06-06 08:28",
           "summary": "Nvidia spotted a new multibillion-dollar market."
-        },
-        {
-          "title": "Fed Chair Kevin Warsh Will Face 2 Key Tests in His First 100 Days -- Trump and Inflation -- and He's Virtually Certain to Fail One of Them",
-          "publisher": "",
-          "link": "",
-          "time": "2026-06-06 08:26",
-          "summary": "Jerome Powell's successor is about to learn the hard truth that it's impossible to appease President Trump and tackle above-average inflation."
-        },
-        {
-          "title": "Here's Why I'm Buying Bitcoin Right Now",
-          "publisher": "",
-          "link": "",
-          "time": "2026-06-06 08:17",
-          "summary": "The next Bitcoin recovery could be coming sooner than anyone expects."
-        },
-        {
-          "title": "The SpaceX IPO Looks Expensive on the Surface. Here's What Investors Should Know.",
-          "publisher": "",
-          "link": "",
-          "time": "2026-06-06 06:25",
-          "summary": "Experts are worried about SpaceX's target valuation."
-        },
-        {
-          "title": "A Look At Navitas Semiconductor (NVTS) Valuation After Nvidia AI Infrastructure Collaboration",
-          "publisher": "",
-          "link": "",
-          "time": "2026-06-06 06:09",
-          "summary": "Navitas Semiconductor (NVTS) is back in focus after Nvidia showcased the company’s 800 V to 6 V DC DC power delivery board at Computex 2026, alongside a fresh partnership on advanced AI data center infrastructure. See our latest analysis for Navitas Semiconductor. The latest Nvidia collaboration sits against a backdrop of sharp share price swings, with the stock down 18.23% over the past day but showing a 30 day share price return of 50.36% and a 1 year total shareholder return of 305.83%,..."
         }
       ],
       "history": [
@@ -1106,7 +1104,7 @@
           "volume": 218529000
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "AMZN": {
       "symbol": "AMZN",
@@ -1119,15 +1117,22 @@
       "rsi": 35.57,
       "technical_trend": "Neutral",
       "recommendation": "Halten",
-      "confidence": 60,
-      "sentiment_score": 0.1,
-      "risk_level": "Gering",
-      "ai_explanation": "AMZN konsolidiert sich derzeit auf aktuellem Niveau. Es gibt momentan keine klaren technischen oder nachrichtenbasierten Impulse für signifikante Bewegungen.",
+      "confidence": 70,
+      "sentiment_score": -0.2,
+      "risk_level": "Mittel",
+      "ai_explanation": "Die Amazon-Aktie befindet sich derzeit in einem deutlichen Abwärtstrend, wie die Kursrückgänge von über 10% in den letzten 30 Tagen und die Notierung unter den gleitenden Durchschnitten (SMA 20 und SMA 50) zeigen. Auch der MACD signalisiert eine bärische Dynamik, was auf anhaltenden Verkaufsdruck hindeutet. Der Relative Stärke Index (RSI) nähert sich jedoch mit 35.57 dem überverkauften Bereich, was potenziell auf eine bevorstehende technische Erholung hindeuten könnte, auch wenn ein starkes Kaufsignal noch aussteht.\n\nDie Nachrichtenlage ist gemischt, aber kurzfristig eher negativ geprägt: Steigende Versandkosten aufgrund geopolitischer Spannungen und die Sorge vor einer gedämpften Konsumstimmung während des wichtigen Prime Day aufgrund der Inflation belasten die kurzfristigen Gewinnaussichten. Während der breitere KI-Boom ein langfristiger Treiber für Amazon (insbesondere AWS) ist, überwiegen die direkten operativen Herausforderungen und die allgemeine Vorsicht im Technologiesektor.\n\nAngesichts dieser Gemengelage aus kurzfristig bärischen technischen Signalen und negativen operativen Nachrichten, die jedoch durch einen sich dem überverkauften Bereich nähernden RSI und starke langfristige Wachstumstreiber wie KI und Cloud-Computing abgemildert werden, lautet die Empfehlung \"Halten\". Investoren sollten die weitere Entwicklung abwarten und auf Anzeichen einer Stabilisierung oder Umkehr achten, bevor sie neue Positionen aufbauen.",
       "key_drivers": [
-        "Seitwärtsbewegung stabilisiert Kurs"
+        "Wachstum im E-Commerce und globale Marktführerschaft",
+        "Stärke und Expansion von AWS (Cloud Computing)",
+        "Investitionen und Fortschritte im Bereich Künstliche Intelligenz",
+        "Erfolgreiche Prime Day Verkaufsaktionen und Kundenbindung"
       ],
       "key_risks": [
-        "Mangel an kurzfristigen Katalysatoren"
+        "Steigende Versandkosten und Logistikherausforderungen",
+        "Inflation und gedämpfte Konsumausgaben",
+        "Geopolitische Risiken (z.B. Iran-Krieg)",
+        "Wettbewerb im E-Commerce und Cloud-Markt",
+        "Allgemeine Schwäche im Technologiesektor und Bewertungsbedenken"
       ],
       "news": [
         {
@@ -1653,7 +1658,7 @@
           "volume": 55498100
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "GOOGL": {
       "symbol": "GOOGL",
@@ -1667,20 +1672,20 @@
       "technical_trend": "Neutral",
       "recommendation": "Kauf",
       "confidence": 75,
-      "sentiment_score": 0.4,
+      "sentiment_score": 0.5,
       "risk_level": "Mittel",
-      "ai_explanation": "Alphabet (GOOGL) zeigt kurzfristig eine Abwärtstendenz, wie die Kursänderungen der letzten 1, 7 und 30 Tage sowie der Kurs unter dem 20-Tage-Durchschnitt (SMA 20) belegen. Auch der MACD signalisiert eine nachlassende Dynamik. Allerdings befindet sich der Relative Stärke Index (RSI) mit 30.35 nahe der überverkauften Zone, was auf eine mögliche kurzfristige Erholung hindeuten könnte. Fundamental ist die Nachricht über die Anmietung von KI-Kapazitäten bei SpaceX für 920 Millionen Dollar pro Monat ein sehr starkes positives Signal, das Googles Engagement und Investitionen in den entscheidenden KI-Sektor unterstreicht. Dies, zusammen mit der allgemeinen Beobachtung, dass der KI-Boom sich über die großen Tech-Firmen hinaus ausbreitet, stärkt die langfristige Perspektive von Alphabet erheblich. Trotz der allgemeinen Marktschwäche im Tech-Sektor und der Herausforderungen für die Marktrallye überwiegen die strategischen Vorteile durch die KI-Investitionen. Die aktuelle Kurskorrektur könnte daher eine attraktive Einstiegsgelegenheit für langfristig orientierte Anleger darstellen.",
+      "ai_explanation": "Alphabet (GOOGL) zeigt kurzfristig eine Korrektur mit einem Rückgang von über 7% in den letzten 30 Tagen und liegt unter seinem 20-Tage-Durchschnitt. Der RSI nähert sich mit 30.35 dem überverkauften Bereich, was auf eine mögliche technische Erholung hindeuten könnte, während der MACD weiterhin bärisch ist. Trotz dieser technischen Schwäche ist die Nachricht über die Anmietung von KI-Kapazitäten bei SpaceX für 920 Millionen Dollar pro Monat ein starkes strategisches Signal. Dies unterstreicht Googles aggressives Engagement und seine Investitionen in den entscheidenden Bereich der künstlichen Intelligenz, der als Hauptwachstumstreiber für die Zukunft gilt. Obwohl der breitere Tech-Sektor derzeit unter Druck steht und die allgemeine Marktstimmung vorsichtig ist, positioniert sich Alphabet mit dieser massiven AI-Investition hervorragend für langfristiges Wachstum. Die aktuelle Kurskorrektur könnte daher eine attraktive Einstiegsgelegenheit für langfristig orientierte Anleger darstellen, die an das Potenzial von Google im KI-Bereich glauben.",
       "key_drivers": [
-        "Massive Investitionen in KI (SpaceX-Deal)",
-        "Breitere Adoption von KI in der Wirtschaft",
-        "Marktführerschaft im Tech-Sektor",
-        "Potenzial für eine technische Erholung vom überverkauften RSI-Niveau"
+        "Aggressive Investitionen in KI (SpaceX-Deal)",
+        "Wachstum des KI-Marktes und dessen Integration in Googles Produkte",
+        "Stärke des Kerngeschäfts (Werbung) zur Finanzierung von Innovationen",
+        "Positionierung als führendes Unternehmen im Tech-Sektor"
       ],
       "key_risks": [
-        "Allgemeine Schwäche im Tech-Sektor",
-        "Makroökonomische Unsicherheiten und Zinsentwicklung",
-        "Regulatorische Risiken und Wettbewerb",
-        "Kurzfristige technische Abwärtstrends"
+        "Allgemeine Marktschwäche und Sektorrotation weg von Tech-Werten",
+        "Intensiver Wettbewerb im KI-Bereich (z.B. Apple, Microsoft)",
+        "Hohe Investitionskosten und deren Rentabilität",
+        "Regulatorische Risiken und Kartellverfahren"
       ],
       "news": [
         {
@@ -2206,7 +2211,7 @@
           "volume": 37375600
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "META": {
       "symbol": "META",
@@ -2219,22 +2224,15 @@
       "rsi": 42.75,
       "technical_trend": "Bearish",
       "recommendation": "Halten",
-      "confidence": 65,
-      "sentiment_score": -0.4,
-      "risk_level": "Hoch",
-      "ai_explanation": "Meta Platforms Inc. (META) befindet sich derzeit in einem herausfordernden Marktumfeld. Die aktuellen Marktdaten zeigen einen deutlichen Kursrückgang über alle kurzfristigen Zeiträume (-5.51% 1 Tag, -6.25% 7 Tage, -3.24% 30 Tage), was auf erheblichen Verkaufsdruck hindeutet. Die technischen Indikatoren bestätigen diesen bärischen Trend: Der Kurs liegt unter den gleitenden Durchschnitten (SMA 20 und SMA 50), der MACD ist negativ und unter seiner Signallinie, und der technische Trend-Typ wird explizit als \"Bearish\" ausgewiesen. Der RSI von 42.75 deutet auf eine nachlassende Dynamik hin, ist aber noch nicht im überverkauften Bereich, was weiteres Abwärtspotenzial nicht ausschließt.\n\nDie Nachrichtenlage ist gemischt, aber kurzfristig von negativen Makrofaktoren dominiert. Die breite Marktschwäche im Technologiesektor, ausgelöst durch Ängste vor weiteren Zinserhöhungen der Fed und Sorgen um eine mögliche Verlangsamung des KI-Booms, zieht auch META nach unten. Berichte über ein \"Markt-Blutbad\" und den \"schlechtesten Rückgang des Nasdaq\" unterstreichen dieses negative Umfeld. Positiv hervorzuheben ist jedoch die strategische Partnerschaft von Meta mit Oklo zur Nutzung fortschrittlicher Kernenergie für KI-Rechenzentren. Dies zeigt Metas langfristiges Engagement in der KI-Infrastruktur und das Potenzial für nachhaltige Energielösungen, was ein starkes Fundament für zukünftiges Wachstum bildet. Obwohl Metas Werbegeschäft weiterhin robust ist, wie eine Nachricht betont, überwiegen kurzfristig die externen Belastungen. Angesichts der starken technischen Abwärtstrends und des negativen Marktsentiments, aber auch der soliden fundamentalen Basis und strategischen Ausrichtung, wird eine \"Halten\"-Empfehlung ausgesprochen. Investoren sollten die weitere Marktentwicklung und Metas Fortschritte bei den KI-Investitionen genau beobachten.",
+      "confidence": 60,
+      "sentiment_score": 0.1,
+      "risk_level": "Gering",
+      "ai_explanation": "META konsolidiert sich derzeit auf aktuellem Niveau. Es gibt momentan keine klaren technischen oder nachrichtenbasierten Impulse für signifikante Bewegungen.",
       "key_drivers": [
-        "Stärke des Kerngeschäfts (Werbeplattformen)",
-        "Strategische Investitionen in KI-Infrastruktur und -Technologien",
-        "Potenzial für langfristiges Wachstum durch Metaverse und KI-Anwendungen",
-        "Effizienzsteigerungen und Kostenmanagement"
+        "Seitwärtsbewegung stabilisiert Kurs"
       ],
       "key_risks": [
-        "Anhaltende makroökonomische Unsicherheiten und Zinsanhebungsängste",
-        "Regulatorische Eingriffe und Datenschutzbedenken",
-        "Intensiver Wettbewerb im Werbe- und Tech-Sektor",
-        "Hohe Investitionsausgaben für Metaverse und KI mit unsicherer kurzfristiger Rentabilität",
-        "Abhängigkeit vom Werbemarkt und potenzieller Rückgang der Werbeausgaben"
+        "Mangel an kurzfristigen Katalysatoren"
       ],
       "news": [
         {
@@ -2760,34 +2758,34 @@
           "volume": 30000600
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "BTC-USD": {
       "symbol": "BTC-USD",
       "name": "Bitcoin",
       "type": "crypto",
-      "price": 61372.9,
-      "price_change_1d": 0.74,
-      "price_change_7d": -13.95,
-      "price_change_30d": -21.45,
-      "rsi": 7.92,
+      "price": 61281.84,
+      "price_change_1d": 0.59,
+      "price_change_7d": -14.07,
+      "price_change_30d": -21.57,
+      "rsi": 7.45,
       "technical_trend": "Bearish",
       "recommendation": "Halten",
-      "confidence": 70,
-      "sentiment_score": -0.4,
+      "confidence": 65,
+      "sentiment_score": 0.06,
       "risk_level": "Sehr Hoch",
-      "ai_explanation": "Die aktuelle Marktlage für Bitcoin ist von einem starken Abwärtstrend geprägt, wie die Kursverluste von über 13% in den letzten 7 Tagen und über 21% in den letzten 30 Tagen deutlich zeigen. Die technischen Indikatoren bestätigen diesen bärischen Trend: Der aktuelle Preis liegt weit unter den gleitenden Durchschnitten (SMA 20 und SMA 50), und der MACD signalisiert ebenfalls eine starke Abwärtsbewegung. Die Nachrichtenlage ist überwiegend negativ, mit Sorgen um Zinserhöhungen in den USA, die Risikoanlagen wie Kryptowährungen belasten, und einer bärischen Einschätzung für Coinbase, die den Druck auf Bitcoin weiter erhöht. Allerdings ist der Relative Stärke Index (RSI) mit 7.92 extrem überverkauft, was historisch oft auf eine bevorstehende kurzfristige Erholung oder zumindest eine Stabilisierung hindeuten kann, auch wenn der übergeordnete Trend bärisch bleibt. Angesichts dieser gemischten Signale wird für bestehende Positionen ein 'Halten' empfohlen, um nicht in einer Phase extremer Überverkaufssituation zu verkaufen, während für Neueinsteiger weiterhin Vorsicht geboten ist.",
+      "ai_explanation": "Bitcoin befindet sich in einem starken Abwärtstrend, wie die negativen Kursänderungen über 7 und 30 Tage sowie die Tatsache zeigen, dass der aktuelle Preis deutlich unter den gleitenden Durchschnitten (SMA 20 und SMA 50) liegt. Auch der MACD bestätigt die bärische Dynamik. Allerdings ist der Relative Stärke Index (RSI) mit 7.45 extrem überverkauft, was historisch oft auf eine bevorstehende Erholung oder zumindest eine kurzfristige Gegenbewegung hindeutet. Die Nachrichtenlage ist gemischt: Während die Sorge vor weiteren Zinserhöhungen durch die US-Notenbank den breiteren Markt und damit auch Bitcoin belastet, gibt es auch Anzeichen für eine Stabilisierung und konträre Kaufbereitschaft nach dem jüngsten Ausverkauf, wie die Erholung über 61.000 USD und optimistische Artikel zeigen. Angesichts des starken Abwärtstrends und der makroökonomischen Unsicherheit ist ein 'Kauf' zu riskant, aber der extrem überverkaufte Zustand und die Anzeichen einer Bodenbildung sprechen gegen einen 'Verkauf' in die Schwäche. Daher wird eine 'Halten'-Empfehlung ausgesprochen, um eine mögliche kurzfristige Erholung abzuwarten, während die langfristigen Risiken bestehen bleiben.",
       "key_drivers": [
-        "Makroökonomische Unsicherheit und Zinserhöhungsängste",
-        "Anhaltender Abwärtstrend und negative Preisdynamik",
         "Extrem überverkaufter Zustand (RSI)",
-        "Dominant bärische technische Indikatoren"
+        "Potenzielle Bodenbildung nach Liquidationsereignissen",
+        "Konträre Anlegerstimmung und Kaufbereitschaft",
+        "Makroökonomische Entwicklung (Zinspolitik der Fed)"
       ],
       "key_risks": [
-        "Fortsetzung des Abwärtstrends",
-        "Weitere Kapitalabflüsse aus Risikoanlagen",
-        "Mangel an positiven Katalysatoren",
-        "Hohe Volatilität des Kryptomarktes"
+        "Weitere Zinsanhebungen und restriktive Geldpolitik",
+        "Fortsetzung des übergeordneten Abwärtstrends",
+        "Geringe Liquidität bei weiteren Abverkäufen",
+        "Regulatorische Unsicherheiten im Kryptomarkt"
       ],
       "news": [
         {
@@ -2803,6 +2801,13 @@
           "link": "",
           "time": "2026-06-05 11:36",
           "summary": "Bitcoin opened at $63,812.18 on Friday, June 5, 2026, down 0.3% from Thursday's opening price. The value was $62,411.20 at 7:29 a.m ET. Ethereum opened at $1,768.86 on Friday, down 2.4% from Thursday's opening price. The value of ethereum was $1,676.27 at 7:29 a.m. ET."
+        },
+        {
+          "title": "Bitcoin rebounds above $61,000 after $1.6 billion liquidation-driven selloff",
+          "publisher": "",
+          "link": "",
+          "time": "2026-06-06 09:08",
+          "summary": "Investing.com -- Bitcoin recovered above $61,000 on Saturday after briefly falling below the key $60,000 level, as traders assessed the fallout from a broad market selloff triggered by stronger-than-expected U.S. jobs data."
         },
         {
           "title": "Here's Why I'm Buying Bitcoin Right Now",
@@ -2852,13 +2857,6 @@
           "link": "",
           "time": "2026-06-05 21:30",
           "summary": "Strategy shares sink as Bitcoin crashes below the $60,000 level. But does that warrant selling MSTR stock? Let’s find out!"
-        },
-        {
-          "title": "Legendary trader warns of more pain after Friday's losses",
-          "publisher": "",
-          "link": "",
-          "time": "2026-06-05 21:30",
-          "summary": "Veteran trader Peter Brandt has a simple rule for heading into the weekend with a clear head, and it is landing at a fitting moment, with crypto markets sliding hard into Friday's close. Brandt, who has traded markets since 1975, laid out his advice on June 5. \"Friday closing loss rule. My ..."
         }
       ],
       "history": [
@@ -3309,38 +3307,33 @@
         },
         {
           "date": "2026-06-06",
-          "price": 61372.9,
-          "volume": 65104117760
+          "price": 61281.84,
+          "volume": 64926134272
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "ETH-USD": {
       "symbol": "ETH-USD",
       "name": "Ethereum",
       "type": "crypto",
-      "price": 1583.81,
-      "price_change_1d": 0.19,
-      "price_change_7d": -20.94,
-      "price_change_30d": -27.34,
-      "rsi": 4.8,
+      "price": 1586.3,
+      "price_change_1d": 0.34,
+      "price_change_7d": -20.81,
+      "price_change_30d": -27.23,
+      "rsi": 5.2,
       "technical_trend": "Bearish",
-      "recommendation": "Starker Verkauf",
-      "confidence": 85,
-      "sentiment_score": -0.7,
-      "risk_level": "Sehr Hoch",
-      "ai_explanation": "Die aktuelle Marktlage für Ethereum ist äußerst negativ. Der Kurs hat in den letzten 7 und 30 Tagen massive Verluste von über 20% bzw. 27% erlitten. Alle technischen Indikatoren bestätigen diesen starken Abwärtstrend: Der aktuelle Preis liegt deutlich unter den gleitenden Durchschnitten (SMA 20 und SMA 50), der MACD ist tief im negativen Bereich und der technische Trend ist als 'Bearish' eingestuft. Obwohl der Relative Stärke Index (RSI) mit 4.8 extrem überverkauft ist, was kurzfristig eine technische Gegenbewegung auslösen könnte, überwiegen die starken bärischen Signale und die negativen Nachrichten. Die Nachrichtenlage ist ebenfalls besorgniserregend, mit Berichten über anhaltende Kursrückgänge, Warnungen eines renommierten Analysten vor einem weiteren Marktkollaps und Bedenken, dass Ethereum dem Beispiel von Cardano folgen könnte. Obwohl die Nachricht über Morgan Stanleys neuen Krypto-zu-ETF-Pfad positiv für die institutionelle Akzeptanz ist, betrifft sie nicht direkt die kurzfristige Preisentwicklung von Ethereum und kann die aktuelle negative Dynamik nicht aufwiegen. Angesichts dieser überwältigenden negativen Signale wird ein 'Starker Verkauf' empfohlen, um weitere Verluste zu minimieren.",
+      "recommendation": "Starker Kauf",
+      "confidence": 82,
+      "sentiment_score": 0.6,
+      "risk_level": "Mittel",
+      "ai_explanation": "Der RSI von 5.2 deutet darauf hin, dass ETH-USD stark überverkauft ist. Es gibt eine gute technische Kaufgelegenheit für eine kurzfristige Erholung.",
       "key_drivers": [
-        "Anhaltender Abwärtstrend im Kryptomarkt",
-        "Negative Analystenwarnungen und Marktprognosen",
-        "Verkauf von Bitcoin durch institutionelle Akteure (indirekter Einfluss)",
-        "Sorgen vor einer breiteren Altcoin-Korrektur und Vergleich mit Cardano"
+        "Überverkaufter Zustand (RSI)",
+        "Stabile fundamentale Unterstützung"
       ],
       "key_risks": [
-        "Potenzial für weitere signifikante Kursverluste",
-        "Anhaltend schwaches Marktvertrauen und FUD (Fear, Uncertainty, Doubt)",
-        "Mangel an positiven Katalysatoren für eine Trendumkehr",
-        "Risiko von Liquidationskaskaden bei weiterer Abwärtsbewegung"
+        "Möglicher anhaltender Abwärtstrend"
       ],
       "news": [
         {
@@ -3862,38 +3855,33 @@
         },
         {
           "date": "2026-06-06",
-          "price": 1583.81,
-          "volume": 35041222656
+          "price": 1586.3,
+          "volume": 35136118784
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "SOL-USD": {
       "symbol": "SOL-USD",
       "name": "Solana",
       "type": "crypto",
-      "price": 63.24,
-      "price_change_1d": -0.39,
-      "price_change_7d": -22.01,
-      "price_change_30d": -26.92,
-      "rsi": 2.6,
+      "price": 63.52,
+      "price_change_1d": 0.05,
+      "price_change_7d": -21.66,
+      "price_change_30d": -26.6,
+      "rsi": 2.76,
       "technical_trend": "Bearish",
-      "recommendation": "Verkauf",
-      "confidence": 70,
-      "sentiment_score": -0.3,
-      "risk_level": "Sehr Hoch",
-      "ai_explanation": "Solana (SOL-USD) befindet sich in einem starken Abwärtstrend, wie die erheblichen Kursverluste von -22.01% in den letzten 7 Tagen und -26.92% in den letzten 30 Tagen zeigen. Technisch ist der Kurs deutlich unter den gleitenden Durchschnitten (SMA 20 bei 80.0, SMA 50 bei 84.51) und der MACD-Wert ist negativ und unter seiner Signallinie, was auf eine starke bärische Dynamik hindeutet. Der Relative Stärke Index (RSI 14) liegt mit 2.6 extrem im überverkauften Bereich, was zwar auf eine mögliche kurzfristige Erholung hindeuten könnte, jedoch in einem starken Abwärtstrend nicht zwangsläufig eine Trendumkehr bedeutet. Die Nachrichtenlage ist überwiegend negativ, mit Warnungen von Analysten vor einem weiteren Krypto-Crash und dem allgemeinen Rückgang des Bitcoin-Kurses unter 61.000 USD, was den gesamten Markt belastet. Obwohl die Nachricht über Morgan Stanleys neuen Krypto-ETF-Pfad langfristig positiv ist, wird sie von der aktuellen negativen Marktstimmung und den technischen Indikatoren überschattet. Angesichts der überwältigenden bärischen Signale und der hohen Unsicherheit wird eine Verkaufsempfehlung ausgesprochen, um weitere Verluste zu vermeiden.",
+      "recommendation": "Starker Kauf",
+      "confidence": 82,
+      "sentiment_score": 0.6,
+      "risk_level": "Mittel",
+      "ai_explanation": "Der RSI von 2.76 deutet darauf hin, dass SOL-USD stark überverkauft ist. Es gibt eine gute technische Kaufgelegenheit für eine kurzfristige Erholung.",
       "key_drivers": [
-        "Breiter Krypto-Marktabschwung (Bitcoin-Fall)",
-        "Negative Analystenwarnungen und Marktstimmung",
-        "Starke bärische technische Indikatoren (SMAs, MACD)",
-        "Institutioneller Verkaufsdruck (MSTR Bitcoin-Verkauf)"
+        "Überverkaufter Zustand (RSI)",
+        "Stabile fundamentale Unterstützung"
       ],
       "key_risks": [
-        "Fortgesetzter Abwärtstrend des Gesamtmarktes",
-        "Hohe Volatilität von Kryptowährungen",
-        "Regulatorische Unsicherheiten und Sicherheitsbedenken (Pump.fun)",
-        "Mögliche weitere Liquidierungen von Positionen"
+        "Möglicher anhaltender Abwärtstrend"
       ],
       "news": [
         {
@@ -4415,11 +4403,11 @@
         },
         {
           "date": "2026-06-06",
-          "price": 63.24,
-          "volume": 5181315584
+          "price": 63.52,
+          "volume": 5089368064
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "GC=F": {
       "symbol": "GC=F",
@@ -4431,22 +4419,17 @@
       "price_change_30d": -7.36,
       "rsi": 32.3,
       "technical_trend": "Bearish",
-      "recommendation": "Verkauf",
-      "confidence": 85,
-      "sentiment_score": -0.7,
-      "risk_level": "Hoch",
-      "ai_explanation": "Die aktuelle Marktlage für Gold (GC=F) ist eindeutig bärisch geprägt. Der Preis hat in den letzten 1, 7 und 30 Tagen signifikante Verluste verzeichnet, was auf einen starken Abwärtstrend hindeutet. Die technischen Indikatoren bestätigen dieses Bild: Der aktuelle Preis liegt deutlich unter den gleitenden Durchschnitten (SMA 20 und SMA 50), und der MACD zeigt eine starke negative Dynamik, da er unter seiner Signallinie liegt und das Histogramm negativ ist. Obwohl der Relative Stärke Index (RSI) mit 32.3 nahe am überverkauften Bereich liegt, was auf eine mögliche kurzfristige Erholung hindeuten könnte, überwiegen die anderen bärischen Signale und der explizite technische Trend-Typ ist 'Bearish'. Die Nachrichtenlage verstärkt den negativen Eindruck, da Goldpreise nach einem starken Arbeitsmarktbericht weiter fallen und auch die Aktien von Goldminenbetreibern deutliche Rückgänge verzeichnen, was auf eine allgemeine negative Stimmung im Sektor hindeutet. Während es langfristige Prognosen für einen Anstieg auf 6.000 USD bis 2026 gibt, dominieren kurzfristig die negativen Faktoren und der technische Abwärtstrend. Daher wird eine Verkaufsempfehlung ausgesprochen.",
+      "recommendation": "Starker Kauf",
+      "confidence": 82,
+      "sentiment_score": 0.6,
+      "risk_level": "Mittel",
+      "ai_explanation": "Der RSI von 32.3 deutet darauf hin, dass GC=F stark überverkauft ist. Es gibt eine gute technische Kaufgelegenheit für eine kurzfristige Erholung.",
       "key_drivers": [
-        "Starker Arbeitsmarktbericht und makroökonomische Daten (impliziert höhere Zinsen/stärkeren Dollar)",
-        "Technischer Abwärtstrend und Verkaufsdruck",
-        "Negative Stimmung im Goldminensektor",
-        "Mangelnde Nachfrage nach sicheren Häfen"
+        "Überverkaufter Zustand (RSI)",
+        "Stabile fundamentale Unterstützung"
       ],
       "key_risks": [
-        "Mögliche kurzfristige technische Erholung (RSI nahe überverkauft)",
-        "Geopolitische Spannungen oder Wirtschaftskrisen (erhöhen Goldnachfrage)",
-        "Änderungen in der Geldpolitik (z.B. Zinssenkungen)",
-        "Schwächung des US-Dollars"
+        "Möglicher anhaltender Abwärtstrend"
       ],
       "news": [
         {
@@ -4972,7 +4955,7 @@
           "volume": 480
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "SI=F": {
       "symbol": "SI=F",
@@ -4984,22 +4967,17 @@
       "price_change_30d": -10.24,
       "rsi": 23.52,
       "technical_trend": "Neutral",
-      "recommendation": "Verkauf",
-      "confidence": 85,
-      "sentiment_score": -0.75,
-      "risk_level": "Hoch",
-      "ai_explanation": "Silber befindet sich in einem starken Abwärtstrend, wie die deutlichen Kursverluste von -6.55% (1 Tag), -8.82% (7 Tage) und -10.24% (30 Tage) zeigen. Der aktuelle Preis liegt signifikant unter den gleitenden Durchschnitten (SMA 20 und SMA 50), was die bärische Dynamik unterstreicht. Auch der MACD-Wert ist negativ und signalisiert einen Abwärtstrend. Die Nachrichten bestätigen diesen Trend und liefern eine klare Begründung: Ein überraschend starker Arbeitsmarktbericht hat die Erwartungen an höhere Zinsen verstärkt, was Edelmetalle unattraktiver macht, da Anleger in zinstragende Anlagen umschichten. Obwohl der Relative Stärke Index (RSI) mit 23.52 auf überverkaufte Bedingungen hindeutet und eine technische Gegenbewegung möglich ist, überwiegen die fundamentalen und technischen Verkaufssignale, was eine Verkaufsempfehlung rechtfertigt.",
+      "recommendation": "Starker Kauf",
+      "confidence": 82,
+      "sentiment_score": 0.6,
+      "risk_level": "Mittel",
+      "ai_explanation": "Der RSI von 23.52 deutet darauf hin, dass SI=F stark überverkauft ist. Es gibt eine gute technische Kaufgelegenheit für eine kurzfristige Erholung.",
       "key_drivers": [
-        "Zinsausblick und Erwartungen der Zentralbanken",
-        "Stärke des US-Dollars",
-        "Konjunkturdaten (insbesondere Arbeitsmarktberichte)",
-        "Anlegerstimmung und Risikobereitschaft"
+        "Überverkaufter Zustand (RSI)",
+        "Stabile fundamentale Unterstützung"
       ],
       "key_risks": [
-        "Mögliche technische Gegenbewegung aufgrund überverkaufter Bedingungen (RSI)",
-        "Änderung der Zinspolitik oder unerwartete Konjunkturabschwächung",
-        "Geopolitische Unsicherheiten, die die Nachfrage nach sicheren Häfen erhöhen könnten",
-        "Volatilität im Rohstoffmarkt"
+        "Möglicher anhaltender Abwärtstrend"
       ],
       "news": [
         {
@@ -5525,7 +5503,7 @@
           "volume": 138
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "CL=F": {
       "symbol": "CL=F",
@@ -5537,21 +5515,17 @@
       "price_change_30d": -4.77,
       "rsi": 31.22,
       "technical_trend": "Bearish",
-      "recommendation": "Verkauf",
-      "confidence": 80,
-      "sentiment_score": -0.4,
-      "risk_level": "Hoch",
-      "ai_explanation": "Die Analyse von Rohöl (CL=F) zeigt ein klares bärisches Bild. Der aktuelle Preis von 90.54 liegt deutlich unter den gleitenden Durchschnitten der letzten 20 und 50 Tage (96.76 bzw. 97.87), was einen starken Abwärtstrend signalisiert. Der MACD-Indikator bestätigt diese bärische Dynamik mit einem negativen Wert und einer Signal-Linie, die ebenfalls negativ ist und auf eine weitere Abschwächung hindeutet. Obwohl der Relative Stärke Index (RSI) mit 31.22 nahe am überverkauften Bereich liegt, was kurzfristig eine technische Gegenbewegung ermöglichen könnte, überwiegen die anderen technischen Indikatoren und der explizite \"Bearish\" Trend-Typ die Möglichkeit einer sofortigen Erholung. Die Nachrichtenlage verstärkt dieses Bild, da mehrere Berichte über fallende Energieaktien aufgrund eines Rückgangs der Ölpreise sprechen, was auf eine negative Marktstimmung im Sektor hindeutet. Die Erwähnung der Straße von Hormuz stellt zwar ein potenzielles geopolitisches Risiko dar, das die Preise in die Höhe treiben könnte, ist aber derzeit kein aktiver Preistreiber.",
+      "recommendation": "Starker Kauf",
+      "confidence": 82,
+      "sentiment_score": 0.6,
+      "risk_level": "Mittel",
+      "ai_explanation": "Der RSI von 31.22 deutet darauf hin, dass CL=F stark überverkauft ist. Es gibt eine gute technische Kaufgelegenheit für eine kurzfristige Erholung.",
       "key_drivers": [
-        "Starke bärische technische Indikatoren (Preis unter SMAs, negativer MACD, bärischer Trend-Typ)",
-        "Negative Marktstimmung im Energiesektor, die sich in fallenden Energieaktien widerspiegelt",
-        "Anhaltende Sorgen um die globale Ölnachfrage, die zu Preisrückgängen führen"
+        "Überverkaufter Zustand (RSI)",
+        "Stabile fundamentale Unterstützung"
       ],
       "key_risks": [
-        "Geopolitische Spannungen, insbesondere im Nahen Osten (z.B. Straße von Hormuz), die zu Versorgungsunterbrechungen führen könnten",
-        "Unerwartete Produktionskürzungen durch OPEC+ oder andere große Produzenten",
-        "Starke Erholung der globalen Wirtschaft und damit der Ölnachfrage",
-        "Technische Gegenbewegung aufgrund des RSI-Wertes nahe am überverkauften Bereich"
+        "Möglicher anhaltender Abwärtstrend"
       ],
       "news": [
         {
@@ -6077,7 +6051,7 @@
           "volume": 219500
         }
       ],
-      "last_updated": "2026-06-06 10:55"
+      "last_updated": "2026-06-06 11:28"
     },
     "MSFT": {
       "symbol": "MSFT",
@@ -6090,20 +6064,15 @@
       "rsi": 48.06,
       "technical_trend": "Neutral",
       "recommendation": "Halten",
-      "confidence": 65,
-      "sentiment_score": -0.15,
-      "risk_level": "Mittel",
-      "ai_explanation": "Microsoft (MSFT) zeigt kurzfristig eine deutliche Schwäche, mit einem Rückgang von 2.66% am letzten Tag und 7.46% in den letzten sieben Tagen. Technisch gesehen liegt der aktuelle Kurs unter dem 20-Tage-Gleitenden Durchschnitt (SMA 20), was ein kurzfristig bärisches Signal darstellt. Der MACD-Wert ist ebenfalls unter seine Signal-Linie gefallen, was auf eine negative Dynamik hindeutet. Trotz dieser kurzfristigen Schwäche liegt der Kurs noch über dem 50-Tage-Gleitenden Durchschnitt (SMA 50), und der RSI ist mit 48.06 neutral, was auf keine extreme Überverkaufsituation hindeutet. Die Nachrichtenlage ist gemischt: Während die Ausbreitung des KI-Booms in die breitere Wirtschaft (News 2) ein stark positives Signal für Microsoft als führenden KI-Player ist, belasten Nachrichten über den Kursrückgang von Nvidia aufgrund makroökonomischer und geopolitischer Faktoren (News 3) sowie die Kapitalbeschaffung von Meta für KI-Investitionen (News 1) die allgemeine Stimmung im Tech-Sektor. Angesichts der kurzfristigen technischen Schwäche und der gemischten Nachrichten, aber der starken langfristigen Positionierung im KI-Bereich, wird eine 'Halten'-Empfehlung ausgesprochen, um die aktuelle Volatilität abzuwarten.",
+      "confidence": 60,
+      "sentiment_score": 0.1,
+      "risk_level": "Gering",
+      "ai_explanation": "MSFT konsolidiert sich derzeit auf aktuellem Niveau. Es gibt momentan keine klaren technischen oder nachrichtenbasierten Impulse für signifikante Bewegungen.",
       "key_drivers": [
-        "Führungsrolle von Microsoft im Bereich Künstliche Intelligenz (KI)",
-        "Breitere Ausbreitung des KI-Booms in der Wirtschaft",
-        "Starke fundamentale Unternehmensbasis und Diversifizierung"
+        "Seitwärtsbewegung stabilisiert Kurs"
       ],
       "key_risks": [
-        "Kurzfristige technische Schwäche und negative Kursdynamik",
-        "Makroökonomische Gegenwinde und geopolitische Spannungen, die den Tech-Sektor beeinflussen",
-        "Hohe Investitionskosten im KI-Bereich und mögliche Bewertungsbedenken",
-        "Sektorweite Volatilität, wie sie bei Nvidia und Meta zu beobachten ist"
+        "Mangel an kurzfristigen Katalysatoren"
       ],
       "news": [
         {
@@ -6629,7 +6598,7 @@
           "volume": 34641500
         }
       ],
-      "last_updated": "2026-06-06 11:25"
+      "last_updated": "2026-06-06 11:28"
     }
   }
 }
