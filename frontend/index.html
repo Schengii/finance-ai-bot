@@ -97,12 +97,12 @@
                         </div>
                     </div>
 
-                    <div class="stat-card glass-panel">
+                    <div class="stat-card glass-panel stat-card-clickable" id="accuracy-card" title="Klicken für detailliertes Backtesting">
                         <div class="stat-icon accuracy">
                             <i data-lucide="target"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>KI-Trefferquote</h3>
+                            <h3>KI-Trefferquote <span class="clickable-hint"><i data-lucide="external-link"></i></span></h3>
                             <p class="stat-value" id="ai-accuracy-val">-</p>
                             <span class="stat-desc" id="ai-accuracy-desc">Lade Trefferquote...</span>
                         </div>
@@ -521,6 +521,78 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- BACKTESTING HISTORY MODAL -->
+    <div class="modal-overlay hidden" id="backtest-modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon"><i data-lucide="bar-chart-3"></i></div>
+                    <div>
+                        <h2>KI-Performance &amp; Backtesting</h2>
+                        <p class="modal-subtitle">Historische Auswertung aller KI-Prognosen</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="close-backtest-modal" aria-label="Schließen">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="backtest-summary" id="backtest-summary"></div>
+            <div class="backtest-table-wrapper">
+                <table class="backtest-table">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Empfehlung</th>
+                            <th>Konfidenz</th>
+                            <th>Preis (Analyse)</th>
+                            <th>Preis (Aktuell)</th>
+                            <th>&Auml;nderung</th>
+                            <th>Ergebnis</th>
+                            <th>Datum</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backtest-tbody">
+                        <tr><td colspan="8" class="backtest-loading"><div class="spinner"></div> Lade...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALPHACHAT FLOATING WIDGET -->
+    <div class="chat-widget" id="chat-widget">
+        <button class="chat-bubble" id="chat-bubble-btn" aria-label="AlphaChat öffnen">
+            <div class="chat-bubble-icon"><i data-lucide="message-circle"></i></div>
+            <span class="chat-bubble-label">AlphaChat</span>
+        </button>
+        <div class="chat-panel hidden" id="chat-panel">
+            <div class="chat-panel-header">
+                <div class="chat-header-info">
+                    <div class="chat-avatar"><i data-lucide="bot"></i></div>
+                    <div>
+                        <div class="chat-header-title">AlphaPulse KI-Berater</div>
+                        <div class="chat-header-status"><span class="chat-status-dot"></span> Online</div>
+                    </div>
+                </div>
+                <button class="chat-close-btn" id="close-chat-btn" aria-label="Chat schließen">
+                    <i data-lucide="minus"></i>
+                </button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-message bot-message">
+                    <div class="chat-msg-bubble">
+                        <strong>Hallo!</strong> Ich bin dein AlphaPulse KI-Berater. 👋<br><br>
+                        Frag mich z.B.: <em>„Wie steht mein Portfolio?“</em> oder <em>„Was denkst du über AAPL?“</em>
+                    </div>
+                </div>
+            </div>
+            <form class="chat-input-form" id="chat-input-form">
+                <input type="text" id="chat-input" class="chat-input glass-input" placeholder="Stelle mir eine Frage..." autocomplete="off">
+                <button type="submit" class="chat-send-btn" id="chat-send-btn"><i data-lucide="send"></i></button>
+            </form>
+        </div>
     </div>
 
     <!-- JS laden -->

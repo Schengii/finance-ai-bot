@@ -192,6 +192,9 @@ class PortfolioAnalysisRequest(BaseModel):
     holdings: List[PortfolioItem]
     strategy: str
 
+class ChatRequest(BaseModel):
+    message: str
+
 
 @app.get("/api/assets")
 def get_watchlist():
@@ -548,6 +551,78 @@ def get_prediction_accuracy():
         }
     except Exception as e:
         logger.error(f"Fehler beim Berechnen der KI-Genauigkeit: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/chat")
+def handle_chat_query(req: ChatRequest):
+    """Beantwortet Fragen des Nutzers basierend auf Portfolio und Watchlist-Daten."""
+    try:
+        from backend.db import get_predictions_from_db, get_portfolio_from_db
+        from backend.ai_analyzer import generate_chat_response
+        
+        # Holen der Daten
+        predictions_data = get_predictions_from_db().get("predictions", {})
+        portfolio_data = get_portfolio_from_db()
+        
+        # Generierung der Antwort
+        ai_response = generate_chat_response(req.message, portfolio_data, predictions_data)
+        
+        return {"response": ai_response}
+    except Exception as e:
+        logger.error(f"Fehler bei Chat-Anfrage: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/backtest")
+def get_backtest_history():
+    """Holt die vollständige Historie der Prognosen für detailliertes Backtesting."""
+    try:
+        from backend.db import get_db_connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT h.symbol, h.price AS pred_price, h.recommendation, h.confidence, h.last_updated, p.name, p.price AS current_price
+            FROM prediction_history h
+            JOIN predictions p ON h.symbol = p.symbol
+            ORDER BY h.last_updated DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        history_list = []
+        for row in rows:
+            pred_price = row["pred_price"]
+            current_price = row["current_price"]
+            rec = row["recommendation"]
+            
+            is_correct = False
+            if rec in ["Kauf", "Starker Kauf"]:
+                if current_price > pred_price:
+                    is_correct = True
+            elif rec in ["Verkauf", "Starker Verkauf"]:
+                if current_price < pred_price:
+                    is_correct = True
+            elif rec == "Halten":
+                pct_diff = abs(current_price - pred_price) / pred_price
+                if pct_diff <= 0.03:
+                    is_correct = True
+                    
+            history_list.append({
+                "symbol": row["symbol"],
+                "name": row["name"],
+                "pred_price": pred_price,
+                "current_price": current_price,
+                "recommendation": rec,
+                "confidence": row["confidence"],
+                "last_updated": row["last_updated"],
+                "is_correct": is_correct
+            })
+            
+        return history_list
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Backtest-Historie: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

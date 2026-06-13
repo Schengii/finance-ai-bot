@@ -185,6 +185,8 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchData();
     checkServerStatus();
     fetchAccuracy();
+    initBacktestModal();
+    initChatWidget();
 });
 
 // Setup Listeners
@@ -1684,4 +1686,180 @@ function renderAllocationChart() {
         }
     });
 }
+
+
+// ==========================================
+// BACKTESTING MODAL
+// ==========================================
+
+function initBacktestModal() {
+    const card = document.getElementById("accuracy-card");
+    const modal = document.getElementById("backtest-modal");
+    const closeBtn = document.getElementById("close-backtest-modal");
+    if (!card || !modal || !closeBtn) return;
+
+    card.addEventListener("click", openBacktestModal);
+    closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
+    modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.add("hidden"); });
+}
+
+async function openBacktestModal() {
+    const modal = document.getElementById("backtest-modal");
+    const tbody = document.getElementById("backtest-tbody");
+    const summary = document.getElementById("backtest-summary");
+    if (!modal) return;
+
+    modal.classList.remove("hidden");
+    if (window.lucide) window.lucide.createIcons();
+
+    tbody.innerHTML = `<tr><td colspan="8" class="backtest-loading"><div class="spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;"></div>&nbsp;Lade...</td></tr>`;
+    summary.innerHTML = "";
+
+    try {
+        const res = await fetch(`${API_BASE}/api/backtest`);
+        if (!res.ok) throw new Error("Backtest-Daten konnten nicht geladen werden.");
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:3rem;color:var(--text-secondary);">Noch keine Prognose-Historie vorhanden.<br><small>Starte eine Analyse, um Daten zu sammeln.</small></td></tr>`;
+            summary.innerHTML = `<div class="backtest-stat-pill"><span class="pill-label">Eintr\u00e4ge</span><span class="pill-value">0</span></div>`;
+            return;
+        }
+
+        const total = data.length;
+        const correct = data.filter(d => d.is_correct).length;
+        const accuracy = total > 0 ? ((correct / total) * 100).toFixed(1) : 0;
+        const accClass = parseFloat(accuracy) >= 60 ? "pill-success" : parseFloat(accuracy) >= 40 ? "pill-accent" : "pill-error";
+
+        summary.innerHTML = `
+            <div class="backtest-stat-pill pill-accent"><span class="pill-label">Prognosen gesamt</span><span class="pill-value">${total}</span></div>
+            <div class="backtest-stat-pill pill-success"><span class="pill-label">Korrekt</span><span class="pill-value">${correct}</span></div>
+            <div class="backtest-stat-pill pill-error"><span class="pill-label">Falsch</span><span class="pill-value">${total - correct}</span></div>
+            <div class="backtest-stat-pill ${accClass}"><span class="pill-label">Trefferquote</span><span class="pill-value">${accuracy}%</span></div>
+        `;
+
+        const recColorMap = {
+            "Starker Kauf": "var(--color-strong-buy)", "Kauf": "var(--color-buy)",
+            "Halten": "var(--color-hold)", "Verkauf": "var(--color-sell)", "Starker Verkauf": "var(--color-strong-sell)"
+        };
+
+        const fmtPrice = (v) => v ? v.toLocaleString("de-DE", {minimumFractionDigits:2, maximumFractionDigits:2}) : "-";
+
+        tbody.innerHTML = data.map(row => {
+            const change = row.pred_price > 0 ? (((row.current_price - row.pred_price) / row.pred_price) * 100).toFixed(2) : 0;
+            const changeColor = change >= 0 ? "var(--color-buy)" : "var(--color-sell)";
+            const resultBadge = row.is_correct
+                ? `<span class="backtest-result-badge correct">\u2713 Korrekt</span>`
+                : `<span class="backtest-result-badge wrong">\u2717 Falsch</span>`;
+            const recColor = recColorMap[row.recommendation] || "var(--text-primary)";
+            const dateStr = row.last_updated ? new Date(row.last_updated).toLocaleDateString("de-DE") : "-";
+
+            return `<tr>
+                <td><strong>${row.symbol}</strong><br><small style="color:var(--text-muted)">${row.name}</small></td>
+                <td><span style="color:${recColor};font-weight:600">${row.recommendation}</span></td>
+                <td>${row.confidence}%</td>
+                <td>${fmtPrice(row.pred_price)}</td>
+                <td>${fmtPrice(row.current_price)}</td>
+                <td style="color:${changeColor};font-weight:600">${change >= 0 ? "+" : ""}${change}%</td>
+                <td>${resultBadge}</td>
+                <td style="color:var(--text-secondary)">${dateStr}</td>
+            </tr>`;
+        }).join("");
+
+    } catch (err) {
+        console.error("Backtest Fehler:", err);
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-sell);">Fehler beim Laden: ${err.message}</td></tr>`;
+    }
+}
+
+
+// ==========================================
+// ALPHACHAT WIDGET
+// ==========================================
+
+function initChatWidget() {
+    const bubbleBtn = document.getElementById("chat-bubble-btn");
+    const chatPanel = document.getElementById("chat-panel");
+    const closeChatBtn = document.getElementById("close-chat-btn");
+    const chatForm = document.getElementById("chat-input-form");
+    const chatInput = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("chat-send-btn");
+
+    if (!bubbleBtn || !chatPanel) return;
+
+    bubbleBtn.addEventListener("click", () => {
+        chatPanel.classList.toggle("hidden");
+        if (!chatPanel.classList.contains("hidden")) {
+            if (window.lucide) window.lucide.createIcons();
+            setTimeout(() => chatInput.focus(), 50);
+        }
+    });
+
+    closeChatBtn?.addEventListener("click", () => chatPanel.classList.add("hidden"));
+
+    chatForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+
+        appendChatMessage(msg, "user");
+        chatInput.value = "";
+        sendBtn.disabled = true;
+
+        const typingEl = appendTypingIndicator();
+
+        try {
+            const res = await fetch(`${API_BASE}/api/chat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: msg })
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            typingEl.remove();
+            appendChatMessage(data.response || "Keine Antwort erhalten.", "bot");
+        } catch (err) {
+            typingEl.remove();
+            appendChatMessage(`Entschuldigung, Fehler: ${err.message}`, "bot");
+        } finally {
+            sendBtn.disabled = false;
+            chatInput.focus();
+        }
+    });
+}
+
+function appendChatMessage(text, role) {
+    const container = document.getElementById("chat-messages");
+    if (!container) return null;
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `chat-message ${role === "user" ? "user-message" : "bot-message"}`;
+    const bubble = document.createElement("div");
+    bubble.className = "chat-msg-bubble";
+    bubble.innerHTML = text
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.+?)\*/g, "<em>$1</em>")
+        .replace(/\n/g, "<br>");
+    msgDiv.appendChild(bubble);
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+    return msgDiv;
+}
+
+function appendTypingIndicator() {
+    const container = document.getElementById("chat-messages");
+    if (!container) return document.createElement("div");
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "chat-message bot-message chat-typing-indicator";
+    msgDiv.innerHTML = `<div class="chat-msg-bubble">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+    </div>`;
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+    return msgDiv;
+}
+
 

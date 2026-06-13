@@ -215,3 +215,79 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
         logger.error(f"Fehler bei der Gemini-Analyse für {symbol}: {e}")
         # Nutze Fallback-Mockdaten, damit die App nicht abstürzt
         return get_mock_prediction(asset_info, market_data)
+
+
+def generate_chat_response(query, portfolio_data, predictions_data):
+    """Generiert eine Antwort auf eine Nutzerfrage basierend auf Portfolio und Prognosen."""
+    
+    if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
+        # Fallback Mock responses for Demo-Modus
+        q_lower = query.lower()
+        if "portfol" in q_lower or "bestand" in q_lower or "invest" in q_lower:
+            return (
+                "**Demo-Modus:** Dein Portfolio sieht gut diversifiziert aus. "
+                "Für eine höhere Rendite könntest du überlegen, den Anteil von Technologie-Werten leicht zu erhöhen. "
+                "Wenn du deine Strategie defensiver ausrichten willst, sind Rohstoffe wie Gold eine Überlegung wert. "
+                "\n\n*Hinweis: Dies ist eine simulierte Antwort im Demo-Modus. Richte einen Gemini API-Key ein, um echte KI-Antworten zu erhalten.*"
+            )
+        for symbol in predictions_data.keys():
+            if symbol.lower() in q_lower:
+                pred = predictions_data[symbol]
+                return (
+                    f"**Demo-Modus:** Zur Aktie **{symbol}** ({pred['name']}) liegt aktuell eine Empfehlung von **{pred['recommendation']}** vor. "
+                    f"Die Konfidenz beträgt {pred['confidence']}% bei einer {pred['risk_level']}en Risikostufe. "
+                    f"Die KI begründet dies wie folgt: \"{pred['ai_explanation']}\""
+                )
+        return (
+            "**Demo-Modus:** Hallo! Ich bin dein AlphaPulse KI-Assistent. Ich kann deine Fragen zu deinem Portfolio "
+            "und deiner Watchlist beantworten. Richte einen Gemini API-Key in deiner `.env` ein, um echte Gespräche zu führen!"
+        )
+
+    # Context construction
+    portfolio_str = ""
+    if portfolio_data:
+        portfolio_str = "Portfolio des Nutzers (Aktuelle Bestände):\n"
+        for item in portfolio_data:
+            portfolio_str += f"- Ticker: {item['symbol']}, Menge: {item['quantity']}, Kaufpreis: {item['buy_price']}€\n"
+    else:
+        portfolio_str = "Der Nutzer hat aktuell keine Assets im Portfolio.\n"
+        
+    predictions_str = "Überwachte Assets (Watchlist) & KI-Analysen:\n"
+    for symbol, pred in predictions_data.items():
+        predictions_str += (
+            f"- Ticker: {symbol} ({pred['name']})\n"
+            f"  Aktueller Preis: {pred['price']}€\n"
+            f"  Empfehlung: {pred['recommendation']} (Konfidenz: {pred['confidence']}%)\n"
+            f"  Risikostufe: {pred['risk_level']}, Sentiment: {pred['sentiment_score']}\n"
+            f"  KI-Begründung: {pred['ai_explanation']}\n"
+        )
+        
+    prompt = f"""Du bist "AlphaPulse AI", ein hochentwickelter KI-Finanzberater. 
+Deine Aufgabe ist es, Fragen des Nutzers kompetent, sachlich, freundlich und auf Deutsch zu beantworten.
+Du hast Zugriff auf die folgenden aktuellen Daten des Nutzers:
+
+{portfolio_str}
+
+{predictions_str}
+
+Beantworte die folgende Frage des Nutzers präzise, hilfreich und professionell. Falls der Nutzer nach Finanzberatung fragt, füge am Ende deiner Antwort einen kurzen rechtlichen Hinweis hinzu, dass dies keine professionelle Anlageberatung ist.
+
+Nutzerfrage: "{query}"
+Antwort:"""
+
+    try:
+        if HAS_NEW_GENAI and client:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            return response.text.strip()
+        elif HAS_LEGACY_GENAI:
+            model = legacy_genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content(prompt)
+            return response.text.strip()
+        else:
+            return "Demo-Modus: Ich kann dir im Demo-Modus leider keine echten KI-Antworten geben. Bitte trage einen GEMINI_API_KEY in deiner .env Datei ein!"
+    except Exception as e:
+        logger.error(f"Fehler bei Generierung der Chat-Antwort: {e}")
+        return f"Entschuldigung, bei der Verarbeitung deiner Frage ist ein Fehler aufgetreten: {str(e)}"
