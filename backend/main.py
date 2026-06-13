@@ -208,13 +208,16 @@ def get_watchlist():
 def add_watchlist_item(item: WatchlistItem, background_tasks: BackgroundTasks):
     """Fügt ein neues Asset zur Watchlist hinzu und stößt dessen Analyse an."""
     try:
-        from backend.db import add_asset
+        from backend.db import add_asset, asset_exists
         symbol = item.symbol.strip().upper()
         name = item.name.strip()
         asset_type = item.type.strip().lower()
         
         if not symbol or not name or asset_type not in ["stock", "crypto", "commodity"]:
             raise HTTPException(status_code=400, detail="Ungültige Asset-Daten.")
+            
+        if asset_exists(symbol):
+            raise HTTPException(status_code=400, detail=f"Asset {symbol} existiert bereits in der Watchlist.")
             
         success = add_asset(symbol, name, asset_type)
         if not success:
@@ -229,6 +232,8 @@ def add_watchlist_item(item: WatchlistItem, background_tasks: BackgroundTasks):
         })
         
         return {"status": "success", "message": f"Asset {symbol} hinzugefügt. Analyse läuft im Hintergrund."}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Fehler beim Hinzufügen des Assets {item.symbol}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

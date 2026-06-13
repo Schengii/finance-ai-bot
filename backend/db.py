@@ -106,6 +106,15 @@ def get_all_assets():
     conn.close()
     return [{"symbol": row["symbol"], "name": row["name"], "type": row["type"]} for row in rows]
 
+def asset_exists(symbol):
+    """Prüft, ob ein Asset in der Watchlist existiert."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM assets WHERE symbol = ?", (symbol,))
+    row = cursor.fetchone()
+    conn.close()
+    return row is not None
+
 def add_asset(symbol, name, asset_type):
     """Fügt ein neues Asset hinzu."""
     conn = get_db_connection()

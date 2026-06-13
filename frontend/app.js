@@ -19,6 +19,68 @@ const API_BASE = (window.location.protocol === 'file:' || window.location.port !
     : '';
 
 
+// Dynamic toast helpers
+function showToast(message, type = "info", title = "") {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    
+    let iconSvg = "";
+    if (type === "success") {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+        if (!title) title = "Erfolg";
+    } else if (type === "error") {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+        if (!title) title = "Fehler";
+    } else if (type === "warning") {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+        if (!title) title = "Warnung";
+    } else {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+        if (!title) title = "Info";
+    }
+    
+    toast.innerHTML = `
+        <div class="toast-icon">${iconSvg}</div>
+        <div class="toast-body">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" type="button" aria-label="Schließen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Force reflow and show
+    toast.offsetHeight;
+    toast.classList.add("show");
+    
+    const autoRemoveTimeout = setTimeout(() => {
+        dismissToast(toast);
+    }, 5000);
+    
+    toast.querySelector(".toast-close").addEventListener("click", () => {
+        clearTimeout(autoRemoveTimeout);
+        dismissToast(toast);
+    });
+}
+
+function dismissToast(toast) {
+    toast.classList.add("hide");
+    toast.addEventListener("transitionend", () => {
+        toast.remove();
+    });
+}
+
 // DOM Elements
 const elements = {
     statusDot: document.getElementById('status-dot'),
@@ -392,7 +454,6 @@ function setUpdatingUI(isUpdating) {
 async function triggerRefresh() {
     try {
         console.log("DEBUG: triggerRefresh wurde aufgerufen!");
-        alert("DEBUG: Klick registriert! Sende Anfrage an den Server...");
         setUpdatingUI(true);
         const response = await fetch(`${API_BASE}/api/refresh`, { method: "POST" });
         if (!response.ok) {
@@ -410,7 +471,7 @@ async function triggerRefresh() {
     } catch (error) {
         console.error("Fehler beim Starten des Updates:", error);
         setUpdatingUI(false);
-        alert("Fehler beim Starten des Updates: " + error.message);
+        showToast("Fehler beim Starten des Updates: " + error.message, "error");
     }
 }
 
@@ -1129,7 +1190,7 @@ async function handleAddInvestment(e) {
     const buyPrice = parseFloat(elements.invPrice.value);
     
     if (!symbol || isNaN(qty) || qty <= 0 || isNaN(buyPrice) || buyPrice <= 0) {
-        alert("Bitte geben Sie eine gültige Menge und einen Kaufpreis ein.");
+        showToast("Bitte geben Sie eine gültige Menge und einen Kaufpreis ein.", "warning");
         return;
     }
     
@@ -1173,7 +1234,7 @@ async function handleAddInvestment(e) {
         
     } catch (error) {
         console.error("Fehler beim Hinzufügen des Investments:", error);
-        alert(error.message);
+        showToast(error.message, "error");
     }
 }
 
@@ -1195,7 +1256,7 @@ async function deleteHolding(idx) {
         renderPortfolio();
     } catch (error) {
         console.error("Fehler beim Löschen des Investments:", error);
-        alert(error.message);
+        showToast(error.message, "error");
     }
 }
 
@@ -1206,7 +1267,7 @@ async function handleAddAsset(e) {
     const type = elements.addAssetType.value;
     
     if (!symbol || !name || !type) {
-        alert("Bitte füllen Sie alle Felder aus.");
+        showToast("Bitte füllen Sie alle Felder aus.", "warning");
         return;
     }
     
@@ -1251,9 +1312,11 @@ async function handleAddAsset(e) {
         // Refresh local predictions
         fetchData();
         
+        // Success notification
+        showToast(`Asset ${symbol} wurde erfolgreich zur Watchlist hinzugefügt. Analyse läuft im Hintergrund.`, "success");
     } catch (error) {
         console.error("Fehler beim Hinzufügen des Assets:", error);
-        alert(error.message);
+        showToast(error.message, "error");
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalHTML;
@@ -1283,15 +1346,17 @@ async function handleDeleteAsset() {
         // Refresh local predictions
         fetchData();
         
+        // Success notification
+        showToast("Asset erfolgreich aus Watchlist gelöscht.", "success");
     } catch (error) {
         console.error("Fehler beim Löschen des Assets:", error);
-        alert(error.message);
+        showToast(error.message, "error");
     }
 }
 
 async function analyzePortfolioWithAI() {
     if (portfolio.length === 0) {
-        alert("Fügen Sie Ihrem Portfolio mindestens ein Investment hinzu, bevor Sie die Analyse starten.");
+        showToast("Fügen Sie Ihrem Portfolio mindestens ein Investment hinzu, bevor Sie die Analyse starten.", "warning");
         return;
     }
     
@@ -1319,7 +1384,7 @@ async function analyzePortfolioWithAI() {
         renderAiReport(report);
     } catch (error) {
         console.error("Fehler bei der KI-Portfolio-Analyse:", error);
-        alert("Die Portfolio-Analyse konnte nicht durchgeführt werden. Bitte überprüfen Sie Ihre Internetverbindung oder ob der Server läuft.");
+        showToast("Die Portfolio-Analyse konnte nicht durchgeführt werden. Bitte überprüfen Sie Ihre Internetverbindung oder ob der Server läuft.", "error");
     } finally {
         elements.analyzePortfolioBtn.disabled = false;
         elements.analyzePortfolioBtn.innerHTML = originalBtnHTML;
