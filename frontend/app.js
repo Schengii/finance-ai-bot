@@ -10,6 +10,14 @@ let selectedPeriod = "30d"; // Ausgewählter Zeitraum
 let historyCache = {}; // Cache für geladene Kursverläufe
 let portfolio = [];
 let selectedStrategy = "Ausgewogen";
+let portfolioInitialized = false;
+
+// Premium Features Global State
+let currentCurrency = "USD";
+let exchangeRate = 0.92;
+let activeAlerts = [];
+let triggeredAlertsInterval = null;
+
 
 
 // Dynamische API-Basis-URL: Falls lokal oder auf abweichendem Port (z.B. Live Server 5500) ausgeführt,
@@ -187,7 +195,17 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchAccuracy();
     initBacktestModal();
     initChatWidget();
+    
+    // Premium Features
+    initCurrencyToggle();
+    initAlerts();
+    
+    // Request notification permission (DSGVO compliant - user is asked, local only)
+    if (Notification && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
 });
+
 
 // Setup Listeners
 function setupEventListeners() {
@@ -237,9 +255,11 @@ function setupEventListeners() {
     });
 
     // View Panel Navigation
+    const navAlerts = document.getElementById("nav-alerts");
     if (elements.navMarkets && elements.navPortfolio) {
         elements.navMarkets.addEventListener("click", () => switchView("markets-view"));
         elements.navPortfolio.addEventListener("click", () => switchView("portfolio-view"));
+        if (navAlerts) navAlerts.addEventListener("click", () => switchView("alerts-view"));
     }
 
     // Portfolio Form Submit
@@ -992,22 +1012,36 @@ function showChartLoading(isLoading) {
 let portfolioInitialized = false;
 
 function switchView(viewId) {
+    const navAlerts = document.getElementById("nav-alerts");
+    const alertsView = document.getElementById("alerts-view");
+    
+    elements.navMarkets.classList.remove("active");
+    elements.navPortfolio.classList.remove("active");
+    if (navAlerts) navAlerts.classList.remove("active");
+    
+    elements.marketsView.classList.add("hidden");
+    elements.marketsView.classList.remove("active");
+    elements.portfolioView.classList.add("hidden");
+    elements.portfolioView.classList.remove("active");
+    if (alertsView) {
+        alertsView.classList.add("hidden");
+        alertsView.classList.remove("active");
+    }
+    
     if (viewId === "markets-view") {
         elements.navMarkets.classList.add("active");
-        elements.navPortfolio.classList.remove("active");
         elements.marketsView.classList.add("active");
         elements.marketsView.classList.remove("hidden");
-        elements.portfolioView.classList.add("hidden");
-        elements.portfolioView.classList.remove("active");
-    } else {
+    } else if (viewId === "portfolio-view") {
         elements.navPortfolio.classList.add("active");
-        elements.navMarkets.classList.remove("active");
         elements.portfolioView.classList.add("active");
         elements.portfolioView.classList.remove("hidden");
-        elements.marketsView.classList.add("hidden");
-        elements.marketsView.classList.remove("active");
-        // Ensure portfolio stats and holdings render
         renderPortfolio();
+    } else if (viewId === "alerts-view" && alertsView) {
+        if (navAlerts) navAlerts.classList.add("active");
+        alertsView.classList.add("active");
+        alertsView.classList.remove("hidden");
+        renderAlerts();
     }
 }
 
@@ -1181,8 +1215,17 @@ function renderPortfolio() {
         elements.portPerformanceCard.style.background = 'linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(255, 255, 255, 0.01) 100%)';
     }
     
-    // Render allocation chart
-    renderAllocationChart();
+    // Render charts row
+    const chartsRow = document.getElementById("portfolio-charts-row");
+    if (chartsRow) {
+        if (portfolio.length > 0) {
+            chartsRow.classList.remove("hidden");
+            renderAllocationChart();
+            renderDividendCalendar();
+        } else {
+            chartsRow.classList.add("hidden");
+        }
+    }
 }
 
 async function handleAddInvestment(e) {
@@ -1688,10 +1731,278 @@ function renderAllocationChart() {
 }
 
 
-// ==========================================
-// BACKTESTING MODAL
-// ==========================================
+// ==========================================================================
+// PREMIUM FEATURES IMPLEMENTATIONS (EUR/USD, Alerts, Dividends, Simulator)
+// ==========================================================================
 
+// 1. Currency Toggle Logic
+async function initCurrencyToggle() {
+    const btn = document.getElementById("currency-toggle-btn");
+    const label = document.getElementById("currency-toggle-label");
+    if (!btn || !label) return;
+
+    // Fetch initial exchange rate
+    try {
+        const res = await fetch(`${API_BASE}/api/exchange-rate`);
+        if (res.ok) {
+            const data = await res.json();
+            exchangeRate = data.rate || 0.92;
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden des USD/EUR Wechselkurses:", e);
+    }
+
+    btn.addEventListener("click", () => {
+        if (currentCurrency === "USD") {
+            currentCurrency = "EUR";
+            label.innerText = "EUR (€)";
+            btn.setAttribute("aria-label", "Währung wechseln. Aktuell: EUR");
+        } else {
+            currentCurrency = "USD";
+            label.innerText = "USD ($)";
+            btn.setAttribute("aria-label", "Währung wechseln. Aktuell: USD");
+        }
+        
+        // Re-render UI with new currency
+        renderAssetsList();
+        if (selectedAsset) {
+            selectAsset(selectedAsset);
+        }
+        renderPortfolio();
+    });
+}
+
+// 2. Alerts Logic (DSGVO compliant, WCAG legible)
+async function initAlerts() {
+    const form = document.getElementById("create-alert-form");
+    if (!form) return;
+
+    // Periodic check for triggered alerts (Simulate real-time checking every 10 seconds)
+    if (!triggeredAlertsInterval) {
+        triggeredAlertsInterval = setInterval(checkTriggeredAlerts, 10000);
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const symbol = document.getElementById("alert-symbol").value;
+        const alert_type = document.getElementById("alert-type").value;
+        const target_value = document.getElementById("alert-value").value.trim();
+
+        if (!symbol || !alert_type || !target_value) {
+            showToast("Bitte füllen Sie alle Felder aus.", "warning");
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/api/alerts`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ symbol, alert_type, target_value })
+            });
+
+            if (!res.ok) throw new Error("Alarm konnte nicht erstellt werden.");
+            
+            showToast(`Alarm für ${symbol} erfolgreich aktiviert!`, "success");
+            form.reset();
+            renderAlerts();
+        } catch (err) {
+            showToast(err.message, "error");
+        }
+    });
+}
+
+async function renderAlerts() {
+    const tbody = document.getElementById("alerts-list-body");
+    const select = document.getElementById("alert-symbol");
+    const countElem = document.getElementById("total-alerts-val");
+    if (!tbody || !select) return;
+
+    // Fill select with watchlist assets
+    select.innerHTML = "";
+    Object.keys(appData.predictions).sort().forEach(sym => {
+        const opt = document.createElement("option");
+        opt.value = sym;
+        opt.innerText = sym;
+        select.appendChild(opt);
+    });
+
+    try {
+        const res = await fetch(`${API_BASE}/api/alerts`);
+        if (!res.ok) throw new Error("Fehler beim Laden der Alarme.");
+        const alerts = await res.json();
+
+        activeAlerts = alerts;
+        if (countElem) countElem.innerText = alerts.length;
+
+        if (alerts.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-muted)">Keine aktiven Alarme eingerichtet.</td></tr>`;
+            return;
+        }
+
+        const typeMap = {
+            "price_above": "Preis über",
+            "price_below": "Preis unter",
+            "rsi_above": "RSI über",
+            "rsi_below": "RSI unter",
+            "rec_change": "KI-Empfehlung ist"
+        };
+
+        tbody.innerHTML = alerts.map(alert => {
+            let valStr = alert.target_value;
+            if (alert.alert_type.startsWith("price")) {
+                valStr = formatCurrency(parseFloat(alert.target_value), "stock");
+            }
+            
+            return `<tr>
+                <td><strong>${alert.symbol}</strong></td>
+                <td>${typeMap[alert.alert_type] || alert.alert_type}</td>
+                <td><span style="font-weight:600;color:white;">${valStr}</span></td>
+                <td style="color:var(--text-secondary)">${alert.created_at}</td>
+                <td>
+                    <button class="btn-delete-asset" onclick="deleteAlert(${alert.id})" title="Alarm löschen">
+                        <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                    </button>
+                </td>
+            </tr>`;
+        }).join("");
+
+        if (window.lucide) window.lucide.createIcons();
+    } catch (err) {
+        console.error("Fehler beim Rendern der Alarme:", err);
+    }
+}
+
+async function deleteAlert(id) {
+    try {
+        const res = await fetch(`${API_BASE}/api/alerts/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Löschen fehlgeschlagen.");
+        showToast("Alarm gelöscht.", "success");
+        renderAlerts();
+    } catch (err) {
+        showToast(err.message, "error");
+    }
+}
+
+async function checkTriggeredAlerts() {
+    try {
+        const res = await fetch(`${API_BASE}/api/alerts/triggered`);
+        if (!res.ok) return;
+        const triggered = await res.json();
+
+        triggered.forEach(alert => {
+            const typeMap = {
+                "price_above": "Preis über",
+                "price_below": "Preis unter",
+                "rsi_above": "RSI über",
+                "rsi_below": "RSI unter",
+                "rec_change": "KI-Empfehlung geändert auf"
+            };
+
+            let valStr = alert.target_value;
+            if (alert.alert_type.startsWith("price")) {
+                valStr = formatCurrency(parseFloat(alert.target_value), "stock");
+            }
+
+            const title = `🚨 ALARM AUSGELÖST: ${alert.symbol}`;
+            const message = `${alert.symbol} hat die Bedingung '${typeMap[alert.alert_type]}' bei ${valStr} erfüllt!`;
+
+            // Browser Notification
+            if (Notification && Notification.permission === "granted") {
+                new Notification(title, { body: message });
+            }
+
+            // In-app premium toast
+            showToast(message, "warning", title);
+        });
+
+        if (triggered.length > 0) {
+            // Update alerts panel if currently showing
+            const alertsView = document.getElementById("alerts-view");
+            if (alertsView && !alertsView.classList.contains("hidden")) {
+                renderAlerts();
+            }
+        }
+    } catch (err) {
+        console.error("Fehler bei der Alarmprüfung:", err);
+    }
+}
+
+// 3. Dividend Calendar rendering
+async function renderDividendCalendar() {
+    const canvas = document.getElementById("portfolioDividendChart");
+    if (!canvas) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/dividends`);
+        if (!res.ok) throw new Error("Fehler beim Laden des Dividendenplans.");
+        const data = await res.json();
+
+        const ctx = canvas.getContext("2d");
+        if (window.portfolioDividendChartInstance) {
+            window.portfolioDividendChartInstance.destroy();
+        }
+
+        const months = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+        const monthlyData = Object.values(data.monthly_dividends);
+        
+        // Convert to selected currency
+        const convertedData = monthlyData.map(val => {
+            if (currentCurrency === "EUR") {
+                return val / exchangeRate;
+            }
+            return val;
+        });
+
+        // Set estimated dividend yield description
+        const divDescElem = document.getElementById("port-ai-dividends");
+        if (divDescElem) {
+            const currencySymbol = currentCurrency === "EUR" ? "€" : "$";
+            const formattedTotal = (data.annual_total / (currentCurrency === "EUR" ? exchangeRate : 1)).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            divDescElem.innerHTML = `Geschätzte jährliche Ausschüttung: <strong>${formattedTotal} ${currencySymbol}</strong>.<br><small style="color:var(--text-muted)">Die Verteilung basiert auf historischen Ausschüttungsmonaten des vergangenen Jahres.</small>`;
+        }
+
+        window.portfolioDividendChartInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: months,
+                datasets: [{
+                    label: `Ertrag (${currentCurrency === "EUR" ? "€" : "$"})`,
+                    data: convertedData,
+                    backgroundColor: "rgba(99, 102, 241, 0.45)",
+                    borderColor: "var(--accent)",
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: "rgba(255, 255, 255, 0.02)" },
+                        ticks: { color: "#9ca3af" }
+                    },
+                    y: {
+                        grid: { color: "rgba(255, 255, 255, 0.03)" },
+                        ticks: {
+                            color: "#9ca3af",
+                            callback: function(value) {
+                                return value.toLocaleString("de-DE") + (currentCurrency === "EUR" ? " €" : " $");
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Fehler beim Laden des Dividenden-Charts:", e);
+    }
+}
+
+// 4. Backtest Strategy Simulator tab logic
 function initBacktestModal() {
     const card = document.getElementById("accuracy-card");
     const modal = document.getElementById("backtest-modal");
@@ -1701,6 +2012,47 @@ function initBacktestModal() {
     card.addEventListener("click", openBacktestModal);
     closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
     modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.add("hidden"); });
+
+    // Tabs inside modal
+    const tabAccuracy = document.getElementById("modal-tab-accuracy");
+    const tabSimulator = document.getElementById("modal-tab-simulator");
+    const contentAccuracy = document.getElementById("tab-content-accuracy");
+    const contentSimulator = document.getElementById("tab-content-simulator");
+
+    if (tabAccuracy && tabSimulator) {
+        tabAccuracy.addEventListener("click", () => {
+            tabAccuracy.classList.add("active");
+            tabSimulator.classList.remove("active");
+            contentAccuracy.classList.add("active");
+            contentAccuracy.classList.remove("hidden");
+            contentSimulator.classList.add("hidden");
+            contentSimulator.classList.remove("active");
+        });
+
+        tabSimulator.addEventListener("click", () => {
+            tabSimulator.classList.add("active");
+            tabAccuracy.classList.remove("active");
+            contentSimulator.classList.add("active");
+            contentSimulator.classList.remove("hidden");
+            contentAccuracy.classList.add("hidden");
+            contentAccuracy.classList.remove("active");
+            
+            // Setup simulator dropdown
+            const simAssetSelect = document.getElementById("sim-asset");
+            if (simAssetSelect) {
+                simAssetSelect.innerHTML = "";
+                Object.keys(appData.predictions).sort().forEach(sym => {
+                    const opt = document.createElement("option");
+                    opt.value = sym;
+                    opt.innerText = sym;
+                    simAssetSelect.appendChild(opt);
+                });
+            }
+        });
+    }
+
+    const runSimBtn = document.getElementById("run-sim-btn");
+    runSimBtn?.addEventListener("click", runSimulator);
 }
 
 async function openBacktestModal() {
@@ -1722,7 +2074,7 @@ async function openBacktestModal() {
 
         if (!data || data.length === 0) {
             tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:3rem;color:var(--text-secondary);">Noch keine Prognose-Historie vorhanden.<br><small>Starte eine Analyse, um Daten zu sammeln.</small></td></tr>`;
-            summary.innerHTML = `<div class="backtest-stat-pill"><span class="pill-label">Eintr\u00e4ge</span><span class="pill-value">0</span></div>`;
+            summary.innerHTML = `<div class="backtest-stat-pill"><span class="pill-label">Einträge</span><span class="pill-value">0</span></div>`;
             return;
         }
 
@@ -1772,11 +2124,104 @@ async function openBacktestModal() {
     }
 }
 
+async function runSimulator() {
+    const symbol = document.getElementById("sim-asset").value;
+    const strategy = document.getElementById("sim-strategy").value;
+    const years = document.getElementById("sim-years").value;
+    const resultsArea = document.getElementById("sim-results-area");
+    const runBtn = document.getElementById("run-sim-btn");
+    
+    if (!symbol) return;
+    
+    runBtn.disabled = true;
+    runBtn.innerHTML = `<div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></div> Rechnet...`;
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/backtest/simulate?symbol=${symbol}&strategy=${strategy}&years=${years}`);
+        if (!res.ok) throw new Error("Fehler beim Simulieren.");
+        const data = await res.json();
+        
+        resultsArea.classList.remove("hidden");
+        
+        const currencySymbol = currentCurrency === "EUR" ? "€" : "$";
+        const convertMultiplier = currentCurrency === "EUR" ? (1 / exchangeRate) : 1;
+        
+        document.getElementById("sim-final-value").innerText = `${(data.final_value * convertMultiplier).toLocaleString("de-DE", {maximumFractionDigits:2})} ${currencySymbol}`;
+        document.getElementById("sim-strat-return").innerText = `${data.strategy_return >= 0 ? "+" : ""}${data.strategy_return}%`;
+        document.getElementById("sim-strat-return").className = `sim-stat-value ${data.strategy_return >= 0 ? "text-green" : "text-red"}`;
+        document.getElementById("sim-bh-return").innerText = `${data.buy_hold_return >= 0 ? "+" : ""}${data.buy_hold_return}%`;
+        document.getElementById("sim-bh-return").className = `sim-stat-value ${data.buy_hold_return >= 0 ? "text-green" : "text-red"}`;
+        document.getElementById("sim-trades").innerText = data.total_trades;
+        
+        // Plot simulation chart
+        const ctx = document.getElementById("simulatorChart").getContext("2d");
+        if (window.simulatorChartInstance) {
+            window.simulatorChartInstance.destroy();
+        }
+        
+        const dates = data.history.map(h => new Date(h.date).toLocaleDateString("de-DE", {month: "short", year: "2-digit"}));
+        const stratVals = data.history.map(h => h.strategy_val * convertMultiplier);
+        const bhVals = data.history.map(h => h.buy_hold_val * convertMultiplier);
+        
+        window.simulatorChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Strategie',
+                        data: stratVals,
+                        borderColor: '#6366f1',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'Buy & Hold',
+                        data: bhVals,
+                        borderColor: 'rgba(255, 255, 255, 0.4)',
+                        borderWidth: 1.5,
+                        borderDash: [4, 4],
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#9ca3af' }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: "rgba(255, 255, 255, 0.02)" },
+                        ticks: { color: "#9ca3af", maxTicksLimit: 12 }
+                    },
+                    y: {
+                        grid: { color: "rgba(255, 255, 255, 0.03)" },
+                        ticks: {
+                            color: "#9ca3af",
+                            callback: function(value) {
+                                return value.toLocaleString("de-DE") + ` ${currencySymbol}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+    } catch (err) {
+        showToast(err.message, "error");
+    } finally {
+        runBtn.disabled = false;
+        runBtn.innerHTML = "Simulation starten";
+    }
+}
 
-// ==========================================
-// ALPHACHAT WIDGET
-// ==========================================
-
+// 5. AlphaChat Quick Actions & Command Parser
 function initChatWidget() {
     const bubbleBtn = document.getElementById("chat-bubble-btn");
     const chatPanel = document.getElementById("chat-panel");
@@ -1796,6 +2241,15 @@ function initChatWidget() {
     });
 
     closeChatBtn?.addEventListener("click", () => chatPanel.classList.add("hidden"));
+
+    // Quick Action Click Handlers
+    document.querySelectorAll(".quick-action-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+            const query = chip.getAttribute("data-query");
+            chatInput.value = query;
+            chatForm.dispatchEvent(new Event("submit"));
+        });
+    });
 
     chatForm?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -1818,6 +2272,11 @@ function initChatWidget() {
             const data = await res.json();
             typingEl.remove();
             appendChatMessage(data.response || "Keine Antwort erhalten.", "bot");
+            
+            // If command executed successfully and asked for data reload
+            if (data.trigger_refresh) {
+                fetchData();
+            }
         } catch (err) {
             typingEl.remove();
             appendChatMessage(`Entschuldigung, Fehler: ${err.message}`, "bot");
@@ -1861,5 +2320,6 @@ function appendTypingIndicator() {
     container.scrollTop = container.scrollHeight;
     return msgDiv;
 }
+
 
 

@@ -1596,8 +1596,8 @@ select.glass-input option {
 .toast {
     pointer-events: auto;
     background: rgba(15, 22, 41, 0.85);
-    backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 1rem 1.25rem;
@@ -1741,8 +1741,8 @@ select.glass-input option {
     inset: 0;
     z-index: 10000;
     background: rgba(5, 8, 18, 0.8);
-    backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1888,8 +1888,8 @@ select.glass-input option {
     width: 360px;
     height: 520px;
     background: rgba(11, 16, 32, 0.96);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border-color);
     border-radius: 16px;
     box-shadow: 0 24px 60px rgba(0,0,0,0.5);
@@ -1970,6 +1970,367 @@ select.glass-input option {
 }
 .chat-send-btn:hover { transform: scale(1.05); }
 .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ==========================================================================
+   NEW PREMIUM FEATURES STYLING (EUR/USD, Alerts, Dividends, Backtest Simulator)
+   ========================================================================== */
+
+/* Currency Toggle */
+.currency-toggle-wrapper {
+    display: flex;
+    align-items: center;
+}
+#currency-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+}
+#currency-toggle-btn:hover, #currency-toggle-btn:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-color-active);
+    color: white;
+    outline: none;
+}
+
+/* Portfolio Multi-Chart Layout */
+.portfolio-charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    width: 100%;
+    margin-top: 1.25rem;
+}
+.portfolio-charts-row.hidden {
+    display: none;
+}
+.portfolio-chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+.portfolio-chart-card h3 {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+}
+
+/* AlphaChat Quick Actions & Commands */
+.chat-quick-actions {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem 0 1rem;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+}
+.chat-quick-actions::-webkit-scrollbar {
+    display: none; /* Safari & Chrome */
+}
+.quick-action-chip {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition-fast);
+}
+.quick-action-chip:hover, .quick-action-chip:focus {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--accent);
+    color: white;
+    outline: none;
+}
+
+/* Backtest Modal Tabs & Simulator UI */
+.backtest-modal-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin: 1rem 0;
+    gap: 0.5rem;
+}
+.modal-tab-content.hidden {
+    display: none;
+}
+.modal-tab-content.active {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.simulator-controls-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) 160px;
+    gap: 1rem;
+    align-items: flex-end;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+}
+.simulator-controls-row .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.simulator-controls-row label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+#run-sim-btn {
+    height: 38px;
+    width: 100%;
+}
+
+.sim-results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+.sim-results-grid.hidden {
+    display: none;
+}
+.sim-stat-box {
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.sim-stat-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+.sim-stat-value {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+}
+
+.simulator-chart-container {
+    height: 350px !important;
+}
+
+/* Alerts CSS */
+#alerts-view .dashboard-grid {
+    grid-template-columns: 420px 1fr;
+}
+#alerts-list-body button.btn-delete-asset {
+    background: transparent;
+    border: none;
+    color: var(--color-sell);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: var(--transition-fast);
+}
+#alerts-list-body button.btn-delete-asset:hover {
+    background: rgba(244, 63, 94, 0.15);
+}
+
+/* ==========================================================================
+   DSGVO, WCAG & ACCESSIBILITY & LRS IMPROVEMENTS
+   ========================================================================== */
+
+/* Keyboard Focus Highlights for WCAG compliance */
+a:focus, button:focus, input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+/* Legibility & LRS (Lese-Rechtschreib-Schwäche) Dyslexia-friendly details */
+body, p, span, td, th, li {
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+}
+h1, h2, h3, h4, h5, h6 {
+    line-height: 1.3;
+}
+/* Toast Notification for Alarms */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    background: rgba(22, 28, 45, 0.95);
+    border: 1.5px solid var(--accent);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--accent-glow);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 300px;
+    max-width: 450px;
+    color: white;
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+}
+.toast-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+}
+.toast-body {
+    flex: 1;
+}
+.toast-title {
+    font-weight: 700;
+    font-family: var(--font-heading);
+    margin-bottom: 0.15rem;
+    font-size: 0.9rem;
+}
+.toast-message {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.toast-close:hover {
+    color: white;
+}
+
+/* ==========================================================================
+   RESPONSIVENESS (MOBILE FRIENDLY GRID & LAYOUTS)
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    .assets-list-section {
+        max-height: 450px;
+    }
+    .detail-section {
+        max-height: none;
+    }
+    .portfolio-charts-row {
+        grid-template-columns: 1fr;
+    }
+    #alerts-view .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+    .main-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    .logo-area {
+        justify-content: center;
+    }
+    .header-nav {
+        justify-content: center;
+    }
+    .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+    .status-indicator, .last-update {
+        font-size: 0.75rem;
+    }
+    .currency-toggle-wrapper {
+        width: 100%;
+        justify-content: center;
+    }
+    #currency-toggle-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    #refresh-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .user-profile {
+        width: 100%;
+        justify-content: center;
+    }
+    .overview-stats {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    .stat-card {
+        padding: 1rem;
+    }
+    .recommendation-hero {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    .tech-indicators-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    .detail-tabs {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .detail-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    .detail-tabactive {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    .simulator-controls-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    .sim-results-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .holdings-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+    .holdings-table th, .holdings-table td {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+}
 
 
 

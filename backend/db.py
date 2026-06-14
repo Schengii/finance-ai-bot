@@ -80,6 +80,29 @@ def init_db():
         )
     """)
     
+    # 5. Alerts-Tabelle (Alarme des Nutzers)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            symbol TEXT NOT NULL,
+            alert_type TEXT NOT NULL,
+            target_value REAL,
+            is_triggered INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (symbol) REFERENCES assets (symbol) ON DELETE CASCADE
+        )
+    """)
+    
+    # Migrations: Add dividend columns to predictions table if they do not exist
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN dividend_yield REAL")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE predictions ADD COLUMN dividend_rate REAL")
+    except sqlite3.OperationalError:
+        pass
+        
     # Standard-Assets einfügen, falls die assets-Tabelle leer ist
     cursor.execute("SELECT COUNT(*) FROM assets")
     if cursor.fetchone()[0] == 0:
@@ -156,8 +179,9 @@ def save_prediction(pred):
             INSERT OR REPLACE INTO predictions (
                 symbol, name, type, price, price_change_1d, price_change_7d, price_change_30d,
                 rsi, technical_trend, recommendation, confidence, sentiment_score, risk_level,
-                ai_explanation, key_drivers, key_risks, news, history, last_updated
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ai_explanation, key_drivers, key_risks, news, history, last_updated,
+                dividend_yield, dividend_rate
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             pred["symbol"], pred["name"], pred["type"], pred["price"],
             pred["price_change_1d"], pred["price_change_7d"], pred["price_change_30d"],
@@ -167,7 +191,9 @@ def save_prediction(pred):
             json.dumps(pred.get("key_risks", [])),
             json.dumps(pred.get("news", [])),
             json.dumps(pred.get("history", [])),
-            pred["last_updated"]
+            pred["last_updated"],
+            pred.get("dividend_yield", 0.0),
+            pred.get("dividend_rate", 0.0)
         ))
         
         # In History-Tabelle archivieren (für Backtesting)
@@ -197,6 +223,16 @@ def get_predictions_from_db():
     
     for row in rows:
         last_updated = row["last_updated"]
+        
+        # Check if dividend columns exist in query result (safeguard)
+        dividend_yield = 0.0
+        dividend_rate = 0.0
+        try:
+            dividend_yield = row["dividend_yield"]
+            dividend_rate = row["dividend_rate"]
+        except Exception:
+            pass
+            
         predictions[row["symbol"]] = {
             "symbol": row["symbol"],
             "name": row["name"],
@@ -216,7 +252,9 @@ def get_predictions_from_db():
             "key_risks": json.loads(row["key_risks"] or "[]"),
             "news": json.loads(row["news"] or "[]"),
             "history": json.loads(row["history"] or "[]"),
-            "last_updated": row["last_updated"]
+            "last_updated": row["last_updated"],
+            "dividend_yield": dividend_yield,
+            "dividend_rate": dividend_rate
         }
         
     conn.close()
@@ -261,3 +299,96 @@ def delete_portfolio_item(symbol):
         return False
     finally:
         conn.close()
+
+# Alarme CRUD Hilfsfunktionen
+
+def get_all_alerts():
+    """Holt alle eingerichteten Alarme."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, symbol, alert_type, target_value, is_triggered, created_at FROM alerts ORDER BY created_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{
+        "id": row["id"],
+        "symbol": row["symbol"],
+        "alert_type": row["alert_type"],
+        "target_value": row["target_value"],
+        "is_triggered": row["is_triggered"],
+        "created_at": row["created_at"]
+    } for row in rows]
+
+def add_alert(symbol, alert_type, target_value):
+    """Erstellt einen neuen Alarm."""
+    import datetime
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    created_at = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        cursor.execute("""
+            INSERT INTO alerts (symbol, alert_type, target_value, is_triggered, created_at)
+            VALUES (?, ?, ?, 0, ?)
+        """, (symbol.upper(), alert_type, target_value, created_at))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Hinzufügen des Alarms für {symbol}: {e}")
+        return False
+    finally:
+        conn.close()
+
+def delete_alert(alert_id):
+    """Löscht einen Alarm."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM alerts WHERE id = ?", (alert_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Alarms {alert_id}: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_triggered_alerts():
+    """Holt alle ausgelösten Alarme und setzt sie wieder zurück (bzw. markiert sie)."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, symbol, alert_type, target_value, created_at FROM alerts WHERE is_triggered = 1")
+    rows = cursor.fetchall()
+    
+    triggered = []
+    for row in rows:
+        triggered.append({
+            "id": row["id"],
+            "symbol": row["symbol"],
+            "alert_type": row["alert_type"],
+            "target_value": row["target_value"],
+            "created_at": row["created_at"]
+        })
+        
+    if triggered:
+        # Löschen oder als gelesen markieren. Löschen wir sie, damit sie nur einmal gemeldet werden
+        ids = [row["id"] for row in rows]
+        placeholders = ",".join("?" for _ in ids)
+        cursor.execute(f"DELETE FROM alerts WHERE id IN ({placeholders})", ids)
+        conn.commit()
+        
+    conn.close()
+    return triggered
+
+def mark_alert_triggered(alert_id):
+    """Markiert einen Alarm als ausgelöst."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE alerts SET is_triggered = 1 WHERE id = ?", (alert_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Markieren des Alarms {alert_id} als ausgelöst: {e}")
+        return False
+    finally:
+        conn.close()
+

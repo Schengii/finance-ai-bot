@@ -36,6 +36,9 @@
                 <button class="nav-tab" id="nav-portfolio" data-tab="portfolio-view">
                     <i data-lucide="wallet"></i> Portfolio-Planer
                 </button>
+                <button class="nav-tab" id="nav-alerts" data-tab="alerts-view">
+                    <i data-lucide="bell"></i> Alarme
+                </button>
             </nav>
             
             <div class="header-actions">
@@ -45,6 +48,13 @@
                 </div>
                 <div class="last-update">
                     Aktualisiert: <span id="last-update-time">-</span>
+                </div>
+                <!-- Currency Toggle -->
+                <div class="currency-toggle-wrapper">
+                    <button id="currency-toggle-btn" class="btn btn-secondary btn-sm" aria-label="Währung wechseln. Aktuell: USD" title="Währung wechseln">
+                        <i data-lucide="coins"></i>
+                        <span id="currency-toggle-label">USD ($)</span>
+                    </button>
                 </div>
                 <button id="refresh-btn" class="btn btn-primary">
                     <i data-lucide="refresh-cw" class="icon-spin-hover"></i>
@@ -406,11 +416,20 @@
                             </table>
                         </div>
 
-                        <!-- Portfolio Allocation Chart Card -->
-                        <div class="portfolio-chart-card glass-panel hidden" id="portfolio-chart-card">
-                            <h3>Asset-Aufteilung (nach Marktwert)</h3>
-                            <div class="portfolio-chart-container">
-                                <canvas id="portfolioAllocationChart"></canvas>
+                        <!-- Portfolio Allocation Chart Card & Dividend Calendar Card -->
+                        <div class="portfolio-charts-row hidden" id="portfolio-charts-row">
+                            <div class="portfolio-chart-card glass-panel" id="portfolio-chart-card">
+                                <h3>Asset-Aufteilung (nach Marktwert)</h3>
+                                <div class="portfolio-chart-container">
+                                    <canvas id="portfolioAllocationChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="portfolio-chart-card glass-panel" id="portfolio-dividend-card">
+                                <h3>Dividenden-Kalender (Erwartete Erträge)</h3>
+                                <div class="portfolio-chart-container">
+                                    <canvas id="portfolioDividendChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -520,6 +539,84 @@
                     </section>
                 </div>
             </div>
+
+            <!-- Alerts View (Alarme verwalten) -->
+            <div id="alerts-view" class="view-panel hidden">
+                <section class="overview-stats">
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon sentiment">
+                            <i data-lucide="bell"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Aktive Alarme</h3>
+                            <p class="stat-value" id="total-alerts-val">0</p>
+                            <span class="stat-desc">Überwachte Marktbedingungen</span>
+                        </div>
+                    </div>
+                </section>
+                
+                <div class="dashboard-grid">
+                    <!-- Left: Create Alert Form -->
+                    <section class="assets-list-section glass-panel">
+                        <div class="section-header">
+                            <h2>Neuen Alarm erstellen</h2>
+                            <p class="section-subtitle">Lasse dich benachrichtigen, wenn Kurs, RSI oder KI-Empfehlungen bestimmte Kriterien erfüllen.</p>
+                        </div>
+                        <form id="create-alert-form" class="add-investment-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="alert-symbol">Asset wählen</label>
+                                    <select id="alert-symbol" class="glass-input" required>
+                                        <!-- Dynamic options -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="alert-type">Bedingung</label>
+                                    <select id="alert-type" class="glass-input" required>
+                                        <option value="price_above">Preis über</option>
+                                        <option value="price_below">Preis unter</option>
+                                        <option value="rsi_above">RSI über</option>
+                                        <option value="rsi_below">RSI unter</option>
+                                        <option value="rec_change">KI-Empfehlung ist</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="alert-value">Zielwert</label>
+                                    <input type="text" id="alert-value" class="glass-input" placeholder="z.B. 180 oder Starker Kauf" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-add-inv">
+                                <i data-lucide="bell-ring"></i> Alarm aktivieren
+                            </button>
+                        </form>
+                    </section>
+                    
+                    <!-- Right: Active Alerts List -->
+                    <section class="detail-section glass-panel">
+                        <div class="section-header">
+                            <h2>Aktive Alarme</h2>
+                            <p class="section-subtitle">Aktuelle Überwachungsprozesse</p>
+                        </div>
+                        <div class="holdings-table-container">
+                            <table class="holdings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset</th>
+                                        <th>Bedingung</th>
+                                        <th>Zielwert</th>
+                                        <th>Erstellt am</th>
+                                        <th>Aktion</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alerts-list-body">
+                                    <tr><td colspan="5" style="text-align:center;">Keine Alarme eingerichtet</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -531,32 +628,91 @@
                     <div class="modal-icon"><i data-lucide="bar-chart-3"></i></div>
                     <div>
                         <h2>KI-Performance &amp; Backtesting</h2>
-                        <p class="modal-subtitle">Historische Auswertung aller KI-Prognosen</p>
+                        <p class="modal-subtitle">Historische Auswertung &amp; Strategie-Simulation</p>
                     </div>
                 </div>
                 <button class="modal-close-btn" id="close-backtest-modal" aria-label="Schließen">
                     <i data-lucide="x"></i>
                 </button>
             </div>
-            <div class="backtest-summary" id="backtest-summary"></div>
-            <div class="backtest-table-wrapper">
-                <table class="backtest-table">
-                    <thead>
-                        <tr>
-                            <th>Asset</th>
-                            <th>Empfehlung</th>
-                            <th>Konfidenz</th>
-                            <th>Preis (Analyse)</th>
-                            <th>Preis (Aktuell)</th>
-                            <th>&Auml;nderung</th>
-                            <th>Ergebnis</th>
-                            <th>Datum</th>
-                        </tr>
-                    </thead>
-                    <tbody id="backtest-tbody">
-                        <tr><td colspan="8" class="backtest-loading"><div class="spinner"></div> Lade...</td></tr>
-                    </tbody>
-                </table>
+            
+            <div class="backtest-modal-tabs">
+                <button class="modal-tabactive active" id="modal-tab-accuracy">KI-Genauigkeit</button>
+                <button class="modal-tabactive" id="modal-tab-simulator">Strategie-Simulator</button>
+            </div>
+            
+            <!-- Tab 1: KI Accuracy History -->
+            <div class="modal-tab-content active" id="tab-content-accuracy">
+                <div class="backtest-summary" id="backtest-summary"></div>
+                <div class="backtest-table-wrapper">
+                    <table class="backtest-table">
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Empfehlung</th>
+                                <th>Konfidenz</th>
+                                <th>Preis (Analyse)</th>
+                                <th>Preis (Aktuell)</th>
+                                <th>&Auml;nderung</th>
+                                <th>Ergebnis</th>
+                                <th>Datum</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backtest-tbody">
+                            <tr><td colspan="8" class="backtest-loading"><div class="spinner"></div> Lade...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Tab 2: Strategy Backtest Simulator -->
+            <div class="modal-tab-content hidden" id="tab-content-simulator">
+                <div class="simulator-controls-row">
+                    <div class="form-group">
+                        <label for="sim-asset">Asset</label>
+                        <select id="sim-asset" class="glass-input"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sim-strategy">Handelsstrategie</label>
+                        <select id="sim-strategy" class="glass-input">
+                            <option value="rsi">RSI Überkauft (<30) / Überverkauft (>70)</option>
+                            <option value="sma">SMA Golden/Death Cross (20/50)</option>
+                            <option value="macd">MACD Signal-Linien-Kreuzung</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sim-years">Zeitraum</label>
+                        <select id="sim-years" class="glass-input">
+                            <option value="1">1 Jahr</option>
+                            <option value="2">2 Jahre</option>
+                            <option value="5">5 Jahre</option>
+                        </select>
+                    </div>
+                    <button id="run-sim-btn" class="btn btn-primary">Simulation starten</button>
+                </div>
+                
+                <div class="sim-results-grid hidden" id="sim-results-area">
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">Endwert (Start: 10.000)</span>
+                        <span class="sim-stat-value" id="sim-final-value">-</span>
+                    </div>
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">Strategie Rendite</span>
+                        <span class="sim-stat-value" id="sim-strat-return">-</span>
+                    </div>
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">Buy & Hold Rendite</span>
+                        <span class="sim-stat-value" id="sim-bh-return">-</span>
+                    </div>
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">Anzahl Trades</span>
+                        <span class="sim-stat-value" id="sim-trades">-</span>
+                    </div>
+                </div>
+                
+                <div class="chart-container simulator-chart-container">
+                    <canvas id="simulatorChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -588,9 +744,15 @@
                     </div>
                 </div>
             </div>
+            <!-- Quick Actions -->
+            <div class="chat-quick-actions" id="chat-quick-actions">
+                <button type="button" class="quick-action-chip" data-query="Portfolio-Gesundheits-Check">📊 Portfolio-Check</button>
+                <button type="button" class="quick-action-chip" data-query="Welche Assets haben aktuell ein starkes Kauf-Signal?">🚀 Top-Käufe</button>
+                <button type="button" class="quick-action-chip" data-query="Welche Assets haben gerade das höchste Risiko?">⚠️ Risiken</button>
+            </div>
             <form class="chat-input-form" id="chat-input-form">
-                <input type="text" id="chat-input" class="chat-input glass-input" placeholder="Stelle mir eine Frage..." autocomplete="off">
-                <button type="submit" class="chat-send-btn" id="chat-send-btn"><i data-lucide="send"></i></button>
+                <input type="text" id="chat-input" class="chat-input glass-input" placeholder="Stelle mir eine Frage oder nutze Befehle..." autocomplete="off">
+                <button type="submit" class="chat-send-btn" id="chat-send-btn" aria-label="Nachricht senden"><i data-lucide="send"></i></button>
             </form>
         </div>
     </div>

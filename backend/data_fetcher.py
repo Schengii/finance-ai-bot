@@ -108,7 +108,20 @@ def fetch_market_data(symbol, days=90):
                 "price": round(float(row['Close']), 2),
                 "volume": int(row['Volume'])
             })
-            
+        # Dividenden auslesen
+        div_yield = 0.0
+        div_rate = 0.0
+        try:
+            info = ticker.info
+            if info:
+                div_yield = float(info.get('dividendYield') or 0.0)
+                div_rate = float(info.get('dividendRate') or 0.0)
+                # Falls yield als Prozent geliefert wird (z.B. 1.5 statt 0.015), korrigieren
+                if div_yield > 1.0:
+                    div_yield = div_yield / 100.0
+        except Exception:
+            pass
+
         return {
             "symbol": symbol,
             "current_price": round(current_price, 2),
@@ -122,11 +135,47 @@ def fetch_market_data(symbol, days=90):
             "macd_signal": round(macd_signal, 4),
             "macd_hist": round(macd_hist, 4),
             "technical_trend": tech_trend,
-            "history": history
+            "history": history,
+            "dividend_yield": div_yield,
+            "dividend_rate": div_rate
         }
     except Exception as e:
         logger.error(f"Fehler beim Laden der Marktdaten für {symbol}: {e}")
         return None
+
+def fetch_exchange_rate():
+    """Holt den aktuellen USD/EUR-Wechselkurs."""
+    try:
+        ticker = yf.Ticker("EURUSD=X")
+        df = ticker.history(period="1d")
+        if not df.empty:
+            rate = float(df['Close'].iloc[-1])
+            return rate
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des USD/EUR-Kurses: {e}")
+    return 0.92 # Plausibler Standardwert
+
+def fetch_dividend_history(symbol):
+    """Holt historische Dividenden der letzten 12 Monate, um Zahlungsmonate zu ermitteln."""
+    try:
+        ticker = yf.Ticker(symbol)
+        divs = ticker.dividends
+        if not divs.empty:
+            # Letztes Jahr filtern
+            one_year_ago = datetime.now() - timedelta(days=365)
+            # divs.index hat Zeitzonen, one_year_ago machen wir auch zeitzonenbewusst falls nötig
+            if divs.index.tz:
+                import pytz
+                one_year_ago = one_year_ago.replace(tzinfo=pytz.utc)
+            
+            recent_divs = divs[divs.index >= one_year_ago]
+            months = [int(date.month) for date in recent_divs.index]
+            return sorted(list(set(months)))
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Dividendenhistorie für {symbol}: {e}")
+    # Standard: Vierteljährlich (z.B. März, Juni, September, Dezember)
+    return [3, 6, 9, 12]
+
 
 def fetch_news(symbol, name):
     """Holt Nachrichten zu einem Ticker via yfinance und bereitet sie auf."""

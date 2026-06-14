@@ -195,6 +195,11 @@ class PortfolioAnalysisRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
 
+class AlertRequest(BaseModel):
+    symbol: str
+    alert_type: str
+    target_value: str
+
 
 @app.get("/api/assets")
 def get_watchlist():
@@ -552,23 +557,106 @@ def get_prediction_accuracy():
     except Exception as e:
         logger.error(f"Fehler beim Berechnen der KI-Genauigkeit: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
 @app.post("/api/chat")
-def handle_chat_query(req: ChatRequest):
+def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
     """Beantwortet Fragen des Nutzers basierend auf Portfolio und Watchlist-Daten."""
     try:
-        from backend.db import get_predictions_from_db, get_portfolio_from_db
+        from backend.db import get_predictions_from_db, get_portfolio_from_db, save_portfolio_item, delete_portfolio_item, add_asset, delete_asset
         from backend.ai_analyzer import generate_chat_response
         
-        # Holen der Daten
+        msg = req.message.strip()
+        
+        # 1. Befehlserkennung
+        if msg.startswith("/"):
+            parts = msg.split()
+            cmd = parts[0].lower()
+            
+            if cmd == "/add" and len(parts) >= 4:
+                # /add SYMBOL MENGE KAUFPREIS
+                symbol = parts[1].upper()
+                try:
+                    qty = float(parts[2])
+                    price = float(parts[3])
+                    
+                    # Watchlist prüfen (yfinance validieren)
+                    try:
+                        ticker_info = search_ticker(symbol)
+                        # Als Asset in Watchlist hinzufügen falls nicht vorhanden
+                        add_asset(symbol, ticker_info["name"], ticker_info["type"])
+                    except Exception:
+                        pass
+                        
+                    save_portfolio_item(symbol, qty, price)
+                    return {
+                        "response": f"✅ **Erfolgreich hinzugefügt!** {qty}x **{symbol}** für je {price}$ wurde in dein Portfolio eingebucht.",
+                        "trigger_refresh": True
+                    }
+                except Exception as e:
+                    return {
+                        "response": f"❌ Fehler beim Hinzufügen: {str(e)}. Syntax: `/add SYMBOL MENGE KAUFPREIS`",
+                        "trigger_refresh": False
+                    }
+                    
+            elif (cmd == "/remove" or cmd == "/delete") and len(parts) >= 2:
+                # /remove SYMBOL
+                symbol = parts[1].upper()
+                delete_portfolio_item(symbol)
+                return {
+                    "response": f"🗑️ **Erfolgreich gelöscht!** Asset **{symbol}** wurde aus deinem Portfolio entfernt.",
+                    "trigger_refresh": True
+                }
+                
+            elif cmd == "/watch" and len(parts) >= 2:
+                # /watch SYMBOL
+                symbol = parts[1].upper()
+                try:
+                    ticker_info = search_ticker(symbol)
+                    add_asset(symbol, ticker_info["name"], ticker_info["type"])
+                    
+                    # Asynchrone Analyse starten
+                    from backend.scheduler import analyze_single_asset_background
+                    background_tasks.add_task(analyze_single_asset_background, {
+                        "symbol": symbol,
+                        "name": ticker_info["name"],
+                        "type": ticker_info["type"]
+                    })
+                    return {
+                        "response": f"👀 **Erfolgreich!** Asset **{symbol}** ({ticker_info['name']}) wird jetzt beobachtet. Die KI-Analyse läuft im Hintergrund.",
+                        "trigger_refresh": True
+                    }
+                except Exception as e:
+                    return {
+                        "response": f"❌ Asset konnte nicht gefunden werden: {str(e)}",
+                        "trigger_refresh": False
+                    }
+                    
+            elif cmd == "/unwatch" and len(parts) >= 2:
+                # /unwatch SYMBOL
+                symbol = parts[1].upper()
+                delete_asset(symbol)
+                return {
+                    "response": f"❌ **Beobachtung beendet!** Asset **{symbol}** wurde aus der Watchlist entfernt.",
+                    "trigger_refresh": True
+                }
+                
+            else:
+                return {
+                    "response": (
+                        "ℹ️ **Verfügbare Chat-Befehle:**\n"
+                        "- `/watch SYMBOL` - Fügt Asset zur Watchlist hinzu\n"
+                        "- `/unwatch SYMBOL` - Entfernt Asset aus Watchlist\n"
+                        "- `/add SYMBOL MENGE KAUFPREIS` - Fügt Asset zum Portfolio hinzu\n"
+                        "- `/remove SYMBOL` - Entfernt Asset aus Portfolio"
+                    ),
+                    "trigger_refresh": False
+                }
+        
+        # Reguläre AI Chat-Antwort
         predictions_data = get_predictions_from_db().get("predictions", {})
         portfolio_data = get_portfolio_from_db()
+        ai_response = generate_chat_response(msg, portfolio_data, predictions_data)
         
-        # Generierung der Antwort
-        ai_response = generate_chat_response(req.message, portfolio_data, predictions_data)
-        
-        return {"response": ai_response}
+        return {"response": ai_response, "trigger_refresh": False}
     except Exception as e:
         logger.error(f"Fehler bei Chat-Anfrage: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -623,6 +711,243 @@ def get_backtest_history():
         return history_list
     except Exception as e:
         logger.error(f"Fehler beim Laden der Backtest-Historie: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/exchange-rate")
+def get_exchange_rate():
+    """Liefert den aktuellen USD/EUR-Wechselkurs."""
+    try:
+        from backend.data_fetcher import fetch_exchange_rate
+        return {"rate": fetch_exchange_rate()}
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des Wechselkurses: {e}")
+        return {"rate": 0.92}
+
+
+@app.get("/api/alerts")
+def get_alerts():
+    """Liefert alle aktiven Alarme."""
+    try:
+        from backend.db import get_all_alerts
+        return get_all_alerts()
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Alarme: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden der Alarme.")
+
+
+@app.post("/api/alerts")
+def create_new_alert(alert: AlertRequest):
+    """Erstellt einen neuen Alarm."""
+    try:
+        from backend.db import add_alert
+        success = add_alert(alert.symbol, alert.alert_type, alert.target_value)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Speichern des Alarms.")
+        return {"status": "success", "message": f"Alarm für {alert.symbol} erstellt."}
+    except Exception as e:
+        logger.error(f"Fehler beim Erstellen des Alarms: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/alerts/{alert_id}")
+def delete_alert_route(alert_id: int):
+    """Löscht einen bestehenden Alarm."""
+    try:
+        from backend.db import delete_alert
+        success = delete_alert(alert_id)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Löschen des Alarms.")
+        return {"status": "success", "message": f"Alarm {alert_id} gelöscht."}
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Alarms: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/alerts/triggered")
+def get_triggered_alerts_route():
+    """Liefert alle ausgelösten Alarme."""
+    try:
+        from backend.db import get_triggered_alerts
+        return get_triggered_alerts()
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der ausgelösten Alarme: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/backtest/simulate")
+def simulate_strategy(symbol: str, strategy: str, years: int = 1):
+    """Simuliert eine Handelsstrategie (rsi, sma, macd) über einen Zeitraum."""
+    try:
+        import pandas as pd
+        import numpy as np
+        symbol_upper = symbol.strip().upper()
+        ticker = yf.Ticker(symbol_upper)
+        
+        # Etwas mehr Daten abrufen für gleitende Durchschnitte
+        period = f"{years}y"
+        df = ticker.history(period=period)
+        if df.empty:
+            raise HTTPException(status_code=404, detail="Keine historischen Daten gefunden.")
+            
+        close_prices = df['Close']
+        
+        # Indikatoren berechnen
+        # RSI
+        delta = close_prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        loss = loss.replace(0, 0.00001)
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        
+        # SMA
+        sma_20 = close_prices.rolling(window=20).mean()
+        sma_50 = close_prices.rolling(window=50).mean()
+        
+        # MACD
+        exp1 = close_prices.ewm(span=12, adjust=False).mean()
+        exp2 = close_prices.ewm(span=26, adjust=False).mean()
+        macd = exp1 - exp2
+        macd_signal = macd.ewm(span=9, adjust=False).mean()
+        
+        # Simulation
+        cash = 10000.0
+        shares = 0.0
+        trade_count = 0
+        
+        sim_history = []
+        buy_hold_shares = 10000.0 / float(close_prices.iloc[0])
+        
+        start_idx = 50 if len(close_prices) > 50 else 0
+        
+        for i in range(start_idx, len(df)):
+            date_str = df.index[i].strftime('%Y-%m-%d')
+            price = float(close_prices.iloc[i])
+            
+            buy_signal = False
+            sell_signal = False
+            
+            if strategy == "rsi":
+                curr_rsi = rsi.iloc[i]
+                if not pd.isna(curr_rsi):
+                    if curr_rsi < 30:
+                        buy_signal = True
+                    elif curr_rsi > 70:
+                        sell_signal = True
+            elif strategy == "sma":
+                curr_sma20 = sma_20.iloc[i]
+                curr_sma50 = sma_50.iloc[i]
+                prev_sma20 = sma_20.iloc[i-1] if i > 0 else curr_sma20
+                prev_sma50 = sma_50.iloc[i-1] if i > 0 else curr_sma50
+                if not pd.isna(curr_sma20) and not pd.isna(curr_sma50):
+                    if prev_sma20 <= prev_sma50 and curr_sma20 > curr_sma50:
+                        buy_signal = True
+                    elif prev_sma20 >= prev_sma50 and curr_sma20 < curr_sma50:
+                        sell_signal = True
+            elif strategy == "macd":
+                curr_macd = macd.iloc[i]
+                curr_sig = macd_signal.iloc[i]
+                prev_macd = macd.iloc[i-1] if i > 0 else curr_macd
+                prev_sig = macd_signal.iloc[i-1] if i > 0 else curr_sig
+                if not pd.isna(curr_macd) and not pd.isna(curr_sig):
+                    if prev_macd <= prev_sig and curr_macd > curr_sig:
+                        buy_signal = True
+                    elif prev_macd >= prev_sig and curr_macd < curr_sig:
+                        sell_signal = True
+                        
+            if buy_signal and cash > 0:
+                shares = cash / price
+                cash = 0.0
+                trade_count += 1
+            elif sell_signal and shares > 0:
+                cash = shares * price
+                shares = 0.0
+                trade_count += 1
+                
+            strat_val = cash + (shares * price)
+            bh_val = buy_hold_shares * price
+            
+            sim_history.append({
+                "date": date_str,
+                "strategy_val": round(strat_val, 2),
+                "buy_hold_val": round(bh_val, 2),
+                "price": round(price, 2)
+            })
+            
+        final_strat_val = cash + (shares * float(close_prices.iloc[-1]))
+        final_bh_val = buy_hold_shares * float(close_prices.iloc[-1])
+        
+        strat_return = ((final_strat_val - 10000.0) / 10000.0) * 100
+        bh_return = ((final_bh_val - 10000.0) / 10000.0) * 100
+        
+        return {
+            "symbol": symbol_upper,
+            "strategy": strategy,
+            "years": years,
+            "total_trades": trade_count,
+            "final_value": round(final_strat_val, 2),
+            "strategy_return": round(strat_return, 2),
+            "buy_hold_return": round(bh_return, 2),
+            "history": sim_history
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei Strategie-Simulation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/dividends")
+def get_portfolio_dividends():
+    """Berechnet die geschätzten monatlichen Dividenden-Zahlungen des Portfolios."""
+    try:
+        from backend.db import get_portfolio_from_db, get_predictions_from_db
+        from backend.data_fetcher import fetch_dividend_history
+        
+        holdings = get_portfolio_from_db()
+        predictions = get_predictions_from_db().get("predictions", {})
+        
+        monthly_dividends = {m: 0.0 for m in range(1, 13)}
+        annual_total = 0.0
+        
+        for item in holdings:
+            symbol = item["symbol"]
+            qty = item["quantity"]
+            
+            pred = predictions.get(symbol)
+            if not pred:
+                continue
+                
+            price = pred.get("price") or item["buy_price"]
+            div_yield = pred.get("dividend_yield") or 0.0
+            div_rate = pred.get("dividend_rate") or 0.0
+            
+            if div_rate > 0:
+                holding_annual = qty * div_rate
+            else:
+                holding_annual = qty * price * div_yield
+                
+            if holding_annual <= 0:
+                continue
+                
+            annual_total += holding_annual
+            
+            months = fetch_dividend_history(symbol)
+            if not months:
+                months = [3, 6, 9, 12]
+                
+            div_per_month = holding_annual / len(months)
+            for m in months:
+                monthly_dividends[m] += div_per_month
+                
+        for m in monthly_dividends:
+            monthly_dividends[m] = round(monthly_dividends[m], 2)
+            
+        return {
+            "monthly_dividends": monthly_dividends,
+            "annual_total": round(annual_total, 2)
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei Dividendenberechnung: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
