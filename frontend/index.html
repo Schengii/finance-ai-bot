@@ -39,6 +39,9 @@
                 <button class="nav-tab" id="nav-alerts" data-tab="alerts-view">
                     <i data-lucide="bell"></i> Alarme
                 </button>
+                <button class="nav-tab" id="nav-settings" data-tab="settings-view">
+                    <i data-lucide="settings"></i> Einstellungen
+                </button>
             </nav>
             
             <div class="header-actions">
@@ -328,6 +331,20 @@
 
             <!-- Portfolio View (Portfolio Planner) -->
             <div id="portfolio-view" class="view-panel hidden">
+                <!-- Portfolio Header Bar for Profiles & Export -->
+                <div class="portfolio-header-bar glass-panel">
+                    <div class="portfolio-profile-selector">
+                        <label for="portfolio-profile-select">Portfolio-Profil:</label>
+                        <select id="portfolio-profile-select" class="glass-input"></select>
+                        <button id="btn-create-portfolio" class="btn btn-secondary btn-sm" title="Neues Profil erstellen"><i data-lucide="plus"></i></button>
+                        <button id="btn-delete-portfolio" class="btn btn-secondary btn-sm btn-delete-profile" title="Dieses Profil löschen"><i data-lucide="trash-2"></i></button>
+                    </div>
+                    <div class="export-buttons">
+                        <button id="btn-export-csv" class="btn btn-secondary btn-sm"><i data-lucide="download"></i> CSV Export</button>
+                        <button id="btn-export-print" class="btn btn-secondary btn-sm"><i data-lucide="printer"></i> PDF / Drucken</button>
+                    </div>
+                </div>
+
                 <!-- Portfolio Stats -->
                 <section class="overview-stats">
                     <div class="stat-card glass-panel">
@@ -373,62 +390,184 @@
                             <p class="section-subtitle">Erfassen und verwalten Sie Ihre Wertpapiere.</p>
                         </div>
 
-                        <!-- Add Holding Form -->
-                        <form id="add-investment-form" class="add-investment-form">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="inv-asset">Asset wählen</label>
-                                    <select id="inv-asset" class="glass-input" required>
-                                        <!-- Dynamic Options -->
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="inv-qty">Menge</label>
-                                    <input type="number" id="inv-qty" class="glass-input" step="any" min="0.000001" placeholder="z.B. 10" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="inv-price">Kaufpreis ($)</label>
-                                    <input type="number" id="inv-price" class="glass-input" step="any" min="0.01" placeholder="z.B. 150.50" required>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-add-inv">
-                                <i data-lucide="plus"></i> Investment hinzufügen
-                            </button>
-                        </form>
-
-                        <!-- Holdings Table -->
-                        <div class="holdings-table-container">
-                            <table class="holdings-table">
-                                <thead>
-                                    <tr>
-                                        <th>Asset</th>
-                                        <th>Menge</th>
-                                        <th>Kaufkurs</th>
-                                        <th>Aktueller Kurs</th>
-                                        <th>Marktwert</th>
-                                        <th>Gewinn/Verlust</th>
-                                        <th>Aktion</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="holdings-list-body">
-                                    <!-- Dynamisch befüllt -->
-                                </tbody>
-                            </table>
+                        <!-- Portfolio Sub-Tabs -->
+                        <div class="portfolio-sub-tabs">
+                            <button class="portfolio-sub-tab active" data-port-tab="holdings-tab-content">Bestände</button>
+                            <button class="portfolio-sub-tab" data-port-tab="transactions-tab-content">Transaktionsverlauf</button>
+                            <button class="portfolio-sub-tab" data-port-tab="tax-tab-content">FIFO-Steuer-Rechner</button>
                         </div>
 
-                        <!-- Portfolio Allocation Chart Card & Dividend Calendar Card -->
-                        <div class="portfolio-charts-row hidden" id="portfolio-charts-row">
-                            <div class="portfolio-chart-card glass-panel" id="portfolio-chart-card">
-                                <h3>Asset-Aufteilung (nach Marktwert)</h3>
-                                <div class="portfolio-chart-container">
-                                    <canvas id="portfolioAllocationChart"></canvas>
+                        <!-- 1. Bestände Tab Content -->
+                        <div id="holdings-tab-content" class="portfolio-tab-pane active">
+                            <!-- Add Holding Form -->
+                            <form id="add-investment-form" class="add-investment-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="inv-asset">Asset wählen</label>
+                                        <select id="inv-asset" class="glass-input" required>
+                                            <!-- Dynamic Options -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inv-qty">Menge</label>
+                                        <input type="number" id="inv-qty" class="glass-input" step="any" min="0.000001" placeholder="z.B. 10" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inv-price">Kaufpreis (€)</label>
+                                        <input type="number" id="inv-price" class="glass-input" step="any" min="0.01" placeholder="z.B. 150.50" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-add-inv">
+                                    <i data-lucide="plus"></i> Investment hinzufügen
+                                </button>
+                            </form>
+
+                            <!-- Holdings Table -->
+                            <div class="holdings-table-container">
+                                <table class="holdings-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Asset</th>
+                                            <th>Menge</th>
+                                            <th>Kaufkurs</th>
+                                            <th>Aktueller Kurs</th>
+                                            <th>Marktwert</th>
+                                            <th>Gewinn/Verlust</th>
+                                            <th>Aktion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="holdings-list-body">
+                                        <!-- Dynamisch befüllt -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Portfolio Allocation Chart Card & Dividend Calendar Card -->
+                            <div class="portfolio-charts-row hidden" id="portfolio-charts-row">
+                                <div class="portfolio-chart-card glass-panel" id="portfolio-chart-card">
+                                    <h3>Asset-Aufteilung (nach Marktwert)</h3>
+                                    <div class="portfolio-chart-container">
+                                        <canvas id="portfolioAllocationChart"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <div class="portfolio-chart-card glass-panel" id="portfolio-dividend-card">
+                                    <h3>Dividenden-Kalender (Erwartete Erträge)</h3>
+                                    <div class="portfolio-chart-container">
+                                        <canvas id="portfolioDividendChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="portfolio-chart-card glass-panel" id="portfolio-dividend-card">
-                                <h3>Dividenden-Kalender (Erwartete Erträge)</h3>
-                                <div class="portfolio-chart-container">
-                                    <canvas id="portfolioDividendChart"></canvas>
+                        </div>
+
+                        <!-- 2. Transaktionsverlauf Tab Content -->
+                        <div id="transactions-tab-content" class="portfolio-tab-pane hidden">
+                            <!-- Add Transaction Form -->
+                            <form id="add-transaction-form" class="add-investment-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="tx-asset">Asset wählen</label>
+                                        <select id="tx-asset" class="glass-input" required>
+                                            <!-- Dynamic Options -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tx-type">Typ</label>
+                                        <select id="tx-type" class="glass-input" required>
+                                            <option value="BUY">Kauf (BUY)</option>
+                                            <option value="SELL">Verkauf (SELL)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tx-qty">Menge</label>
+                                        <input type="number" id="tx-qty" class="glass-input" step="any" min="0.000001" placeholder="z.B. 10" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tx-price">Preis (€)</label>
+                                        <input type="number" id="tx-price" class="glass-input" step="any" min="0.01" placeholder="z.B. 150.50" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tx-date">Datum</label>
+                                        <input type="date" id="tx-date" class="glass-input" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-add-inv">
+                                    <i data-lucide="plus-circle"></i> Transaktion buchen
+                                </button>
+                            </form>
+
+                            <!-- Transactions Table -->
+                            <div class="holdings-table-container">
+                                <table class="holdings-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Datum</th>
+                                            <th>Asset</th>
+                                            <th>Typ</th>
+                                            <th>Menge</th>
+                                            <th>Preis</th>
+                                            <th>Gesamtwert</th>
+                                            <th>Aktion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactions-list-body">
+                                        <!-- Dynamisch befüllt -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 3. FIFO Steuer-Rechner Tab Content -->
+                        <div id="tax-tab-content" class="portfolio-tab-pane hidden">
+                            <!-- Tax Simulator Form -->
+                            <form id="tax-simulator-form" class="add-investment-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="tax-asset">Asset wählen</label>
+                                        <select id="tax-asset" class="glass-input" required>
+                                            <!-- Dynamic Options -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tax-qty">Verkauf Menge</label>
+                                        <input type="number" id="tax-qty" class="glass-input" step="any" min="0.000001" placeholder="z.B. 5" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tax-price">Verkaufspreis (€)</label>
+                                        <input type="number" id="tax-price" class="glass-input" step="any" min="0.01" placeholder="z.B. 180.00" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-add-inv">
+                                    <i data-lucide="calculator"></i> Steuer simulieren
+                                </button>
+                            </form>
+
+                            <!-- Simulation Results Card -->
+                            <div id="tax-simulation-results" class="tax-results-card hidden glass-panel">
+                                <h3>Simulationsergebnis (FIFO)</h3>
+                                <div class="tax-results-grid">
+                                    <div class="tax-stat">
+                                        <span class="tax-label">Verkaufserlös:</span>
+                                        <span class="tax-value" id="tax-res-revenue">0.00 €</span>
+                                    </div>
+                                    <div class="tax-stat">
+                                        <span class="tax-label">Anschaffungskosten (FIFO):</span>
+                                        <span class="tax-value" id="tax-res-cost">0.00 €</span>
+                                    </div>
+                                    <div class="tax-stat">
+                                        <span class="tax-label">Realisierter Gewinn:</span>
+                                        <span class="tax-value" id="tax-res-profit">0.00 €</span>
+                                    </div>
+                                    <div class="tax-stat highlight-tax">
+                                        <span class="tax-label">Est. Kapitalertragsteuer (26.375%):</span>
+                                        <span class="tax-value text-red" id="tax-res-tax">0.00 €</span>
+                                    </div>
+                                </div>
+                                <div class="matched-buys-section">
+                                    <h4>Verwendete Kauf-Tranchen:</h4>
+                                    <ul id="tax-res-matched-list" class="matched-list">
+                                        <!-- Dynamisch befüllt -->
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -609,10 +748,53 @@
                                     </tr>
                                 </thead>
                                 <tbody id="alerts-list-body">
-                                    <tr><td colspan="5" style="text-align:center;">Keine Alarme eingerichtet</td></tr>
+                                    <tr><td colspan="5" class="text-center">Keine Alarme eingerichtet</td></tr>
                                 </tbody>
                             </table>
                         </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Settings View (KI-Einstellungen) -->
+            <div id="settings-view" class="view-panel hidden">
+                <section class="overview-stats">
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon sentiment">
+                            <i data-lucide="settings"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>System-Einstellungen</h3>
+                            <p class="stat-value">KI-Personalisierung</p>
+                            <span class="stat-desc">Anpassen von Tonart und Systemprompts</span>
+                        </div>
+                    </div>
+                </section>
+                
+                <div class="dashboard-grid">
+                    <section class="assets-list-section glass-panel settings-form-container">
+                        <div class="section-header">
+                            <h2>KI-Prompt &amp; Tonart</h2>
+                            <p class="section-subtitle">Personalisieren Sie die Empfehlungen und die Tonalität des KI-Beraters.</p>
+                        </div>
+                        <form id="settings-form" class="settings-form">
+                            <div class="form-group-block">
+                                <label for="setting-ai-tone">Tonalität der KI</label>
+                                <select id="setting-ai-tone" class="glass-input" required>
+                                    <option value="professionell">Professionell / Sachlich</option>
+                                    <option value="humorvoll">Humorvoll / Locker</option>
+                                    <option value="defensiv">Defensiv / Risikoavers</option>
+                                    <option value="aggressiv">Aggressiv / Risikofreudig</option>
+                                </select>
+                            </div>
+                            <div class="form-group-block">
+                                <label for="setting-custom-prompt">Zusätzlicher Systemprompt / Anweisungen</label>
+                                <textarea id="setting-custom-prompt" class="glass-input text-area-prompt" rows="8" placeholder="z.B. Fokussiere dich besonders auf langfristiges Dividendenwachstum. Warne mich explizit vor geopolitischen Risiken."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i data-lucide="save"></i> Einstellungen speichern
+                            </button>
+                        </form>
                     </section>
                 </div>
             </div>

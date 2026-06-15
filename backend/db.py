@@ -70,15 +70,87 @@ def init_db():
         )
     """)
     
-    # 4. Portfolio-Tabelle (Bestände des Nutzers)
+    # 4. Portfolios-Liste (Profile)
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS portfolio (
-            symbol TEXT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS portfolios_list (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )
+    """)
+    
+    # Standard-Portfolio einfügen falls leer
+    cursor.execute("SELECT COUNT(*) FROM portfolios_list")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT INTO portfolios_list (id, name) VALUES (1, 'Standard-Portfolio')")
+
+    # 5. Portfolio-Tabelle (Bestände des Nutzers)
+    # Check if 'portfolio' table has composite primary key / portfolio_id
+    cursor.execute("PRAGMA table_info(portfolio)")
+    cols = [col[1] for col in cursor.fetchall()]
+    if not cols:
+        # Tabelle existiert nicht, erstellen
+        cursor.execute("""
+            CREATE TABLE portfolio (
+                portfolio_id INTEGER NOT NULL,
+                symbol TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                buy_price REAL NOT NULL,
+                PRIMARY KEY (portfolio_id, symbol),
+                FOREIGN KEY (portfolio_id) REFERENCES portfolios_list (id) ON DELETE CASCADE,
+                FOREIGN KEY (symbol) REFERENCES assets (symbol) ON DELETE CASCADE
+            )
+        """)
+    elif "portfolio_id" not in cols:
+        logger.info("Migriere Portfolio-Tabelle zur Unterstützung von Multi-Portfolios...")
+        # 1. Benenne alte Tabelle um
+        cursor.execute("ALTER TABLE portfolio RENAME TO portfolio_old")
+        # 2. Erstelle neue Tabelle
+        cursor.execute("""
+            CREATE TABLE portfolio (
+                portfolio_id INTEGER NOT NULL,
+                symbol TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                buy_price REAL NOT NULL,
+                PRIMARY KEY (portfolio_id, symbol),
+                FOREIGN KEY (portfolio_id) REFERENCES portfolios_list (id) ON DELETE CASCADE,
+                FOREIGN KEY (symbol) REFERENCES assets (symbol) ON DELETE CASCADE
+            )
+        """)
+        # 3. Kopiere alte Daten mit portfolio_id = 1
+        try:
+            cursor.execute("INSERT INTO portfolio (portfolio_id, symbol, quantity, buy_price) SELECT 1, symbol, quantity, buy_price FROM portfolio_old")
+        except Exception as e:
+            logger.error(f"Fehler beim Kopieren der alten Portfoliodaten: {e}")
+        # 4. Lösche alte Tabelle
+        cursor.execute("DROP TABLE portfolio_old")
+        
+    # 6. Settings-Tabelle (Einstellungen für Prompts etc.)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+    
+    # Standard-Einstellungen einfügen
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('custom_prompt', '')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ai_tone', 'professionell')")
+
+    # 7. Transaktionen-Tabelle (für FIFO)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            portfolio_id INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            type TEXT NOT NULL, -- 'BUY' oder 'SELL'
             quantity REAL NOT NULL,
-            buy_price REAL NOT NULL,
+            price REAL NOT NULL,
+            date TEXT NOT NULL,
+            FOREIGN KEY (portfolio_id) REFERENCES portfolios_list (id) ON DELETE CASCADE,
             FOREIGN KEY (symbol) REFERENCES assets (symbol) ON DELETE CASCADE
         )
     """)
+
     
     # 5. Alerts-Tabelle (Alarme des Nutzers)
     cursor.execute("""
@@ -260,44 +332,45 @@ def get_predictions_from_db():
     conn.close()
     return {"last_updated": last_updated, "predictions": predictions}
 
-def get_portfolio_from_db():
-    """Holt das Portfolio des Nutzers."""
+def get_portfolio_from_db(portfolio_id: int = 1):
+    """Holt das Portfolio des Nutzers für ein Profil."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT symbol, quantity, buy_price FROM portfolio")
+    cursor.execute("SELECT symbol, quantity, buy_price FROM portfolio WHERE portfolio_id = ?", (portfolio_id,))
     rows = cursor.fetchall()
     conn.close()
     return [{"symbol": row["symbol"], "quantity": row["quantity"], "buy_price": row["buy_price"]} for row in rows]
 
-def save_portfolio_item(symbol, quantity, buy_price):
+def save_portfolio_item(symbol, quantity, buy_price, portfolio_id: int = 1):
     """Speichert oder aktualisiert ein Portfolio-Asset."""
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT OR REPLACE INTO portfolio (symbol, quantity, buy_price)
-            VALUES (?, ?, ?)
-        """, (symbol, quantity, buy_price))
+            INSERT OR REPLACE INTO portfolio (portfolio_id, symbol, quantity, buy_price)
+            VALUES (?, ?, ?, ?)
+        """, (portfolio_id, symbol.upper(), quantity, buy_price))
         conn.commit()
         return True
     except Exception as e:
-        logger.error(f"Fehler beim Speichern des Portfolio-Assets {symbol}: {e}")
+        logger.error(f"Fehler beim Speichern des Portfolio-Assets {symbol} für Portfolio {portfolio_id}: {e}")
         return False
     finally:
         conn.close()
 
-def delete_portfolio_item(symbol):
+def delete_portfolio_item(symbol, portfolio_id: int = 1):
     """Löscht ein Asset aus dem Portfolio."""
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("DELETE FROM portfolio WHERE symbol = ?", (symbol,))
+        cursor.execute("DELETE FROM portfolio WHERE symbol = ? AND portfolio_id = ?", (symbol, portfolio_id))
         conn.commit()
         return True
     except Exception as e:
-        logger.error(f"Fehler beim Löschen des Portfolio-Assets {symbol}: {e}")
+        logger.error(f"Fehler beim Löschen des Portfolio-Assets {symbol} für Portfolio {portfolio_id}: {e}")
         return False
     finally:
+        conn.close()
         conn.close()
 
 # Alarme CRUD Hilfsfunktionen
@@ -391,4 +464,285 @@ def mark_alert_triggered(alert_id):
         return False
     finally:
         conn.close()
+
+# --------------------------------------------------------------------------
+# Hilfsfunktionen für Multi-Portfolio, Settings & FIFO Transaktionen
+# --------------------------------------------------------------------------
+
+def get_portfolios():
+    """Holt alle Portfolio-Profile."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM portfolios_list ORDER BY id ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"id": row["id"], "name": row["name"]} for row in rows]
+
+def create_portfolio(name):
+    """Erstellt ein neues Portfolio-Profil."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO portfolios_list (name) VALUES (?)", (name,))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Erstellen des Portfolios {name}: {e}")
+        return False
+    finally:
+        conn.close()
+
+def delete_portfolio(portfolio_id):
+    """Löscht ein Portfolio-Profil (und kaskadiert alle Bestände/Transaktionen)."""
+    if portfolio_id == 1:
+        return False # Standard-Portfolio darf nicht gelöscht werden
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM portfolios_list WHERE id = ?", (portfolio_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Portfolios {portfolio_id}: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_setting(key, default=""):
+    """Liest eine Einstellung aus."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+    row = cursor.fetchone()
+    conn.close()
+    return row["value"] if row else default
+
+def save_setting(key, value):
+    """Speichert eine Einstellung."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern der Einstellung {key}: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_transactions(portfolio_id):
+    """Holt den Transaktionsverlauf eines Portfolios."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT t.id, t.symbol, t.type, t.quantity, t.price, t.date, a.name
+        FROM transactions t
+        JOIN assets a ON t.symbol = a.symbol
+        WHERE t.portfolio_id = ?
+        ORDER BY t.date DESC, t.id DESC
+    """, (portfolio_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [{
+        "id": row["id"],
+        "symbol": row["symbol"],
+        "name": row["name"],
+        "type": row["type"],
+        "quantity": row["quantity"],
+        "price": row["price"],
+        "date": row["date"]
+    } for row in rows]
+
+def add_transaction(portfolio_id, symbol, tx_type, quantity, price, date):
+    """Fügt eine Transaktion hinzu und aktualisiert den Gesamtbestand im Portfolio."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    symbol = symbol.upper()
+    try:
+        # Transaktion einfügen
+        cursor.execute("""
+            INSERT INTO transactions (portfolio_id, symbol, type, quantity, price, date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (portfolio_id, symbol, tx_type.upper(), quantity, price, date))
+        
+        # Neuen Gesamtbestand für dieses Asset berechnen
+        cursor.execute("""
+            SELECT type, quantity, price FROM transactions 
+            WHERE portfolio_id = ? AND symbol = ?
+        """, (portfolio_id, symbol))
+        rows = cursor.fetchall()
+        
+        total_qty = 0.0
+        total_cost = 0.0
+        
+        for row in rows:
+            qty = row["quantity"]
+            p = row["price"]
+            if row["type"] == "BUY":
+                total_qty += qty
+                total_cost += qty * p
+            elif row["type"] == "SELL":
+                if total_qty > 0:
+                    avg_price = total_cost / total_qty
+                    total_qty = max(0.0, total_qty - qty)
+                    total_cost = total_qty * avg_price
+                else:
+                    total_qty = 0.0
+                    total_cost = 0.0
+                    
+        avg_buy_price = (total_cost / total_qty) if total_qty > 0 else 0.0
+        
+        if total_qty > 0:
+            cursor.execute("""
+                INSERT OR REPLACE INTO portfolio (portfolio_id, symbol, quantity, buy_price)
+                VALUES (?, ?, ?, ?)
+            """, (portfolio_id, symbol, total_qty, round(avg_buy_price, 4)))
+        else:
+            cursor.execute("""
+                DELETE FROM portfolio WHERE portfolio_id = ? AND symbol = ?
+            """, (portfolio_id, symbol))
+            
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Hinzufügen der Transaktion: {e}")
+        return False
+    finally:
+        conn.close()
+
+def delete_transaction(tx_id, portfolio_id):
+    """Löscht eine Transaktion und berechnet den Bestand neu."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT symbol FROM transactions WHERE id = ?", (tx_id,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        symbol = row["symbol"]
+        
+        cursor.execute("DELETE FROM transactions WHERE id = ? AND portfolio_id = ?", (tx_id, portfolio_id))
+        
+        cursor.execute("""
+            SELECT type, quantity, price FROM transactions 
+            WHERE portfolio_id = ? AND symbol = ?
+        """, (portfolio_id, symbol))
+        rows = cursor.fetchall()
+        
+        total_qty = 0.0
+        total_cost = 0.0
+        
+        for row in rows:
+            qty = row["quantity"]
+            p = row["price"]
+            if row["type"] == "BUY":
+                total_qty += qty
+                total_cost += qty * p
+            elif row["type"] == "SELL":
+                if total_qty > 0:
+                    avg_price = total_cost / total_qty
+                    total_qty = max(0.0, total_qty - qty)
+                    total_cost = total_qty * avg_price
+                else:
+                    total_qty = 0.0
+                    total_cost = 0.0
+                    
+        avg_buy_price = (total_cost / total_qty) if total_qty > 0 else 0.0
+        
+        if total_qty > 0:
+            cursor.execute("""
+                INSERT OR REPLACE INTO portfolio (portfolio_id, symbol, quantity, buy_price)
+                VALUES (?, ?, ?, ?)
+            """, (portfolio_id, symbol, total_qty, round(avg_buy_price, 4)))
+        else:
+            cursor.execute("""
+                DELETE FROM portfolio WHERE portfolio_id = ? AND symbol = ?
+            """, (portfolio_id, symbol))
+            
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen der Transaktion: {e}")
+        return False
+    finally:
+        conn.close()
+
+def calculate_fifo_tax(portfolio_id, symbol, sell_qty, sell_price):
+    """
+    Berechnet den Gewinn/Verlust nach FIFO und schätzt die Kapitalertragsteuer (26,375%).
+    Gibt Details zu den gematchten Käufen zurück.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    symbol = symbol.upper()
+    
+    cursor.execute("""
+        SELECT type, quantity, price, date FROM transactions 
+        WHERE portfolio_id = ? AND symbol = ?
+        ORDER BY date ASC, id ASC
+    """, (portfolio_id, symbol))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    buy_queue = []
+    
+    for row in rows:
+        qty = row["quantity"]
+        p = row["price"]
+        t_type = row["type"]
+        
+        if t_type == "BUY":
+            buy_queue.append({"qty": qty, "price": p, "date": row["date"]})
+        elif t_type == "SELL":
+            to_remove = qty
+            while to_remove > 0 and buy_queue:
+                first = buy_queue[0]
+                if first["qty"] <= to_remove:
+                    to_remove -= first["qty"]
+                    buy_queue.pop(0)
+                else:
+                    first["qty"] -= to_remove
+                    to_remove = 0
+                    
+    matched_buys = []
+    total_cost = 0.0
+    remaining_to_sell = sell_qty
+    
+    temp_queue = [dict(b) for b in buy_queue]
+    
+    while remaining_to_sell > 0 and temp_queue:
+        first = temp_queue[0]
+        match_qty = min(remaining_to_sell, first["qty"])
+        
+        matched_buys.append({
+            "buy_date": first["date"],
+            "buy_price": first["price"],
+            "quantity": match_qty,
+            "cost": round(match_qty * first["price"], 2)
+        })
+        
+        total_cost += match_qty * first["price"]
+        remaining_to_sell -= match_qty
+        
+        first["qty"] -= match_qty
+        if first["qty"] <= 0:
+            temp_queue.pop(0)
+            
+    revenue = sell_qty * sell_price
+    profit = revenue - total_cost
+    tax = max(0.0, profit * 0.26375)
+    
+    return {
+        "symbol": symbol,
+        "sell_quantity": sell_qty,
+        "sell_price": sell_price,
+        "revenue": round(revenue, 2),
+        "total_cost": round(total_cost, 2),
+        "profit": round(profit, 2),
+        "tax": round(tax, 2),
+        "matched_buys": matched_buys,
+        "unmatched_quantity": remaining_to_sell
+    }
+
 

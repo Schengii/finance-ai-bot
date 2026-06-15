@@ -2029,7 +2029,6 @@ select.glass-input option {
     gap: 0.4rem;
     padding: 0.5rem 1rem 0 1rem;
     overflow-x: auto;
-    scrollbar-width: none; /* Firefox */
 }
 .chat-quick-actions::-webkit-scrollbar {
     display: none; /* Safari & Chrome */
@@ -2228,7 +2227,7 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 1200px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
-        min-height: auto;
+        min-height: unset;
     }
     .assets-list-section {
         max-height: 450px;
@@ -2303,7 +2302,6 @@ h1, h2, h3, h4, h5, h6 {
     }
     .detail-tabs {
         overflow-x: auto;
-        scrollbar-width: none;
     }
     .detail-tabs::-webkit-scrollbar {
         display: none;
@@ -2331,6 +2329,222 @@ h1, h2, h3, h4, h5, h6 {
         font-size: 0.8rem;
     }
 }
+
+.text-center {
+    text-align: center !important;
+}
+
+/* ==========================================================================
+   PORTFOLIO PROFILE, EXPORTS, SUB-TABS & FIFO TAX / TRANSACTIONS
+   ========================================================================== */
+
+.portfolio-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.portfolio-profile-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.portfolio-profile-selector label {
+    font-family: var(--font-heading);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.portfolio-profile-selector select {
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    outline: none;
+    font-family: var(--font-body);
+}
+
+.portfolio-profile-selector select:focus {
+    border-color: var(--accent);
+}
+
+.portfolio-sub-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.portfolio-sub-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.portfolio-sub-tab:hover {
+    color: var(--text-primary);
+}
+
+.portfolio-sub-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.portfolio-tab-pane {
+    display: none;
+}
+
+.portfolio-tab-pane.active {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-delete-profile {
+    color: var(--color-strong-sell) !important;
+}
+
+.btn-delete-profile:hover {
+    background: rgba(225, 29, 72, 0.1) !important;
+}
+
+/* Tax Simulation Card */
+.tax-results-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.tax-results-card h3 {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.tax-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.tax-stat {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tax-stat.highlight-tax {
+    border-color: rgba(225, 29, 72, 0.3);
+    background: rgba(225, 29, 72, 0.05);
+}
+
+.tax-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.tax-value {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.matched-buys-section h4 {
+    font-size: 0.9rem;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.matched-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.matched-list li {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding: 0.4rem 0.6rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+/* Settings view form classes */
+.settings-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-group-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group-block label {
+    font-family: var(--font-heading);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.text-area-prompt {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+/* Print Overrides */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    .app-container, .chat-widget, .header-nav, .header-actions, .watchlist-action-area, #add-investment-form, #add-transaction-form, #tax-simulator-form, .btn {
+        display: none !important;
+    }
+    .view-panel {
+        display: block !important;
+    }
+}
+
+
 
 
 

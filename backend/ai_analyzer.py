@@ -2,8 +2,10 @@ import os
 import json
 import logging
 from backend.config import GEMINI_API_KEY
+from backend.db import get_setting
 
 logger = logging.getLogger(__name__)
+
 
 # Try importing the new google-genai SDK first
 try:
@@ -118,6 +120,10 @@ def analyze_asset_with_ai(asset_info, market_data, news_items):
 
     logger.info(f"Führe KI-Analyse für {symbol} mit Gemini durch...")
     
+    # Einstellungen aus der Datenbank laden
+    custom_prompt = get_setting('custom_prompt', '')
+    ai_tone = get_setting('ai_tone', 'professionell')
+    
     # News für den Prompt aufbereiten
     news_text = ""
     for idx, item in enumerate(news_items[:5]):
@@ -128,7 +134,11 @@ def analyze_asset_with_ai(asset_info, market_data, news_items):
 
     prompt = f"""
 Du bist ein professioneller Finanzanalyst und KI-Investment-Berater.
-Deine Aufgabe ist es, die Marktlage und die Nachrichten zu folgender Aktie bzw. Kryptowährung zu bewerten:
+Deine Aufgabe ist es, die Marktlage und die Nachrichten zu folgender Aktie bzw. Kryptowährung zu bewerten.
+
+NUTZER-EINSTELLUNGEN FÜR DEINEN STIL / DEINE TONALITÄT:
+- Tonalität: {ai_tone}
+- Spezifische Anweisungen / Fokus: {custom_prompt}
 
 Name: {name} ({symbol})
 Kategorie: {asset_info['type']}
@@ -149,7 +159,7 @@ TECHNISCHE INDIKATOREN:
 AKTUELLE NACHRICHTEN & THEMEN:
 {news_text}
 
-Analysiere die Daten und erstelle eine fundierte Prognose.
+Analysiere die Daten und erstelle eine fundierte Prognose unter Berücksichtigung der gewünschten Tonalität ({ai_tone}) und der spezifischen Anweisungen.
 Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit diesem JSON-Objekt. Verwende genau folgendes Schema:
 
 {{
@@ -157,7 +167,7 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
   "confidence": <Zahl zwischen 0 und 100, wie sicher du dir bei der Prognose bist>,
   "sentiment_score": <Zahl zwischen -1.0 (extrem negativ) und 1.0 (extrem positiv) für die Nachrichtenstimmung>,
   "risk_level": "Gering" | "Mittel" | "Hoch" | "Sehr Hoch",
-  "ai_explanation": "<Eine detaillierte, verständliche Erklärung auf Deutsch, warum du diese Empfehlung gibst (mindestens 3-4 Sätze). Gehe auf die News und die technischen Indikatoren ein.>",
+  "ai_explanation": "<Eine detaillierte, verständliche Erklärung auf Deutsch, warum du diese Empfehlung gibst (mindestens 3-4 Sätze). Antworte in der gewünschten Tonalität und berücksichtige die spezifischen Anweisungen. Gehe auf die News und die technischen Indikatoren ein.>",
   "key_drivers": ["Treiber 1", "Treiber 2", ...],
   "key_risks": ["Risiko 1", "Risiko 2", ...]
 }}
@@ -262,15 +272,24 @@ def generate_chat_response(query, portfolio_data, predictions_data):
             f"  KI-Begründung: {pred['ai_explanation']}\n"
         )
         
+    # Einstellungen aus der Datenbank laden
+    custom_prompt = get_setting('custom_prompt', '')
+    ai_tone = get_setting('ai_tone', 'professionell')
+
     prompt = f"""Du bist "AlphaPulse AI", ein hochentwickelter KI-Finanzberater. 
-Deine Aufgabe ist es, Fragen des Nutzers kompetent, sachlich, freundlich und auf Deutsch zu beantworten.
+
+NUTZER-EINSTELLUNGEN FÜR DEINEN STIL / DEINE TONALITÄT:
+- Tonalität: {ai_tone}
+- Spezifische Anweisungen / Fokus: {custom_prompt}
+
+Deine Aufgabe ist es, Fragen des Nutzers kompetent, sachlich, freundlich und auf Deutsch zu beantworten unter Berücksichtigung der gewünschten Tonalität ({ai_tone}) und Anweisungen.
 Du hast Zugriff auf die folgenden aktuellen Daten des Nutzers:
 
 {portfolio_str}
 
 {predictions_str}
 
-Beantworte die folgende Frage des Nutzers präzise, hilfreich und professionell. Falls der Nutzer nach Finanzberatung fragt, füge am Ende deiner Antwort einen kurzen rechtlichen Hinweis hinzu, dass dies keine professionelle Anlageberatung ist.
+Beantworte die folgende Frage des Nutzers präzise, hilfreich und in der gewünschten Tonalität. Falls der Nutzer nach Finanzberatung fragt, füge am Ende deiner Antwort einen kurzen rechtlichen Hinweis hinzu, dass dies keine professionelle Anlageberatung ist.
 
 Nutzerfrage: "{query}"
 Antwort:"""

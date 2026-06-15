@@ -200,6 +200,26 @@ class AlertRequest(BaseModel):
     alert_type: str
     target_value: str
 
+class SettingsRequest(BaseModel):
+    custom_prompt: str
+    ai_tone: str
+
+class PortfolioCreateRequest(BaseModel):
+    name: str
+
+class TransactionRequest(BaseModel):
+    symbol: str
+    type: str  # 'BUY' oder 'SELL'
+    quantity: float
+    price: float
+    date: str
+
+class TaxSimulateRequest(BaseModel):
+    symbol: str
+    sell_quantity: float
+    sell_price: float
+
+
 
 @app.get("/api/assets")
 def get_watchlist():
@@ -265,22 +285,22 @@ def delete_watchlist_item(symbol: str):
 
 
 @app.get("/api/portfolio")
-def get_portfolio():
+def get_portfolio(portfolio_id: int = 1):
     """Holt das Portfolio des Nutzers aus der Datenbank."""
     try:
         from backend.db import get_portfolio_from_db
-        return get_portfolio_from_db()
+        return get_portfolio_from_db(portfolio_id)
     except Exception as e:
         logger.error(f"Fehler beim Laden des Portfolios: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden des Portfolios.")
 
 
 @app.post("/api/portfolio")
-def add_portfolio_item_route(item: PortfolioItem):
+def add_portfolio_item_route(item: PortfolioItem, portfolio_id: int = 1):
     """Speichert oder aktualisiert ein Asset im Portfolio."""
     try:
         from backend.db import save_portfolio_item
-        success = save_portfolio_item(item.symbol, item.quantity, item.buy_price)
+        success = save_portfolio_item(item.symbol, item.quantity, item.buy_price, portfolio_id)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Speichern in der Datenbank.")
         return {"status": "success", "message": f"Asset {item.symbol} im Portfolio gespeichert."}
@@ -290,17 +310,307 @@ def add_portfolio_item_route(item: PortfolioItem):
 
 
 @app.delete("/api/portfolio/{symbol}")
-def delete_portfolio_item_route(symbol: str):
+def delete_portfolio_item_route(symbol: str, portfolio_id: int = 1):
     """Löscht ein Asset aus dem Portfolio."""
     try:
         from backend.db import delete_portfolio_item
-        success = delete_portfolio_item(symbol)
+        success = delete_portfolio_item(symbol, portfolio_id)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Löschen in der Datenbank.")
         return {"status": "success", "message": f"Asset {symbol} aus dem Portfolio gelöscht."}
     except Exception as e:
         logger.error(f"Fehler beim Löschen des Portfolio-Items {symbol}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Neue Routen für Settings, Multi-Portfolio & FIFO ---
+
+@app.get("/api/portfolios")
+def get_portfolios_route():
+    """Holt alle Portfolio-Profile."""
+    try:
+        from backend.db import get_portfolios
+        return get_portfolios()
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Portfolios: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden der Portfolio-Profile.")
+
+
+@app.post("/api/portfolios")
+def create_portfolio_route(req: PortfolioCreateRequest):
+    """Erstellt ein neues Portfolio-Profil."""
+    try:
+        from backend.db import create_portfolio
+        success = create_portfolio(req.name)
+        if not success:
+            raise HTTPException(status_code=400, detail="Portfolio-Profil konnte nicht erstellt werden (Name evtl. bereits vergeben).")
+        return {"status": "success", "message": f"Portfolio '{req.name}' erfolgreich erstellt."}
+    except Exception as e:
+        logger.error(f"Fehler beim Erstellen des Portfolios: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/portfolios/{portfolio_id}")
+def delete_portfolio_route(portfolio_id: int):
+    """Löscht ein Portfolio-Profil."""
+    try:
+        from backend.db import delete_portfolio
+        if portfolio_id == 1:
+            raise HTTPException(status_code=400, detail="Das Standard-Portfolio darf nicht gelöscht werden.")
+        success = delete_portfolio(portfolio_id)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Löschen des Portfolios.")
+        return {"status": "success", "message": "Portfolio erfolgreich gelöscht."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Portfolios: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/settings")
+def get_settings_route():
+    """Holt alle KI- und System-Einstellungen."""
+    try:
+        from backend.db import get_setting
+        return {
+            "custom_prompt": get_setting("custom_prompt", ""),
+            "ai_tone": get_setting("ai_tone", "professionell")
+        }
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Einstellungen: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden der Einstellungen.")
+
+
+@app.post("/api/settings")
+def save_settings_route(settings: SettingsRequest):
+    """Speichert die KI- und System-Einstellungen."""
+    try:
+        from backend.db import save_setting
+        success_prompt = save_setting("custom_prompt", settings.custom_prompt)
+        success_tone = save_setting("ai_tone", settings.ai_tone)
+        if not success_prompt or not success_tone:
+            raise HTTPException(status_code=500, detail="Fehler beim Speichern der Einstellungen.")
+        return {"status": "success", "message": "Einstellungen erfolgreich gespeichert."}
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern des Settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/transactions")
+def get_transactions_route(portfolio_id: int):
+    """Holt alle Transaktionen eines Portfolios."""
+    try:
+        from backend.db import get_transactions
+        return get_transactions(portfolio_id)
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Transaktionen: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden der Transaktionen.")
+
+
+@app.post("/api/portfolio/{portfolio_id}/transactions")
+def add_transaction_route(portfolio_id: int, tx: TransactionRequest):
+    """Fügt eine Transaktion hinzu und passt den Portfolio-Bestand an."""
+    try:
+        from backend.db import add_transaction
+        success = add_transaction(
+            portfolio_id=portfolio_id,
+            symbol=tx.symbol,
+            tx_type=tx.type,
+            quantity=tx.quantity,
+            price=tx.price,
+            date=tx.date
+        )
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Hinzufügen der Transaktion.")
+        return {"status": "success", "message": "Transaktion hinzugefügt und Portfolio aktualisiert."}
+    except Exception as e:
+        logger.error(f"Fehler beim Hinzufügen der Transaktion: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/portfolio/{portfolio_id}/transactions/{tx_id}")
+def delete_transaction_route(portfolio_id: int, tx_id: int):
+    """Löscht eine Transaktion und berechnet den Portfolio-Bestand neu."""
+    try:
+        from backend.db import delete_transaction
+        success = delete_transaction(tx_id, portfolio_id)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Löschen der Transaktion.")
+        return {"status": "success", "message": "Transaktion gelöscht und Portfolio-Bestand neu berechnet."}
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen der Transaktion: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.post("/api/portfolio/{portfolio_id}/tax-simulate")
+def tax_simulate_route(portfolio_id: int, req: TaxSimulateRequest):
+    """Führt eine FIFO-Steuersimulation für einen Verkauf durch."""
+    try:
+        from backend.db import calculate_fifo_tax
+        result = calculate_fifo_tax(
+            portfolio_id=portfolio_id,
+            symbol=req.symbol,
+            sell_qty=req.sell_quantity,
+            sell_price=req.sell_price
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Fehler bei der FIFO-Steuersimulation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/export/csv")
+def export_portfolio_csv(portfolio_id: int):
+    """Exportiert das Portfolio als CSV."""
+    from backend.db import get_portfolio_from_db
+    import io
+    import csv
+    from fastapi.responses import StreamingResponse
+    try:
+        holdings = get_portfolio_from_db(portfolio_id)
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=';')
+        writer.writerow(["Symbol", "Menge", "Durchschnittlicher Kaufpreis"])
+        for h in holdings:
+            writer.writerow([h["symbol"], h["quantity"], h["buy_price"]])
+        output.seek(0)
+        return StreamingResponse(
+            output,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=portfolio_{portfolio_id}_export.csv"}
+        )
+    except Exception as e:
+        logger.error(f"Fehler beim CSV-Export: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/export/print")
+def export_portfolio_print(portfolio_id: int):
+    """Liefert einen druckfreundlichen Report für das Portfolio."""
+    from backend.db import get_portfolio_from_db, get_predictions_from_db, get_portfolios
+    from fastapi.responses import HTMLResponse
+    import datetime
+    try:
+        portfolios = get_portfolios()
+        portfolio_name = "Unbekanntes Portfolio"
+        for p in portfolios:
+            if p["id"] == portfolio_id:
+                portfolio_name = p["name"]
+                break
+
+        holdings = get_portfolio_from_db(portfolio_id)
+        predictions_data = get_predictions_from_db().get("predictions", {})
+
+        rows_html = ""
+        total_val = 0.0
+        now_str = datetime.datetime.now().strftime('%d.%m.%Y %H:%M')
+
+        for h in holdings:
+            symbol = h["symbol"]
+            qty = h["quantity"]
+            bp = h["buy_price"]
+            pred = predictions_data.get(symbol, {})
+            cp = pred.get("price", bp)
+            val = qty * cp
+            total_val += val
+            rec = pred.get("recommendation", "N/A")
+            rows_html += f"""
+            <tr>
+                <td>{symbol}</td>
+                <td>{qty}</td>
+                <td>{bp:.2f} €</td>
+                <td>{cp:.2f} €</td>
+                <td>{val:.2f} €</td>
+                <td>{rec}</td>
+            </tr>
+            """
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="de">
+        <head>
+            <meta charset="UTF-8">
+            <title>Portfolio-Report: {portfolio_name}</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    color: #333;
+                    margin: 40px;
+                    line-height: 1.6;
+                }}
+                h1 {{
+                    color: #1a365d;
+                    border-bottom: 2px solid #3182ce;
+                    padding-bottom: 10px;
+                }}
+                .meta {{
+                    font-size: 0.9em;
+                    color: #718096;
+                    margin-bottom: 30px;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 30px;
+                }}
+                th, td {{
+                    border: 1px solid #e2e8f0;
+                    padding: 12px;
+                    text-align: left;
+                }}
+                th {{
+                    background-color: #ebf8ff;
+                    color: #2b6cb0;
+                }}
+                .total {{
+                    font-size: 1.2em;
+                    font-weight: bold;
+                    text-align: right;
+                    color: #2b6cb0;
+                }}
+                @media print {{
+                    body {{ margin: 0; }}
+                    button {{ display: none; }}
+                }}
+            </style>
+        </head>
+        <body>
+            <h1>AlphaPulse AI Portfolio-Zusammenfassung</h1>
+            <div class="meta">
+                <strong>Portfolio:</strong> {portfolio_name}<br>
+                <strong>Erstellt am:</strong> {now_str}
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Menge</th>
+                        <th>Durchschnittlicher Kaufpreis</th>
+                        <th>Aktueller Preis</th>
+                        <th>Gesamtwert</th>
+                        <th>KI-Empfehlung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+            <div class="total">Gesamtwert: {total_val:.2f} €</div>
+            <script>
+                window.onload = function() {{
+                    window.print();
+                }}
+            </script>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html_content)
+    except Exception as e:
+        logger.error(f"Fehler beim Druckexport: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/portfolio/analyze")
 def analyze_portfolio(request: PortfolioAnalysisRequest):
@@ -897,14 +1207,15 @@ def simulate_strategy(symbol: str, strategy: str, years: int = 1):
 
 
 @app.get("/api/portfolio/dividends")
-def get_portfolio_dividends():
+def get_portfolio_dividends(portfolio_id: int = 1):
     """Berechnet die geschätzten monatlichen Dividenden-Zahlungen des Portfolios."""
     try:
         from backend.db import get_portfolio_from_db, get_predictions_from_db
         from backend.data_fetcher import fetch_dividend_history
         
-        holdings = get_portfolio_from_db()
+        holdings = get_portfolio_from_db(portfolio_id)
         predictions = get_predictions_from_db().get("predictions", {})
+
         
         monthly_dividends = {m: 0.0 for m in range(1, 13)}
         annual_total = 0.0

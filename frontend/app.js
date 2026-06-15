@@ -335,15 +335,50 @@ function setupEventListeners() {
         });
     }
     
-    if (sma50Btn) {
-        sma50Btn.addEventListener('click', () => {
-            const active = sma50Btn.getAttribute('data-active') === 'true';
-            sma50Btn.setAttribute('data-active', !active ? 'true' : 'false');
             if (selectedAsset) {
                 const cached = historyCache[selectedAsset]?.[selectedPeriod] || appData.predictions[selectedAsset]?.history;
                 renderChart(cached, selectedAsset, getRecColorHex(appData.predictions[selectedAsset]?.recommendation));
             }
         });
+    }
+
+    // Registrierung der neuen Premium Feature Listener
+    setupPortfolioSubTabs();
+    initExportButtons();
+    
+    const settingsForm = document.getElementById("settings-form");
+    if (settingsForm) {
+        settingsForm.addEventListener("submit", handleSaveSettings);
+    }
+    
+    const profileSelect = document.getElementById("portfolio-profile-select");
+    if (profileSelect) {
+        profileSelect.addEventListener("change", async (e) => {
+            currentPortfolioId = parseInt(e.target.value);
+            await loadPortfolioData();
+            renderPortfolio();
+            loadTransactions();
+        });
+    }
+    
+    const btnCreateProfile = document.getElementById("btn-create-portfolio");
+    if (btnCreateProfile) {
+        btnCreateProfile.addEventListener("click", handleCreatePortfolio);
+    }
+    
+    const btnDeleteProfile = document.getElementById("btn-delete-portfolio");
+    if (btnDeleteProfile) {
+        btnDeleteProfile.addEventListener("click", handleDeletePortfolio);
+    }
+    
+    const addTxForm = document.getElementById("add-transaction-form");
+    if (addTxForm) {
+        addTxForm.addEventListener("submit", handleAddTransaction);
+    }
+    
+    const taxSimForm = document.getElementById("tax-simulator-form");
+    if (taxSimForm) {
+        taxSimForm.addEventListener("submit", handleTaxSimulation);
     }
 }
 
@@ -378,6 +413,7 @@ async function fetchData() {
             // Initialize and render Portfolio
             await initPortfolio();
             populateAssetDropdown();
+            populateTransactionDropdowns();
             renderPortfolio();
         } else {
             // Keine Daten vorhanden (z.B. initialer Zustand)
@@ -1014,10 +1050,13 @@ let portfolioInitialized = false;
 function switchView(viewId) {
     const navAlerts = document.getElementById("nav-alerts");
     const alertsView = document.getElementById("alerts-view");
+    const navSettings = document.getElementById("nav-settings");
+    const settingsView = document.getElementById("settings-view");
     
     elements.navMarkets.classList.remove("active");
     elements.navPortfolio.classList.remove("active");
     if (navAlerts) navAlerts.classList.remove("active");
+    if (navSettings) navSettings.classList.remove("active");
     
     elements.marketsView.classList.add("hidden");
     elements.marketsView.classList.remove("active");
@@ -1026,6 +1065,10 @@ function switchView(viewId) {
     if (alertsView) {
         alertsView.classList.add("hidden");
         alertsView.classList.remove("active");
+    }
+    if (settingsView) {
+        settingsView.classList.add("hidden");
+        settingsView.classList.remove("active");
     }
     
     if (viewId === "markets-view") {
@@ -1042,6 +1085,11 @@ function switchView(viewId) {
         alertsView.classList.add("active");
         alertsView.classList.remove("hidden");
         renderAlerts();
+    } else if (viewId === "settings-view" && settingsView) {
+        if (navSettings) navSettings.classList.add("active");
+        settingsView.classList.add("active");
+        settingsView.classList.remove("hidden");
+        loadSettings();
     }
 }
 
@@ -1049,7 +1097,8 @@ async function initPortfolio() {
     if (portfolioInitialized) return;
     
     try {
-        const response = await fetch(`${API_BASE}/api/portfolio`);
+        await loadPortfolios();
+        const response = await fetch(`${API_BASE}/api/portfolio?portfolio_id=${currentPortfolioId}`);
         if (!response.ok) {
             throw new Error(`Fehler beim Laden des Portfolios vom Server (HTTP ${response.status})`);
         }
@@ -1064,14 +1113,14 @@ async function initPortfolio() {
                 { symbol: "GC=F", quantity: 2.0, buy_price: 2000.0 }
             ];
             for (const item of defaultHoldings) {
-                await fetch(`${API_BASE}/api/portfolio`, {
+                await fetch(`${API_BASE}/api/portfolio?portfolio_id=${currentPortfolioId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(item)
                 });
             }
             // Nochmals abrufen nach dem Seeding
-            const response2 = await fetch(`${API_BASE}/api/portfolio`);
+            const response2 = await fetch(`${API_BASE}/api/portfolio?portfolio_id=${currentPortfolioId}`);
             portfolio = await response2.json();
         }
         
@@ -1252,7 +1301,7 @@ async function handleAddInvestment(e) {
     const item = { symbol, quantity: finalQty, buy_price: finalBuyPrice };
     
     try {
-        const response = await fetch(`${API_BASE}/api/portfolio`, {
+        const response = await fetch(`${API_BASE}/api/portfolio?portfolio_id=${currentPortfolioId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1265,7 +1314,7 @@ async function handleAddInvestment(e) {
         }
         
         // Reload portfolio from server
-        const reloadResponse = await fetch(`${API_BASE}/api/portfolio`);
+        const reloadResponse = await fetch(`${API_BASE}/api/portfolio?portfolio_id=${currentPortfolioId}`);
         if (reloadResponse.ok) {
             portfolio = await reloadResponse.json();
         }
@@ -1288,7 +1337,7 @@ async function deleteHolding(idx) {
     if (!item) return;
     
     try {
-        const response = await fetch(`${API_BASE}/api/portfolio/${item.symbol}`, {
+        const response = await fetch(`${API_BASE}/api/portfolio/${item.symbol}?portfolio_id=${currentPortfolioId}`, {
             method: 'DELETE'
         });
         
@@ -1933,7 +1982,7 @@ async function renderDividendCalendar() {
     if (!canvas) return;
 
     try {
-        const res = await fetch(`${API_BASE}/api/portfolio/dividends`);
+        const res = await fetch(`${API_BASE}/api/portfolio/dividends?portfolio_id=${currentPortfolioId}`);
         if (!res.ok) throw new Error("Fehler beim Laden des Dividendenplans.");
         const data = await res.json();
 
@@ -2320,6 +2369,328 @@ function appendTypingIndicator() {
     container.scrollTop = container.scrollHeight;
     return msgDiv;
 }
+
+
+// --- NEW PREMIUM FEATURES: PORTFOLIO MANAGEMENT, TAX SIMULATOR & SETTINGS ---
+
+let currentPortfolioId = 1;
+
+// Sub-Tab Switcher
+function setupPortfolioSubTabs() {
+    const tabs = document.querySelectorAll(".portfolio-sub-tab");
+    tabs.forEach(tab => {
+        tab.addEventListener("click", (e) => {
+            tabs.forEach(t => t.classList.remove("active"));
+            e.currentTarget.classList.add("active");
+            
+            const targetPane = e.currentTarget.dataset.portTab;
+            document.querySelectorAll(".portfolio-tab-pane").forEach(pane => {
+                pane.classList.remove("active");
+                if (pane.id === targetPane) {
+                    pane.classList.add("active");
+                }
+            });
+            
+            if (targetPane === "transactions-tab-content") {
+                loadTransactions();
+            }
+        });
+    });
+}
+
+// Load Portfolios & Setup Profile Dropdown
+async function loadPortfolios() {
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolios`);
+        if (res.ok) {
+            const list = await res.json();
+            const select = document.getElementById("portfolio-profile-select");
+            if (select) {
+                select.innerHTML = list.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+                select.value = currentPortfolioId;
+            }
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden der Portfolio-Liste:", e);
+    }
+}
+
+// Load Portfolio Data Helper
+async function loadPortfolioData() {
+    try {
+        const response = await fetch(`${API_BASE}/api/portfolio?portfolio_id=${currentPortfolioId}`);
+        if (!response.ok) {
+            throw new Error(`Fehler beim Laden des Portfolios vom Server (HTTP ${response.status})`);
+        }
+        portfolio = await response.json();
+    } catch (e) {
+        console.error("Fehler beim Laden der Portfolio-Daten:", e);
+    }
+}
+
+// Create Portfolio Profile
+async function handleCreatePortfolio() {
+    const name = prompt("Geben Sie einen Namen für das neue Portfolio ein:");
+    if (!name || !name.trim()) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolios`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: name.trim() })
+        });
+        if (res.ok) {
+            showToast(`Portfolio '${name}' erfolgreich erstellt.`, "success");
+            await loadPortfolios();
+            const listRes = await fetch(`${API_BASE}/api/portfolios`);
+            if (listRes.ok) {
+                const list = await listRes.json();
+                const found = list.find(p => p.name === name.trim());
+                if (found) {
+                    const select = document.getElementById("portfolio-profile-select");
+                    if (select) {
+                        select.value = found.id;
+                        select.dispatchEvent(new Event("change"));
+                    }
+                }
+            }
+        } else {
+            const err = await res.json();
+            showToast(err.detail || "Erstellen fehlgeschlagen.", "error");
+        }
+    } catch (e) {
+        showToast(e.message, "error");
+    }
+}
+
+// Delete Portfolio Profile
+async function handleDeletePortfolio() {
+    if (currentPortfolioId === 1) {
+        showToast("Das Standard-Portfolio darf nicht gelöscht werden.", "warning");
+        return;
+    }
+    const confirmDel = confirm("Möchten Sie dieses Portfolio-Profil wirklich löschen? Alle Bestände und Transaktionen werden unwiderruflich gelöscht.");
+    if (!confirmDel) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolios/${currentPortfolioId}`, {
+            method: "DELETE"
+        });
+        if (res.ok) {
+            showToast("Portfolio erfolgreich gelöscht.", "success");
+            currentPortfolioId = 1;
+            await loadPortfolios();
+            const select = document.getElementById("portfolio-profile-select");
+            if (select) select.value = 1;
+            await loadPortfolioData();
+            renderPortfolio();
+        } else {
+            const err = await res.json();
+            showToast(err.detail || "Löschen fehlgeschlagen.", "error");
+        }
+    } catch (e) {
+        showToast(e.message, "error");
+    }
+}
+
+// Populate watchlist dropdowns for transactions & tax simulator
+function populateTransactionDropdowns() {
+    const txSelect = document.getElementById("tx-asset");
+    const taxSelect = document.getElementById("tax-asset");
+    if (!appData.predictions) return;
+    const assets = Object.values(appData.predictions);
+    assets.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    
+    [txSelect, taxSelect].forEach(select => {
+        if (select) {
+            select.innerHTML = assets.map(a => `<option value="${a.symbol}">${a.symbol} - ${a.name}</option>`).join("");
+        }
+    });
+}
+
+// Transactions list & add transaction
+async function loadTransactions() {
+    const tbody = document.getElementById("transactions-list-body");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center"><div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></div> Lade Transaktionen...</td></tr>`;
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/transactions`);
+        if (res.ok) {
+            const txs = await res.json();
+            if (txs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color: var(--text-muted)">Keine Transaktionen erfasst.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = txs.map(t => {
+                const total = t.quantity * t.price;
+                const typeText = t.type === "BUY" ? "Kauf" : "Verkauf";
+                const typeClass = t.type === "BUY" ? "text-green" : "text-red";
+                return `<tr>
+                    <td>${t.date}</td>
+                    <td><strong>${t.symbol}</strong><br><small style="color:var(--text-muted)">${t.name || ""}</small></td>
+                    <td class="${typeClass}" style="font-weight:600">${typeText}</td>
+                    <td>${t.quantity}</td>
+                    <td>${formatCurrency(t.price, "stock")}</td>
+                    <td>${formatCurrency(total, "stock")}</td>
+                    <td>
+                        <button class="btn-delete-inv" onclick="deleteTransaction(${t.id})" title="Löschen">
+                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join("");
+            if (window.lucide) window.lucide.createIcons();
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden der Transaktionen:", e);
+    }
+}
+
+async function handleAddTransaction(e) {
+    e.preventDefault();
+    const symbol = document.getElementById("tx-asset").value;
+    const type = document.getElementById("tx-type").value;
+    const quantity = parseFloat(document.getElementById("tx-qty").value);
+    const price = parseFloat(document.getElementById("tx-price").value);
+    const date = document.getElementById("tx-date").value;
+    
+    if (!symbol || !type || isNaN(quantity) || quantity <= 0 || isNaN(price) || price <= 0 || !date) {
+        showToast("Bitte füllen Sie alle Felder aus.", "warning");
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/transactions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symbol, type, quantity, price, date })
+        });
+        if (res.ok) {
+            showToast("Transaktion erfolgreich gebucht.", "success");
+            document.getElementById("add-transaction-form").reset();
+            await loadPortfolioData();
+            renderPortfolio();
+            loadTransactions();
+        }
+    } catch (e) {
+        showToast(e.message, "error");
+    }
+}
+
+async function deleteTransaction(txId) {
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/transactions/${txId}`, {
+            method: "DELETE"
+        });
+        if (res.ok) {
+            showToast("Transaktion gelöscht.", "success");
+            await loadPortfolioData();
+            renderPortfolio();
+            loadTransactions();
+        }
+    } catch (e) {
+        showToast(e.message, "error");
+    }
+}
+
+// FIFO Tax Simulation
+async function handleTaxSimulation(e) {
+    e.preventDefault();
+    const symbol = document.getElementById("tax-asset").value;
+    const sell_quantity = parseFloat(document.getElementById("tax-qty").value);
+    const sell_price = parseFloat(document.getElementById("tax-price").value);
+    
+    if (!symbol || isNaN(sell_quantity) || sell_quantity <= 0 || isNaN(sell_price) || sell_price <= 0) {
+        showToast("Bitte füllen Sie alle Felder aus.", "warning");
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/tax-simulate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symbol, sell_quantity, sell_price })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById("tax-simulation-results").classList.remove("hidden");
+            document.getElementById("tax-res-revenue").innerText = formatCurrency(data.revenue, "stock");
+            document.getElementById("tax-res-cost").innerText = formatCurrency(data.total_cost, "stock");
+            
+            const profitClass = data.profit >= 0 ? "text-green" : "text-red";
+            document.getElementById("tax-res-profit").innerText = formatCurrency(data.profit, "stock");
+            document.getElementById("tax-res-profit").className = `tax-value ${profitClass}`;
+            
+            document.getElementById("tax-res-tax").innerText = formatCurrency(data.tax, "stock");
+            
+            const matchedList = document.getElementById("tax-res-matched-list");
+            if (data.matched_buys && data.matched_buys.length > 0) {
+                matchedList.innerHTML = data.matched_buys.map(b => 
+                    `<li>Kauf am ${b.buy_date}: ${b.quantity} Stück für je ${formatCurrency(b.buy_price, "stock")} (Kosten: ${formatCurrency(b.cost, "stock")})</li>`
+                ).join("");
+            } else {
+                matchedList.innerHTML = "<li>Keine passenden Käufe gefunden. Haben Sie ausreichend BUY Transaktionen verbucht?</li>";
+            }
+            if (data.unmatched_quantity > 0) {
+                matchedList.innerHTML += `<li style="color:var(--color-hold)">Warnung: Für ${data.unmatched_quantity} Stück wurden keine passenden Käufe in der Historie gefunden! (Fehlbestand)</li>`;
+            }
+        }
+    } catch (e) {
+        showToast(e.message, "error");
+    }
+}
+
+// Load & Save AI Settings
+async function loadSettings() {
+    try {
+        const res = await fetch(`${API_BASE}/api/settings`);
+        if (res.ok) {
+            const data = await res.json();
+            const toneEl = document.getElementById("setting-ai-tone");
+            const promptEl = document.getElementById("setting-custom-prompt");
+            if (toneEl) toneEl.value = data.ai_tone;
+            if (promptEl) promptEl.value = data.custom_prompt;
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden der Einstellungen:", e);
+    }
+}
+
+async function handleSaveSettings(e) {
+    e.preventDefault();
+    const custom_prompt = document.getElementById("setting-custom-prompt").value;
+    const ai_tone = document.getElementById("setting-ai-tone").value;
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/settings`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ custom_prompt, ai_tone })
+        });
+        if (res.ok) {
+            showToast("Einstellungen erfolgreich gespeichert. Die nächsten KI-Analysen verwenden dieses Profil.", "success");
+        }
+    } catch (e) {
+        showToast(e.message, "error");
+    }
+}
+
+// Export triggers
+function initExportButtons() {
+    const btnCsv = document.getElementById("btn-export-csv");
+    const btnPrint = document.getElementById("btn-export-print");
+    
+    if (btnCsv) {
+        btnCsv.addEventListener("click", () => {
+            window.location.href = `${API_BASE}/api/portfolio/${currentPortfolioId}/export/csv`;
+        });
+    }
+    
+    if (btnPrint) {
+        btnPrint.addEventListener("click", () => {
+            window.open(`${API_BASE}/api/portfolio/${currentPortfolioId}/export/print`, "_blank");
+        });
+    }
+}
+
 
 
 
