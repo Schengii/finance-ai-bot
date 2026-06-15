@@ -765,13 +765,14 @@
                         </div>
                         <div class="stat-info">
                             <h3>System-Einstellungen</h3>
-                            <p class="stat-value">KI-Personalisierung</p>
-                            <span class="stat-desc">Anpassen von Tonart und Systemprompts</span>
+                            <p class="stat-value">KI-Personalisierung & Benachrichtigungen</p>
+                            <span class="stat-desc">Tonart, Prompts und Alarm-Kanäle anpassen</span>
                         </div>
                     </div>
                 </section>
                 
                 <div class="dashboard-grid">
+                    <!-- Left: KI Config -->
                     <section class="assets-list-section glass-panel settings-form-container">
                         <div class="section-header">
                             <h2>KI-Prompt &amp; Tonart</h2>
@@ -791,10 +792,84 @@
                                 <label for="setting-custom-prompt">Zusätzlicher Systemprompt / Anweisungen</label>
                                 <textarea id="setting-custom-prompt" class="glass-input text-area-prompt" rows="8" placeholder="z.B. Fokussiere dich besonders auf langfristiges Dividendenwachstum. Warne mich explizit vor geopolitischen Risiken."></textarea>
                             </div>
+                            
+                            <!-- Hidden notification fields linked to the right column fields -->
+                            <input type="hidden" id="setting-tg-token">
+                            <input type="hidden" id="setting-tg-chatid">
+                            <input type="hidden" id="setting-dc-webhook">
+                            <input type="hidden" id="setting-mail-server">
+                            <input type="hidden" id="setting-mail-port">
+                            <input type="hidden" id="setting-mail-sender">
+                            <input type="hidden" id="setting-mail-password">
+                            <input type="hidden" id="setting-mail-recipient">
+
                             <button type="submit" class="btn btn-primary">
                                 <i data-lucide="save"></i> Einstellungen speichern
                             </button>
                         </form>
+                    </section>
+
+                    <!-- Right: Notification Config -->
+                    <section class="detail-section glass-panel settings-form-container">
+                        <div class="section-header">
+                            <h2>Benachrichtigungskanäle</h2>
+                            <p class="section-subtitle">Konfigurieren Sie Telegram, Discord und E-Mail für Alarme.</p>
+                        </div>
+                        <div class="settings-form">
+                            <!-- Telegram -->
+                            <div class="notification-sub-section">
+                                <h3 class="notif-heading"><i data-lucide="message-square" class="text-blue"></i> Telegram Bot</h3>
+                                <div class="form-group-block">
+                                    <label for="visible-setting-tg-token">Bot Token</label>
+                                    <input type="text" id="visible-setting-tg-token" class="glass-input" placeholder="z.B. 123456:ABC-DEF...">
+                                </div>
+                                <div class="form-group-block">
+                                    <label for="visible-setting-tg-chatid">Chat ID</label>
+                                    <input type="text" id="visible-setting-tg-chatid" class="glass-input" placeholder="z.B. 987654321">
+                                </div>
+                                <button type="button" id="btn-test-telegram" class="btn btn-secondary btn-sm"><i data-lucide="send"></i> Telegram testen</button>
+                            </div>
+                            <hr class="settings-divider">
+                            <!-- Discord -->
+                            <div class="notification-sub-section">
+                                <h3 class="notif-heading"><i data-lucide="hash" class="text-indigo"></i> Discord Webhook</h3>
+                                <div class="form-group-block">
+                                    <label for="visible-setting-dc-webhook">Webhook URL</label>
+                                    <input type="text" id="visible-setting-dc-webhook" class="glass-input" placeholder="https://discord.com/api/webhooks/...">
+                                </div>
+                                <button type="button" id="btn-test-discord" class="btn btn-secondary btn-sm"><i data-lucide="send"></i> Discord testen</button>
+                            </div>
+                            <hr class="settings-divider">
+                            <!-- E-Mail -->
+                            <div class="notification-sub-section">
+                                <h3 class="notif-heading"><i data-lucide="mail" class="text-green"></i> E-Mail (SMTP)</h3>
+                                <div class="form-row-settings">
+                                    <div class="form-group">
+                                        <label for="visible-setting-mail-server">SMTP Server</label>
+                                        <input type="text" id="visible-setting-mail-server" class="glass-input" placeholder="smtp.gmail.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="visible-setting-mail-port">SMTP Port</label>
+                                        <input type="text" id="visible-setting-mail-port" class="glass-input" placeholder="465 oder 587">
+                                    </div>
+                                </div>
+                                <div class="form-row-settings">
+                                    <div class="form-group">
+                                        <label for="visible-setting-mail-sender">Absender E-Mail</label>
+                                        <input type="email" id="visible-setting-mail-sender" class="glass-input" placeholder="absender@gmail.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="visible-setting-mail-password">Passwort</label>
+                                        <input type="password" id="visible-setting-mail-password" class="glass-input" placeholder="SMTP Passwort">
+                                    </div>
+                                </div>
+                                <div class="form-group-block">
+                                    <label for="visible-setting-mail-recipient">Empfänger E-Mail</label>
+                                    <input type="email" id="visible-setting-mail-recipient" class="glass-input" placeholder="empfaenger@gmail.com">
+                                </div>
+                                <button type="button" id="btn-test-email" class="btn btn-secondary btn-sm"><i data-lucide="send"></i> E-Mail testen</button>
+                            </div>
+                        </div>
                     </section>
                 </div>
             </div>
@@ -914,9 +989,14 @@
                         <div class="chat-header-status"><span class="chat-status-dot"></span> Online</div>
                     </div>
                 </div>
-                <button class="chat-close-btn" id="close-chat-btn" aria-label="Chat schließen">
-                    <i data-lucide="minus"></i>
-                </button>
+                <div class="chat-header-actions-group">
+                    <button class="chat-clear-btn" id="clear-chat-btn" title="Chatverlauf löschen" aria-label="Chatverlauf löschen">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                    <button class="chat-close-btn" id="close-chat-btn" aria-label="Chat schließen">
+                        <i data-lucide="minus"></i>
+                    </button>
+                </div>
             </div>
             <div class="chat-messages" id="chat-messages">
                 <div class="chat-message bot-message">

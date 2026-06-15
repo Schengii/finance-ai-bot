@@ -335,6 +335,10 @@ function setupEventListeners() {
         });
     }
     
+    if (sma50Btn) {
+        sma50Btn.addEventListener('click', () => {
+            const active = sma50Btn.getAttribute('data-active') === 'true';
+            sma50Btn.setAttribute('data-active', !active ? 'true' : 'false');
             if (selectedAsset) {
                 const cached = historyCache[selectedAsset]?.[selectedPeriod] || appData.predictions[selectedAsset]?.history;
                 renderChart(cached, selectedAsset, getRecColorHex(appData.predictions[selectedAsset]?.recommendation));
@@ -345,6 +349,7 @@ function setupEventListeners() {
     // Registrierung der neuen Premium Feature Listener
     setupPortfolioSubTabs();
     initExportButtons();
+    setupNotificationTestButtons();
     
     const settingsForm = document.getElementById("settings-form");
     if (settingsForm) {
@@ -358,6 +363,7 @@ function setupEventListeners() {
             await loadPortfolioData();
             renderPortfolio();
             loadTransactions();
+            loadChatHistory();
         });
     }
     
@@ -2278,6 +2284,7 @@ function initChatWidget() {
     const chatForm = document.getElementById("chat-input-form");
     const chatInput = document.getElementById("chat-input");
     const sendBtn = document.getElementById("chat-send-btn");
+    const clearChatBtn = document.getElementById("clear-chat-btn");
 
     if (!bubbleBtn || !chatPanel) return;
 
@@ -2285,11 +2292,28 @@ function initChatWidget() {
         chatPanel.classList.toggle("hidden");
         if (!chatPanel.classList.contains("hidden")) {
             if (window.lucide) window.lucide.createIcons();
+            loadChatHistory();
             setTimeout(() => chatInput.focus(), 50);
         }
     });
 
     closeChatBtn?.addEventListener("click", () => chatPanel.classList.add("hidden"));
+
+    clearChatBtn?.addEventListener("click", async () => {
+        if (confirm("Möchten Sie den Chatverlauf für dieses Portfolio wirklich löschen?")) {
+            try {
+                const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/chat`, {
+                    method: "DELETE"
+                });
+                if (res.ok) {
+                    showToast("Chatverlauf erfolgreich gelöscht.", "success");
+                    loadChatHistory();
+                }
+            } catch (e) {
+                showToast(e.message, "error");
+            }
+        }
+    });
 
     // Quick Action Click Handlers
     document.querySelectorAll(".quick-action-chip").forEach(chip => {
@@ -2315,7 +2339,7 @@ function initChatWidget() {
             const res = await fetch(`${API_BASE}/api/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: msg })
+                body: JSON.stringify({ message: msg, portfolio_id: currentPortfolioId })
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
@@ -2334,6 +2358,33 @@ function initChatWidget() {
             chatInput.focus();
         }
     });
+}
+
+async function loadChatHistory() {
+    const container = document.getElementById("chat-messages");
+    if (!container) return;
+    
+    // Clear all messages except the first welcome message
+    container.innerHTML = `
+        <div class="chat-message bot-message">
+            <div class="chat-msg-bubble">
+                <strong>Hallo!</strong> Ich bin dein AlphaPulse KI-Berater. 👋<br><br>
+                Frag mich z.B.: <em>„Wie steht mein Portfolio?“</em> oder <em>„Was denkst du über AAPL?“</em>
+            </div>
+        </div>
+    `;
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/chat`);
+        if (res.ok) {
+            const history = await res.json();
+            history.forEach(h => {
+                appendChatMessage(h.message, h.sender);
+            });
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden des Chatverlaufs:", e);
+    }
 }
 
 function appendChatMessage(text, role) {
@@ -2648,6 +2699,25 @@ async function loadSettings() {
             const promptEl = document.getElementById("setting-custom-prompt");
             if (toneEl) toneEl.value = data.ai_tone;
             if (promptEl) promptEl.value = data.custom_prompt;
+            
+            // Set notification configuration fields
+            const tgToken = document.getElementById("visible-setting-tg-token");
+            const tgChatId = document.getElementById("visible-setting-tg-chatid");
+            const dcWebhook = document.getElementById("visible-setting-dc-webhook");
+            const mailServer = document.getElementById("visible-setting-mail-server");
+            const mailPort = document.getElementById("visible-setting-mail-port");
+            const mailSender = document.getElementById("visible-setting-mail-sender");
+            const mailPassword = document.getElementById("visible-setting-mail-password");
+            const mailRecipient = document.getElementById("visible-setting-mail-recipient");
+
+            if (tgToken) tgToken.value = data.telegram_bot_token || "";
+            if (tgChatId) tgChatId.value = data.telegram_chat_id || "";
+            if (dcWebhook) dcWebhook.value = data.discord_webhook_url || "";
+            if (mailServer) mailServer.value = data.email_smtp_server || "";
+            if (mailPort) mailPort.value = data.email_smtp_port || "";
+            if (mailSender) mailSender.value = data.email_sender || "";
+            if (mailPassword) mailPassword.value = data.email_password || "";
+            if (mailRecipient) mailRecipient.value = data.email_recipient || "";
         }
     } catch (e) {
         console.error("Fehler beim Laden der Einstellungen:", e);
@@ -2655,15 +2725,31 @@ async function loadSettings() {
 }
 
 async function handleSaveSettings(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const custom_prompt = document.getElementById("setting-custom-prompt").value;
     const ai_tone = document.getElementById("setting-ai-tone").value;
     
+    const telegram_bot_token = document.getElementById("visible-setting-tg-token")?.value || "";
+    const telegram_chat_id = document.getElementById("visible-setting-tg-chatid")?.value || "";
+    const discord_webhook_url = document.getElementById("visible-setting-dc-webhook")?.value || "";
+    const email_smtp_server = document.getElementById("visible-setting-mail-server")?.value || "";
+    const email_smtp_port = document.getElementById("visible-setting-mail-port")?.value || "";
+    const email_sender = document.getElementById("visible-setting-mail-sender")?.value || "";
+    const email_password = document.getElementById("visible-setting-mail-password")?.value || "";
+    const email_recipient = document.getElementById("visible-setting-mail-recipient")?.value || "";
+
     try {
         const res = await fetch(`${API_BASE}/api/settings`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ custom_prompt, ai_tone })
+            body: JSON.stringify({
+                custom_prompt, ai_tone,
+                telegram_bot_token, telegram_chat_id,
+                discord_webhook_url,
+                email_smtp_server, email_smtp_port,
+                email_sender, email_password,
+                email_recipient
+            })
         });
         if (res.ok) {
             showToast("Einstellungen erfolgreich gespeichert. Die nächsten KI-Analysen verwenden dieses Profil.", "success");
@@ -2671,6 +2757,124 @@ async function handleSaveSettings(e) {
     } catch (e) {
         showToast(e.message, "error");
     }
+}
+
+async function saveAllSettingsSilently() {
+    const custom_prompt = document.getElementById("setting-custom-prompt").value;
+    const ai_tone = document.getElementById("setting-ai-tone").value;
+    const telegram_bot_token = document.getElementById("visible-setting-tg-token")?.value || "";
+    const telegram_chat_id = document.getElementById("visible-setting-tg-chatid")?.value || "";
+    const discord_webhook_url = document.getElementById("visible-setting-dc-webhook")?.value || "";
+    const email_smtp_server = document.getElementById("visible-setting-mail-server")?.value || "";
+    const email_smtp_port = document.getElementById("visible-setting-mail-port")?.value || "";
+    const email_sender = document.getElementById("visible-setting-mail-sender")?.value || "";
+    const email_password = document.getElementById("visible-setting-mail-password")?.value || "";
+    const email_recipient = document.getElementById("visible-setting-mail-recipient")?.value || "";
+
+    const res = await fetch(`${API_BASE}/api/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            custom_prompt, ai_tone,
+            telegram_bot_token, telegram_chat_id,
+            discord_webhook_url,
+            email_smtp_server, email_smtp_port,
+            email_sender, email_password,
+            email_recipient
+        })
+    });
+    if (!res.ok) throw new Error("Konnte Einstellungen nicht zwischenspeichern.");
+}
+
+function setupNotificationTestButtons() {
+    const btnTg = document.getElementById("btn-test-telegram");
+    const btnDc = document.getElementById("btn-test-discord");
+    const btnMail = document.getElementById("btn-test-email");
+
+    btnTg?.addEventListener("click", async () => {
+        const token = document.getElementById("visible-setting-tg-token").value;
+        const chatId = document.getElementById("visible-setting-tg-chatid").value;
+        if (!token || !chatId) {
+            showToast("Bitte Bot Token und Chat ID ausfüllen.", "warning");
+            return;
+        }
+        btnTg.disabled = true;
+        try {
+            await saveAllSettingsSilently();
+            const res = await fetch(`${API_BASE}/api/settings/test-telegram`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: "AlphaPulse AI Telegram Testnachricht!" })
+            });
+            if (res.ok) {
+                showToast("Telegram Testnachricht erfolgreich gesendet!", "success");
+            } else {
+                const err = await res.json();
+                showToast(err.detail || "Telegram Test fehlgeschlagen.", "error");
+            }
+        } catch (e) {
+            showToast(e.message, "error");
+        } finally {
+            btnTg.disabled = false;
+        }
+    });
+
+    btnDc?.addEventListener("click", async () => {
+        const webhook = document.getElementById("visible-setting-dc-webhook").value;
+        if (!webhook) {
+            showToast("Bitte Webhook URL ausfüllen.", "warning");
+            return;
+        }
+        btnDc.disabled = true;
+        try {
+            await saveAllSettingsSilently();
+            const res = await fetch(`${API_BASE}/api/settings/test-discord`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: "AlphaPulse AI Discord Testnachricht!" })
+            });
+            if (res.ok) {
+                showToast("Discord Testnachricht erfolgreich gesendet!", "success");
+            } else {
+                const err = await res.json();
+                showToast(err.detail || "Discord Test fehlgeschlagen.", "error");
+            }
+        } catch (e) {
+            showToast(e.message, "error");
+        } finally {
+            btnDc.disabled = false;
+        }
+    });
+
+    btnMail?.addEventListener("click", async () => {
+        const server = document.getElementById("visible-setting-mail-server").value;
+        const port = document.getElementById("visible-setting-mail-port").value;
+        const sender = document.getElementById("visible-setting-mail-sender").value;
+        const recipient = document.getElementById("visible-setting-mail-recipient").value;
+        if (!server || !port || !sender || !recipient) {
+            showToast("Bitte SMTP Server, Port, Absender und Empfänger ausfüllen.", "warning");
+            return;
+        }
+        btnMail.disabled = true;
+        try {
+            await saveAllSettingsSilently();
+            const res = await fetch(`${API_BASE}/api/settings/test-email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: "AlphaPulse AI E-Mail Testnachricht!" })
+            });
+            if (res.ok) {
+                showToast("E-Mail Testnachricht erfolgreich gesendet!", "success");
+            } else {
+                const err = await res.json();
+                showToast(err.detail || "E-Mail Test fehlgeschlagen.", "error");
+            }
+        } catch (e) {
+            showToast(e.message, "error");
+        } finally {
+            btnMail.disabled = false;
+        }
+    });
 }
 
 // Export triggers

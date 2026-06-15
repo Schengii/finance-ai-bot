@@ -194,6 +194,7 @@ class PortfolioAnalysisRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    portfolio_id: int = 1
 
 class AlertRequest(BaseModel):
     symbol: str
@@ -203,6 +204,14 @@ class AlertRequest(BaseModel):
 class SettingsRequest(BaseModel):
     custom_prompt: str
     ai_tone: str
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+    discord_webhook_url: str = ""
+    email_smtp_server: str = ""
+    email_smtp_port: str = ""
+    email_sender: str = ""
+    email_password: str = ""
+    email_recipient: str = ""
 
 class PortfolioCreateRequest(BaseModel):
     name: str
@@ -375,7 +384,15 @@ def get_settings_route():
         from backend.db import get_setting
         return {
             "custom_prompt": get_setting("custom_prompt", ""),
-            "ai_tone": get_setting("ai_tone", "professionell")
+            "ai_tone": get_setting("ai_tone", "professionell"),
+            "telegram_bot_token": get_setting("telegram_bot_token", ""),
+            "telegram_chat_id": get_setting("telegram_chat_id", ""),
+            "discord_webhook_url": get_setting("discord_webhook_url", ""),
+            "email_smtp_server": get_setting("email_smtp_server", ""),
+            "email_smtp_port": get_setting("email_smtp_port", ""),
+            "email_sender": get_setting("email_sender", ""),
+            "email_password": get_setting("email_password", ""),
+            "email_recipient": get_setting("email_recipient", "")
         }
     except Exception as e:
         logger.error(f"Fehler beim Laden der Einstellungen: {e}")
@@ -389,8 +406,19 @@ def save_settings_route(settings: SettingsRequest):
         from backend.db import save_setting
         success_prompt = save_setting("custom_prompt", settings.custom_prompt)
         success_tone = save_setting("ai_tone", settings.ai_tone)
+        
+        # Save notification settings
+        save_setting("telegram_bot_token", settings.telegram_bot_token)
+        save_setting("telegram_chat_id", settings.telegram_chat_id)
+        save_setting("discord_webhook_url", settings.discord_webhook_url)
+        save_setting("email_smtp_server", settings.email_smtp_server)
+        save_setting("email_smtp_port", settings.email_smtp_port)
+        save_setting("email_sender", settings.email_sender)
+        save_setting("email_password", settings.email_password)
+        save_setting("email_recipient", settings.email_recipient)
+        
         if not success_prompt or not success_tone:
-            raise HTTPException(status_code=500, detail="Fehler beim Speichern der Einstellungen.")
+            raise HTTPException(status_code=500, detail="Fehler beim Speichern der Haupteinstellungen.")
         return {"status": "success", "message": "Einstellungen erfolgreich gespeichert."}
     except Exception as e:
         logger.error(f"Fehler beim Speichern des Settings: {e}")
@@ -871,10 +899,16 @@ def get_prediction_accuracy():
 def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
     """Beantwortet Fragen des Nutzers basierend auf Portfolio und Watchlist-Daten."""
     try:
-        from backend.db import get_predictions_from_db, get_portfolio_from_db, save_portfolio_item, delete_portfolio_item, add_asset, delete_asset
+        from backend.db import get_predictions_from_db, get_portfolio_from_db, add_asset, delete_asset, add_chat_message, add_transaction
         from backend.ai_analyzer import generate_chat_response
+        import datetime
         
         msg = req.message.strip()
+        portfolio_id = req.portfolio_id
+        current_date = datetime.date.today().strftime('%Y-%m-%d')
+        
+        # Save user message to chat history
+        add_chat_message(portfolio_id, "user", msg)
         
         # 1. Befehlserkennung
         if msg.startswith("/"):
@@ -896,26 +930,55 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
                     except Exception:
                         pass
                         
-                    save_portfolio_item(symbol, qty, price)
+                    # Buchen einer Transaktion (dadurch wird das Portfolio automatisch aktualisiert)
+                    add_transaction(portfolio_id, symbol, 'BUY', qty, price, current_date)
+                    
+                    response_text = f"✅ **Erfolgreich hinzugefügt!** {qty}x **{symbol}** für je {price}$ wurde als Kauf in dein Portfolio (Profil: {portfolio_id}) eingetragen."
+                    add_chat_message(portfolio_id, "bot", response_text)
                     return {
-                        "response": f"✅ **Erfolgreich hinzugefügt!** {qty}x **{symbol}** für je {price}$ wurde in dein Portfolio eingebucht.",
+                        "response": response_text,
                         "trigger_refresh": True
                     }
                 except Exception as e:
+                    response_text = f"❌ Fehler beim Hinzufügen: {str(e)}. Syntax: `/add SYMBOL MENGE KAUFPREIS`"
+                    add_chat_message(portfolio_id, "bot", response_text)
                     return {
-                        "response": f"❌ Fehler beim Hinzufügen: {str(e)}. Syntax: `/add SYMBOL MENGE KAUFPREIS`",
+                        "response": response_text,
                         "trigger_refresh": False
                     }
                     
             elif (cmd == "/remove" or cmd == "/delete") and len(parts) >= 2:
                 # /remove SYMBOL
                 symbol = parts[1].upper()
-                delete_portfolio_item(symbol)
-                return {
-                    "response": f"🗑️ **Erfolgreich gelöscht!** Asset **{symbol}** wurde aus deinem Portfolio entfernt.",
-                    "trigger_refresh": True
-                }
-                
+                try:
+                    # Finde den aktuellen Bestand im Portfolio, um ihn zu nullen
+                    holdings = get_portfolio_from_db(portfolio_id)
+                    item = next((h for h in holdings if h["symbol"] == symbol), None)
+                    
+                    if item and item["quantity"] > 0:
+                        predictions_data = get_predictions_from_db().get("predictions", {})
+                        pred = predictions_data.get(symbol, {})
+                        sell_price = pred.get("price") or item["buy_price"]
+                        
+                        # Transaktion buchen, die den Bestand eliminiert
+                        add_transaction(portfolio_id, symbol, 'SELL', item["quantity"], sell_price, current_date)
+                        response_text = f"🗑️ **Erfolgreich gelöscht!** Asset **{symbol}** wurde über einen Komplettverkauf aus deinem Portfolio entfernt."
+                    else:
+                        response_text = f"ℹ️ Asset **{symbol}** befindet sich nicht in diesem Portfolio."
+                    
+                    add_chat_message(portfolio_id, "bot", response_text)
+                    return {
+                        "response": response_text,
+                        "trigger_refresh": True
+                    }
+                except Exception as e:
+                    response_text = f"❌ Fehler beim Entfernen: {str(e)}"
+                    add_chat_message(portfolio_id, "bot", response_text)
+                    return {
+                        "response": response_text,
+                        "trigger_refresh": False
+                    }
+                    
             elif cmd == "/watch" and len(parts) >= 2:
                 # /watch SYMBOL
                 symbol = parts[1].upper()
@@ -930,13 +993,17 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
                         "name": ticker_info["name"],
                         "type": ticker_info["type"]
                     })
+                    response_text = f"👀 **Erfolgreich!** Asset **{symbol}** ({ticker_info['name']}) wird jetzt beobachtet. Die KI-Analyse läuft im Hintergrund."
+                    add_chat_message(portfolio_id, "bot", response_text)
                     return {
-                        "response": f"👀 **Erfolgreich!** Asset **{symbol}** ({ticker_info['name']}) wird jetzt beobachtet. Die KI-Analyse läuft im Hintergrund.",
+                        "response": response_text,
                         "trigger_refresh": True
                     }
                 except Exception as e:
+                    response_text = f"❌ Asset konnte nicht gefunden werden: {str(e)}"
+                    add_chat_message(portfolio_id, "bot", response_text)
                     return {
-                        "response": f"❌ Asset konnte nicht gefunden werden: {str(e)}",
+                        "response": response_text,
                         "trigger_refresh": False
                     }
                     
@@ -944,28 +1011,33 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
                 # /unwatch SYMBOL
                 symbol = parts[1].upper()
                 delete_asset(symbol)
+                response_text = f"❌ **Beobachtung beendet!** Asset **{symbol}** wurde aus der Watchlist entfernt."
+                add_chat_message(portfolio_id, "bot", response_text)
                 return {
-                    "response": f"❌ **Beobachtung beendet!** Asset **{symbol}** wurde aus der Watchlist entfernt.",
+                    "response": response_text,
                     "trigger_refresh": True
                 }
                 
             else:
+                response_text = (
+                    "ℹ️ **Verfügbare Chat-Befehle:**\n"
+                    "- `/watch SYMBOL` - Fügt Asset zur Watchlist hinzu\n"
+                    "- `/unwatch SYMBOL` - Entfernt Asset aus Watchlist\n"
+                    "- `/add SYMBOL MENGE KAUFPREIS` - Fügt Asset zum Portfolio hinzu\n"
+                    "- `/remove SYMBOL` - Entfernt Asset aus Portfolio"
+                )
+                add_chat_message(portfolio_id, "bot", response_text)
                 return {
-                    "response": (
-                        "ℹ️ **Verfügbare Chat-Befehle:**\n"
-                        "- `/watch SYMBOL` - Fügt Asset zur Watchlist hinzu\n"
-                        "- `/unwatch SYMBOL` - Entfernt Asset aus Watchlist\n"
-                        "- `/add SYMBOL MENGE KAUFPREIS` - Fügt Asset zum Portfolio hinzu\n"
-                        "- `/remove SYMBOL` - Entfernt Asset aus Portfolio"
-                    ),
+                    "response": response_text,
                     "trigger_refresh": False
                 }
         
         # Reguläre AI Chat-Antwort
         predictions_data = get_predictions_from_db().get("predictions", {})
-        portfolio_data = get_portfolio_from_db()
-        ai_response = generate_chat_response(msg, portfolio_data, predictions_data)
+        portfolio_data = get_portfolio_from_db(portfolio_id)
+        ai_response = generate_chat_response(msg, portfolio_data, predictions_data, portfolio_id=portfolio_id)
         
+        add_chat_message(portfolio_id, "bot", ai_response)
         return {"response": ai_response, "trigger_refresh": False}
     except Exception as e:
         logger.error(f"Fehler bei Chat-Anfrage: {e}")
@@ -1260,6 +1332,65 @@ def get_portfolio_dividends(portfolio_id: int = 1):
     except Exception as e:
         logger.error(f"Fehler bei Dividendenberechnung: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/chat")
+def get_portfolio_chat_route(portfolio_id: int):
+    """Holt die Chat-Historie für das Portfolio."""
+    try:
+        from backend.db import get_chat_history
+        return get_chat_history(portfolio_id)
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des Chatverlaufs: {e}")
+        raise HTTPException(status_code=500, detail="Fehler beim Laden des Chatverlaufs.")
+
+
+@app.delete("/api/portfolio/{portfolio_id}/chat")
+def delete_portfolio_chat_route(portfolio_id: int):
+    """Löscht die Chat-Historie für das Portfolio."""
+    try:
+        from backend.db import clear_chat_history
+        success = clear_chat_history(portfolio_id)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Löschen des Chatverlaufs.")
+        return {"status": "success", "message": "Chatverlauf gelöscht."}
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Chatverlaufs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class TestNotificationRequest(BaseModel):
+    message: str = "Test-Nachricht von AlphaPulse AI!"
+
+
+@app.post("/api/settings/test-telegram")
+def test_telegram_route(req: TestNotificationRequest):
+    """Sendet eine Test-Benachrichtigung an Telegram."""
+    from backend.notifications import send_telegram_notification
+    success = send_telegram_notification(req.message)
+    if not success:
+        raise HTTPException(status_code=400, detail="Telegram Test fehlgeschlagen. Bitte Einstellungen prüfen.")
+    return {"status": "success", "message": "Testnachricht an Telegram gesendet."}
+
+
+@app.post("/api/settings/test-discord")
+def test_discord_route(req: TestNotificationRequest):
+    """Sendet eine Test-Benachrichtigung an Discord."""
+    from backend.notifications import send_discord_notification
+    success = send_discord_notification(req.message)
+    if not success:
+        raise HTTPException(status_code=400, detail="Discord Test fehlgeschlagen. Bitte Einstellungen prüfen.")
+    return {"status": "success", "message": "Testnachricht an Discord gesendet."}
+
+
+@app.post("/api/settings/test-email")
+def test_email_route(req: TestNotificationRequest):
+    """Sendet eine Test-E-Mail."""
+    from backend.notifications import send_email_notification
+    success = send_email_notification("AlphaPulse AI Test E-Mail", f"<h3>Test</h3><p>{req.message}</p>")
+    if not success:
+        raise HTTPException(status_code=400, detail="E-Mail Test fehlgeschlagen. Bitte Einstellungen prüfen.")
+    return {"status": "success", "message": "Test E-Mail gesendet."}
 
 
 # Finde den Pfad zum Frontend-Ordner

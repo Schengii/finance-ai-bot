@@ -135,6 +135,16 @@ def init_db():
     # Standard-Einstellungen einfügen
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('custom_prompt', '')")
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ai_tone', 'professionell')")
+    
+    # Benachrichtigungskanäle Standard-Einstellungen einfügen
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('telegram_bot_token', '')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('telegram_chat_id', '')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('discord_webhook_url', '')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('email_smtp_server', '')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('email_smtp_port', '')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('email_sender', '')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('email_password', '')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('email_recipient', '')")
 
     # 7. Transaktionen-Tabelle (für FIFO)
     cursor.execute("""
@@ -148,6 +158,18 @@ def init_db():
             date TEXT NOT NULL,
             FOREIGN KEY (portfolio_id) REFERENCES portfolios_list (id) ON DELETE CASCADE,
             FOREIGN KEY (symbol) REFERENCES assets (symbol) ON DELETE CASCADE
+        )
+    """)
+
+    # 8. Chat-Verlauf Tabelle
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS chat_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            portfolio_id INTEGER NOT NULL,
+            sender TEXT NOT NULL, -- 'user' oder 'bot'
+            message TEXT NOT NULL,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (portfolio_id) REFERENCES portfolios_list (id) ON DELETE CASCADE
         )
     """)
 
@@ -744,5 +766,52 @@ def calculate_fifo_tax(portfolio_id, symbol, sell_qty, sell_price):
         "matched_buys": matched_buys,
         "unmatched_quantity": remaining_to_sell
     }
+
+def get_chat_history(portfolio_id: int):
+    """Holt den Chatverlauf für ein bestimmtes Portfolio-Profil."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT sender, message, timestamp 
+        FROM chat_history 
+        WHERE portfolio_id = ? 
+        ORDER BY id ASC
+    """, (portfolio_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"sender": row["sender"], "message": row["message"], "timestamp": row["timestamp"]} for row in rows]
+
+def add_chat_message(portfolio_id: int, sender: str, message: str):
+    """Fügt eine Chatnachricht zum Verlauf hinzu."""
+    import datetime
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        cursor.execute("""
+            INSERT INTO chat_history (portfolio_id, sender, message, timestamp) 
+            VALUES (?, ?, ?, ?)
+        """, (portfolio_id, sender, message, timestamp))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern der Chat-Nachricht: {e}")
+        return False
+    finally:
+        conn.close()
+
+def clear_chat_history(portfolio_id: int):
+    """Löscht den Chatverlauf für ein bestimmtes Portfolio-Profil."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM chat_history WHERE portfolio_id = ?", (portfolio_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Chatverlaufs für Portfolio {portfolio_id}: {e}")
+        return False
+    finally:
+        conn.close()
 
 

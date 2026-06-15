@@ -2544,6 +2544,53 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
+/* Multi-column settings and notifications styles */
+.form-row-settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.settings-divider {
+    border: 0;
+    height: 1px;
+    background: var(--border-color);
+    margin: 0.5rem 0;
+}
+.notification-sub-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.notif-heading {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+.chat-header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.chat-clear-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    transition: var(--transition-fast);
+}
+.chat-clear-btn:hover {
+    color: var(--color-sell);
+    background: rgba(244, 63, 94, 0.15);
+}
+
 
 
 

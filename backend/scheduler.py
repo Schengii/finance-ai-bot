@@ -119,6 +119,41 @@ def check_alerts():
             if trigger:
                 mark_alert_triggered(alert["id"])
                 logger.info(f"ALARM AUSGELÖST: {symbol} ({alert_type}) erreicht Zielwert {target_value}")
+                
+                try:
+                    from backend.notifications import send_all_notifications
+                    
+                    type_labels = {
+                        "price_above": "Preis übersteigt",
+                        "price_below": "Preis fällt unter",
+                        "rsi_above": "RSI übersteigt",
+                        "rsi_below": "RSI fällt unter",
+                        "rec_change": "KI-Empfehlung ändert sich auf"
+                    }
+                    label = type_labels.get(alert_type, alert_type)
+                    
+                    subj = f"🚨 AlphaPulse Alarm ausgelöst: {symbol}"
+                    text_msg = (
+                        f"🚨 Alarm ausgelöst!\n\n"
+                        f"Asset: {symbol} ({pred.get('name', '')})\n"
+                        f"Bedingung: {label} {target_value}\n\n"
+                        f"Aktuelle Werte:\n"
+                        f"- Preis: {current_price} $\n"
+                        f"- RSI: {rsi:.1f if rsi else 0.0}\n"
+                        f"- Empfehlung: {rec}"
+                    )
+                    html_msg = (
+                        f"<h3>🚨 Alarm ausgelöst!</h3>"
+                        f"<p>Asset: <b>{symbol}</b> ({pred.get('name', '')})<br>"
+                        f"Bedingung: {label} <b>{target_value}</b></p>"
+                        f"<p><b>Aktuelle Werte:</b><br>"
+                        f"• Preis: {current_price} $<br>"
+                        f"• RSI: {rsi:.1f if rsi else 0.0}<br>"
+                        f"• Empfehlung: <b>{rec}</b></p>"
+                    )
+                    send_all_notifications(subj, html_msg, text_msg)
+                except Exception as e_notif:
+                    logger.error(f"Fehler beim Versenden der Alarm-Benachrichtigung: {e_notif}")
     except Exception as e:
         logger.error(f"Fehler in check_alerts: {e}")
 

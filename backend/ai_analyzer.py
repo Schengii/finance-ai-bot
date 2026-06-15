@@ -227,8 +227,8 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
         return get_mock_prediction(asset_info, market_data)
 
 
-def generate_chat_response(query, portfolio_data, predictions_data):
-    """Generiert eine Antwort auf eine Nutzerfrage basierend auf Portfolio und Prognosen."""
+def generate_chat_response(query, portfolio_data, predictions_data, portfolio_id=1):
+    """Generiert eine Antwort auf eine Nutzerfrage basierend auf Portfolio, Prognosen und Chatverlauf."""
     
     if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
         # Fallback Mock responses for Demo-Modus
@@ -272,6 +272,19 @@ def generate_chat_response(query, portfolio_data, predictions_data):
             f"  KI-Begründung: {pred['ai_explanation']}\n"
         )
         
+    # Chatverlauf aus DB laden
+    from backend.db import get_chat_history
+    history = get_chat_history(portfolio_id)
+    history_str = ""
+    if history:
+        history_str = "Bisheriger Chatverlauf:\n"
+        # Nimm die letzten 8 Nachrichten für den Kontext (ohne die allerletzte, die ist die aktuelle Frage)
+        context_msgs = history[-9:-1] if len(history) > 1 else []
+        for msg in context_msgs:
+            role = "Nutzer" if msg["sender"] == "user" else "KI"
+            history_str += f"{role}: {msg['message']}\n"
+        history_str += "\n"
+
     # Einstellungen aus der Datenbank laden
     custom_prompt = get_setting('custom_prompt', '')
     ai_tone = get_setting('ai_tone', 'professionell')
@@ -288,6 +301,8 @@ Du hast Zugriff auf die folgenden aktuellen Daten des Nutzers:
 {portfolio_str}
 
 {predictions_str}
+
+{history_str}
 
 Beantworte die folgende Frage des Nutzers präzise, hilfreich und in der gewünschten Tonalität. Falls der Nutzer nach Finanzberatung fragt, füge am Ende deiner Antwort einen kurzen rechtlichen Hinweis hinzu, dass dies keine professionelle Anlageberatung ist.
 
