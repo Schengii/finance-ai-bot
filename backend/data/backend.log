@@ -317,3 +317,11 @@
 2026-06-13 19:33:18,573 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
 2026-06-13 19:33:18,583 [INFO] backend.scheduler: Analyse für MSFT erfolgreich abgeschlossen und in DB gespeichert.
 2026-06-13 19:33:18,583 [INFO] backend.scheduler: Aktualisierungszyklus abgeschlossen. Daten in DB gespeichert.
+2026-06-16 16:29:21,015 [INFO] backend.main: Logging-System in backend.log umgeleitet.
+2026-06-16 16:29:21,016 [INFO] backend.db: Initialisiere SQLite-Datenbank...
+2026-06-16 16:29:21,046 [INFO] backend.db: Migriere Portfolio-Tabelle zur Unterstützung von Multi-Portfolios...
+2026-06-16 16:29:21,066 [INFO] backend.db: Datenbank erfolgreich initialisiert.
+2026-06-16 16:29:21,076 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-06-16 16:29:21,077 [INFO] apscheduler.scheduler: Added job "run_update_cycle" to job store "default"
+2026-06-16 16:29:21,078 [INFO] apscheduler.scheduler: Scheduler started
+2026-06-16 16:29:21,079 [INFO] backend.scheduler: Hintergrund-Scheduler gestartet (Intervall: 24 Stunden).
