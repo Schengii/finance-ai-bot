@@ -325,3 +325,196 @@ Antwort:"""
     except Exception as e:
         logger.error(f"Fehler bei Generierung der Chat-Antwort: {e}")
         return f"Entschuldigung, bei der Verarbeitung deiner Frage ist ein Fehler aufgetreten: {str(e)}"
+
+
+def get_mock_rebalancing_advice(total_value, allocations, holdings_detail):
+    """Generiert programmatische Rebalancing-Vorschläge und Erklärung für den Demo-Modus oder Fallback."""
+    proposals = []
+    overweighted = []
+    underweighted = []
+    
+    # Identifiziere Über- und Untergewichtungen
+    for cat, data in allocations.items():
+        diff_val = data["difference_value"]
+        diff_pct = data["difference_percentage"]
+        if diff_val > 5.0: # Über 5 EUR Abweichung
+            overweighted.append((cat, diff_val, diff_pct))
+        elif diff_val < -5.0:
+            underweighted.append((cat, abs(diff_val), diff_pct))
+            
+    # Vorschläge für Verkäufe generieren (Umschichtung von Übergewichteten)
+    for cat, diff_val, diff_pct in overweighted:
+        cat_holdings = [h for h in holdings_detail if h["type"] == cat]
+        if not cat_holdings:
+            continue
+        
+        # Sortiere nach Empfehlung (Verkauf zuerst) oder Name
+        cat_holdings.sort(key=lambda x: 0 if x.get("recommendation") in ["Verkauf", "Starker Verkauf"] else 1)
+        
+        # Verteile den Verkaufsbetrag auf die Holdings dieser Kategorie
+        remaining_to_sell = diff_val
+        for h in cat_holdings:
+            if remaining_to_sell <= 1.0:
+                break
+            h_val = h["quantity"] * h["current_price"]
+            sell_val = min(remaining_to_sell, h_val)
+            sell_qty = sell_val / h["current_price"]
+            
+            proposals.append({
+                "type": "SELL",
+                "symbol": h["symbol"],
+                "value": round(sell_val, 2),
+                "quantity": round(sell_qty, 4),
+                "reason": f"Kategorie '{cat}' ist übergewichtet (+{diff_pct:.1f}%). Reduzierung des Bestands um {sell_val:.2f} € zur Gewinnmitnahme."
+            })
+            remaining_to_sell -= sell_val
+
+    # Vorschläge für Käufe generieren (Umschichtung in Untergewichtete)
+    # Standard-Symbole für Kategorien, falls keine Holdings vorhanden sind
+    default_symbols = {
+        "stock": "AAPL",
+        "crypto": "BTC-USD",
+        "commodity": "GC=F"
+    }
+    
+    for cat, diff_val, diff_pct in underweighted:
+        cat_holdings = [h for h in holdings_detail if h["type"] == cat]
+        
+        if not cat_holdings:
+            # Schlage Kauf eines Standard-Assets vor
+            symbol = default_symbols.get(cat, "AAPL")
+            price = 100.0 # fallback
+            if symbol == "BTC-USD": price = 65000.0
+            elif symbol == "GC=F": price = 2300.0
+            
+            buy_qty = diff_val / price
+            proposals.append({
+                "type": "BUY",
+                "symbol": symbol,
+                "value": round(diff_val, 2),
+                "quantity": round(buy_qty, 4),
+                "reason": f"Kategorie '{cat}' ist untergewichtet ({diff_pct:.1f}%). Aufbau einer Einstiegsposition in {symbol} empfohlen."
+            })
+        else:
+            # Bevorzuge Assets mit Kaufempfehlung
+            cat_holdings.sort(key=lambda x: 0 if x.get("recommendation") in ["Kauf", "Starker Kauf"] else 1)
+            buy_val_per_asset = diff_val / len(cat_holdings)
+            for h in cat_holdings:
+                buy_qty = buy_val_per_asset / h["current_price"]
+                proposals.append({
+                    "type": "BUY",
+                    "symbol": h["symbol"],
+                    "value": round(buy_val_per_asset, 2),
+                    "quantity": round(buy_qty, 4),
+                    "reason": f"Kategorie '{cat}' ist untergewichtet ({diff_pct:.1f}%). Aufstockung von {h['symbol']} zur Wiederherstellung der Allokation."
+                })
+
+    # Erzeuge deutsche Erklärung
+    explanation_parts = ["**Automatisches Portfolio-Rebalancing:**\n"]
+    if not proposals:
+        explanation_parts.append("Ihr Portfolio entspricht derzeit genau der gewünschten Ziel-Allokation. Es sind keine Anpassungen erforderlich.")
+    else:
+        explanation_parts.append("Um Ihre Ziel-Allokation wiederherzustellen, empfiehlt der Rebalancing Advisor folgende Umschichtungen:\n")
+        for cat, diff_val, diff_pct in overweighted:
+            explanation_parts.append(f"- **{cat.capitalize()}** ist um **{diff_pct:.1f}%** ({diff_val:.2f} €) überrepräsentiert. Gewinne sollten hier realisiert werden.")
+        for cat, diff_val, diff_pct in underweighted:
+            explanation_parts.append(f"- **{cat.capitalize()}** ist um **{diff_pct:.1f}%** ({diff_val:.2f} €) unterrepräsentiert. Hier sollte gezielt nachgekauft werden.")
+            
+        explanation_parts.append("\n*Hinweis: Dies ist eine algorithmisch generierte Empfehlung, da entweder kein Gemini API-Schlüssel konfiguriert ist oder die KI-Analyse nicht erreichbar war.*")
+
+    return {
+        "proposals": proposals,
+        "ai_explanation": "\n".join(explanation_parts)
+    }
+
+
+def generate_rebalancing_advice(portfolio_id, total_value, allocations, holdings_detail):
+    """Generiert KI-gestützte Rebalancing-Vorschläge basierend auf Abweichungen und Prognosen."""
+    # Falls kein API-Key oder genai SDK, nutze Mock-Fallback
+    if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
+        return get_mock_rebalancing_advice(total_value, allocations, holdings_detail)
+        
+    # Baue Kontext für den Prompt
+    allocations_str = ""
+    for cat, data in allocations.items():
+        allocations_str += (
+            f"- Kategorie '{cat}': Ist-Wert: {data['current_value']:.2f} € ({data['current_percentage']:.1f}%), "
+            f"Soll-Wert: {data['target_percentage']:.1f}%, Abweichung: {data['difference_percentage']:.1f}% "
+            f"({data['difference_value']:.2f} €)\n"
+        )
+        
+    holdings_str = ""
+    for h in holdings_detail:
+        holdings_str += (
+            f"- Ticker: {h['symbol']} ({h['name']}), Kategorie: {h['type']}\n"
+            f"  Bestand: {h['quantity']} x {h['current_price']:.2f} € = {h['quantity']*h['current_price']:.2f} €\n"
+            f"  KI-Prognose/Empfehlung: {h.get('recommendation', 'N/A')}, RSI: {h.get('rsi', 'N/A')}, Trend: {h.get('technical_trend', 'N/A')}\n"
+        )
+        
+    custom_prompt = get_setting('custom_prompt', '')
+    ai_tone = get_setting('ai_tone', 'professionell')
+    
+    prompt = f"""
+Du bist ein erstklassiger KI-Investment-Berater. Deine Aufgabe ist es, dem Nutzer beim Rebalancing seines Portfolios zu helfen.
+Der Nutzer möchte eine bestimmte Zielallokation einhalten.
+
+NUTZER-EINSTELLUNGEN FÜR DEINEN STIL / DEINE TONALITÄT:
+- Tonalität: {ai_tone}
+- Spezifische Anweisungen: {custom_prompt}
+
+GESAMTWERT DES PORTFOLIOS: {total_value:.2f} €
+
+ALLOKATIONS-ABWEICHUNGEN:
+{allocations_str}
+
+AKTUELLER PORTFOLIO-BESTAND & KI-ANALYSEN:
+{holdings_str}
+
+Deine Analyse soll konkrete Kauf- und Verkaufsvorschläge generieren, um die Zielallokationen wiederherzustellen.
+- Verkaufe vorzugsweise Anteile von überbewerteten Kategorien (Abweichung > 0) und insbesondere von Assets mit neutralen oder negativen Prognosen ("Verkauf", "Halten").
+- Kaufe vorzugsweise Anteile für unterbewertete Kategorien (Abweichung < 0) und insbesondere von Assets mit positiven Prognosen ("Kauf", "Starker Kauf").
+- Falls in einer unterbewerteten Kategorie noch kein Asset existiert, schlage ein passendes Asset (z. B. BTC für Krypto, AAPL für Aktien, Gold GC=F für Rohstoffe) vor.
+
+Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit diesem JSON-Objekt. Verwende genau folgendes Schema:
+
+{{
+  "proposals": [
+    {{
+      "type": "BUY" | "SELL",
+      "symbol": "SYMBOL",
+      "value": <Betrag in EUR, z. B. 150.50>,
+      "quantity": <Menge des Assets als Kommazahl, z. B. 2.5>,
+      "reason": "<Grund für diesen Umschichtungsvorschlag auf Deutsch unter Berücksichtigung von Prognosen/RSI/Trends.>"
+    }},
+    ...
+  ],
+  "ai_explanation": "<Detaillierter Rebalancing-Report auf Deutsch, der die Umschichtungen begründet, Marktchancen aufzeigt und dem Nutzer die nächsten Schritte erklärt. Verwende die gewünschte Tonalität ({ai_tone}) und beachte die spezifischen Anweisungen.>"
+}}
+"""
+
+    try:
+        if HAS_NEW_GENAI and client:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                )
+            )
+            response_text = response.text
+        elif HAS_LEGACY_GENAI:
+            model = legacy_genai.GenerativeModel("gemini-1.5-flash")
+            generation_config = {
+                "response_mime_type": "application/json",
+                "temperature": 0.2
+            }
+            response = model.generate_content(prompt, generation_config=generation_config)
+            response_text = response.text
+        else:
+            raise RuntimeError("Kein Gemini SDK vorhanden.")
+            
+        return json.loads(response_text.strip())
+    except Exception as e:
+        logger.error(f"Fehler bei der Generierung der KI-Rebalancing-Empfehlung: {e}")
+        return get_mock_rebalancing_advice(total_value, allocations, holdings_detail)

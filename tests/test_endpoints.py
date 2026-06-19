@@ -59,6 +59,33 @@ def test_endpoints():
     print("[OK] KI-Erfolgsquote-Endpunkt erfolgreich!")
     print(f"      KI-Trefferquote: {data_acc['accuracy']}% ({data_acc['correct_count']}/{data_acc['total_evaluated']} korrekte Empfehlungen)")
     
+    # 4. Test Target Allocation and Rebalancing Endpoints
+    print("\n[4/4] Teste Zielallokation- & Rebalancing-Endpunkte...")
+    
+    # Target Allocation POST
+    target_data = {"stock": 45.0, "crypto": 35.0, "commodity": 20.0}
+    response_post_alloc = client.post("/api/portfolio/1/target-allocation", json=target_data)
+    assert response_post_alloc.status_code == 200, "Speichern der Zielallokation fehlgeschlagen"
+    
+    # Target Allocation GET
+    response_get_alloc = client.get("/api/portfolio/1/target-allocation")
+    assert response_get_alloc.status_code == 200, "Laden der Zielallokation fehlgeschlagen"
+    alloc_res = response_get_alloc.json()
+    assert alloc_res["stock"] == 45.0
+    assert alloc_res["crypto"] == 35.0
+    assert alloc_res["commodity"] == 20.0
+    print("[OK] Zielallokation Speichern/Laden erfolgreich!")
+    
+    # Rebalance GET
+    response_rebalance = client.get("/api/portfolio/1/rebalance")
+    assert response_rebalance.status_code == 200, "Rebalancing-Berechnung fehlgeschlagen"
+    rebalance_res = response_rebalance.json()
+    assert "current_allocation" in rebalance_res
+    assert "target_allocation" in rebalance_res
+    assert "advice_summary" in rebalance_res
+    assert "recommended_trades" in rebalance_res
+    print("[OK] Rebalancing-Berechnung erfolgreich!")
+    
     print("\n==================================================")
     print("             ALLE ENDPUNKT-TESTS ERFOLGREICH!      ")
     print("==================================================")

@@ -351,6 +351,16 @@ function setupEventListeners() {
     initExportButtons();
     setupNotificationTestButtons();
     
+    const targetAllocForm = document.getElementById("target-allocation-form");
+    if (targetAllocForm) {
+        targetAllocForm.addEventListener("submit", handleSaveTargetAllocation);
+    }
+    
+    const rebalanceBtn = document.getElementById("rebalance-analyze-btn");
+    if (rebalanceBtn) {
+        rebalanceBtn.addEventListener("click", analyzeRebalancing);
+    }
+    
     const settingsForm = document.getElementById("settings-form");
     if (settingsForm) {
         settingsForm.addEventListener("submit", handleSaveSettings);
@@ -385,6 +395,16 @@ function setupEventListeners() {
     const taxSimForm = document.getElementById("tax-simulator-form");
     if (taxSimForm) {
         taxSimForm.addEventListener("submit", handleTaxSimulation);
+    }
+
+    const targetAllocForm = document.getElementById("target-allocation-form");
+    if (targetAllocForm) {
+        targetAllocForm.addEventListener("submit", handleSaveTargetAllocation);
+    }
+    
+    const rebalanceBtn = document.getElementById("rebalance-analyze-btn");
+    if (rebalanceBtn) {
+        rebalanceBtn.addEventListener("click", analyzeRebalancing);
     }
 }
 
@@ -2444,6 +2464,8 @@ function setupPortfolioSubTabs() {
             
             if (targetPane === "transactions-tab-content") {
                 loadTransactions();
+            } else if (targetPane === "rebalance-tab-content") {
+                loadRebalanceData();
             }
         });
     });
@@ -2892,6 +2914,178 @@ function initExportButtons() {
         btnPrint.addEventListener("click", () => {
             window.open(`${API_BASE}/api/portfolio/${currentPortfolioId}/export/print`, "_blank");
         });
+    }
+}
+
+// ==========================================
+// REBALANCING & ALLOCATION PLANER LOGIC
+// ==========================================
+
+async function loadRebalanceData() {
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/target-allocation`);
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById("target-stock").value = data.stock || 50;
+            document.getElementById("target-crypto").value = data.crypto || 30;
+            document.getElementById("target-commodity").value = data.commodity || 20;
+            
+            updateRebalanceChart(data);
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden der Zielallokation:", e);
+    }
+}
+
+function updateRebalanceChart(targetAlloc) {
+    if (!appData.predictions) return;
+    
+    let totalVal = 0.0;
+    let catValues = { stock: 0.0, crypto: 0.0, commodity: 0.0 };
+    
+    portfolio.forEach(item => {
+        const symbol = item.symbol;
+        const qty = item.quantity;
+        const buyPrice = item.buy_price;
+        
+        const pred = appData.predictions[symbol] || {};
+        const price = pred.price || buyPrice;
+        const val = qty * price;
+        totalVal += val;
+        
+        const atype = pred.type || "stock";
+        if (catValues[atype] !== undefined) {
+            catValues[atype] += val;
+        }
+    });
+    
+    const currentAlloc = {
+        stock: totalVal > 0 ? (catValues.stock / totalVal * 100) : 0.0,
+        crypto: totalVal > 0 ? (catValues.crypto / totalVal * 100) : 0.0,
+        commodity: totalVal > 0 ? (catValues.commodity / totalVal * 100) : 0.0
+    };
+    
+    const tStock = parseFloat(targetAlloc.stock) || 0.0;
+    const tCrypto = parseFloat(targetAlloc.crypto) || 0.0;
+    const tCommodity = parseFloat(targetAlloc.commodity) || 0.0;
+    
+    document.getElementById("bar-stock-current").style.width = `${currentAlloc.stock}%`;
+    document.getElementById("bar-stock-target").style.left = `${tStock}%`;
+    document.getElementById("alloc-stock-current-val").innerText = `${currentAlloc.stock.toFixed(1)}%`;
+    document.getElementById("alloc-stock-target-val").innerText = `${tStock.toFixed(1)}%`;
+    
+    const diffStock = currentAlloc.stock - tStock;
+    const stockDiffElem = document.getElementById("alloc-stock-diff");
+    stockDiffElem.innerText = `${diffStock >= 0 ? "+" : ""}${diffStock.toFixed(1)}%`;
+    stockDiffElem.className = diffStock >= 5.0 ? "text-positive bg-positive" : diffStock <= -5.0 ? "text-negative bg-negative" : "text-muted bg-neutral";
+
+    document.getElementById("bar-crypto-current").style.width = `${currentAlloc.crypto}%`;
+    document.getElementById("bar-crypto-target").style.left = `${tCrypto}%`;
+    document.getElementById("alloc-crypto-current-val").innerText = `${currentAlloc.crypto.toFixed(1)}%`;
+    document.getElementById("alloc-crypto-target-val").innerText = `${tCrypto.toFixed(1)}%`;
+    
+    const diffCrypto = currentAlloc.crypto - tCrypto;
+    const cryptoDiffElem = document.getElementById("alloc-crypto-diff");
+    cryptoDiffElem.innerText = `${diffCrypto >= 0 ? "+" : ""}${diffCrypto.toFixed(1)}%`;
+    cryptoDiffElem.className = diffCrypto >= 5.0 ? "text-positive bg-positive" : diffCrypto <= -5.0 ? "text-negative bg-negative" : "text-muted bg-neutral";
+
+    document.getElementById("bar-commodity-current").style.width = `${currentAlloc.commodity}%`;
+    document.getElementById("bar-commodity-target").style.left = `${tCommodity}%`;
+    document.getElementById("alloc-commodity-current-val").innerText = `${currentAlloc.commodity.toFixed(1)}%`;
+    document.getElementById("alloc-commodity-target-val").innerText = `${tCommodity.toFixed(1)}%`;
+    
+    const diffCommodity = currentAlloc.commodity - tCommodity;
+    const commodityDiffElem = document.getElementById("alloc-commodity-diff");
+    commodityDiffElem.innerText = `${diffCommodity >= 0 ? "+" : ""}${diffCommodity.toFixed(1)}%`;
+    commodityDiffElem.className = diffCommodity >= 5.0 ? "text-positive bg-positive" : diffCommodity <= -5.0 ? "text-negative bg-negative" : "text-muted bg-neutral";
+}
+
+async function handleSaveTargetAllocation(e) {
+    e.preventDefault();
+    const stock = parseFloat(document.getElementById("target-stock").value) || 0;
+    const crypto = parseFloat(document.getElementById("target-crypto").value) || 0;
+    const commodity = parseFloat(document.getElementById("target-commodity").value) || 0;
+    
+    const sum = stock + crypto + commodity;
+    if (Math.abs(sum - 100) > 0.1) {
+        showToast("Die Allokationswerte müssen in Summe genau 100% ergeben. (Aktuell: " + sum.toFixed(1) + "%)", "warning");
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/target-allocation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stock, crypto, commodity })
+        });
+        if (res.ok) {
+            showToast("Zielallokation erfolgreich gespeichert.", "success");
+            updateRebalanceChart({ stock, crypto, commodity });
+        } else {
+            const err = await res.json();
+            showToast(err.detail || "Fehler beim Speichern.", "error");
+        }
+    } catch (err) {
+        showToast(err.message, "error");
+    }
+}
+
+async function analyzeRebalancing() {
+    const reportPanel = document.getElementById("rebalance-ai-report");
+    const summaryText = document.getElementById("rebalance-ai-summary");
+    const tradesBody = document.getElementById("rebalance-trades-body");
+    const tipsList = document.getElementById("rebalance-ai-tips");
+    const btn = document.getElementById("rebalance-analyze-btn");
+    
+    if (!reportPanel || !btn) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></div> Berechne...`;
+    reportPanel.classList.remove("hidden");
+    summaryText.innerText = "Lade Rebalancing-Bericht und KI-Ratschläge...";
+    tradesBody.innerHTML = `<tr><td colspan="4" class="text-center">Analysiere Bestände...</td></tr>`;
+    tipsList.innerHTML = "<li>Warte auf Antwort...</li>";
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/rebalance`);
+        if (!res.ok) throw new Error("KI-Rebalancing-Dienst nicht erreichbar.");
+        const data = await res.json();
+        
+        summaryText.innerHTML = data.advice_summary.replace(/\n/g, "<br>");
+        
+        if (data.recommended_trades && data.recommended_trades.length > 0) {
+            tradesBody.innerHTML = data.recommended_trades.map(t => {
+                const actionClass = t.action === "Kauf" ? "text-green" : "text-red";
+                return `<tr>
+                    <td><strong>${t.symbol}</strong></td>
+                    <td class="${actionClass}" style="font-weight:600">${t.action}</td>
+                    <td>${formatCurrency(t.amount_eur, "stock")}</td>
+                    <td>${t.reason}</td>
+                </tr>`;
+            }).join("");
+        } else {
+            tradesBody.innerHTML = `<tr><td colspan="4" class="text-center" style="color:var(--text-muted)">Kein unmittelbarer Rebalancing-Bedarf vorhanden. Allokation liegt im Zielbereich.</td></tr>`;
+        }
+        
+        if (data.rebalance_tips && data.rebalance_tips.length > 0) {
+            tipsList.innerHTML = data.rebalance_tips.map(tip => `<li>${tip}</li>`).join("");
+        } else {
+            tipsList.innerHTML = "<li>Keine besonderen Hinweise.</li>";
+        }
+        
+        if (data.target_allocation) {
+            updateRebalanceChart(data.target_allocation);
+        }
+        
+    } catch (e) {
+        showToast(e.message, "error");
+        summaryText.innerText = "Fehler beim Laden des Rebalancing-Berichts.";
+        tradesBody.innerHTML = `<tr><td colspan="4" class="text-center text-red">Fehler: ${e.message}</td></tr>`;
+        tipsList.innerHTML = `<li class="text-red">KI konnte keine Empfehlungen laden.</li>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="scale"></i> Rebalancing berechnen`;
+        if (window.lucide) window.lucide.createIcons();
     }
 }
 

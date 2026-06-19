@@ -228,6 +228,11 @@ class TaxSimulateRequest(BaseModel):
     sell_quantity: float
     sell_price: float
 
+class TargetAllocationRequest(BaseModel):
+    stock: float
+    crypto: float
+    commodity: float
+
 
 
 @app.get("/api/assets")
@@ -469,6 +474,212 @@ def delete_transaction_route(portfolio_id: int, tx_id: int):
     except Exception as e:
         logger.error(f"Fehler beim Löschen der Transaktion: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+@app.get("/api/portfolio/{portfolio_id}/target-allocation")
+async def get_portfolio_target_allocation(portfolio_id: int):
+    """Liefert die Zielallokation für ein Portfolio."""
+    try:
+        from backend.db import get_target_allocation
+        alloc = await get_target_allocation(portfolio_id)
+        return alloc
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Zielallokation für Portfolio {portfolio_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/portfolio/{portfolio_id}/target-allocation")
+async def save_portfolio_target_allocation(portfolio_id: int, req: TargetAllocationRequest):
+    """Speichert die Zielallokation für ein Portfolio."""
+    try:
+        from backend.db import save_target_allocation
+        target_alloc = {
+            "stock": req.stock,
+            "crypto": req.crypto,
+            "commodity": req.commodity
+        }
+        # Validierung Summe = 100%
+        total = req.stock + req.crypto + req.commodity
+        if abs(total - 100.0) > 0.01:
+            raise HTTPException(status_code=400, detail="Die Summe der Allokationen muss 100% ergeben.")
+            
+        success = await save_target_allocation(portfolio_id, target_alloc)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Speichern in der Datenbank.")
+        return {"status": "success", "message": "Zielallokation erfolgreich gespeichert."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern der Zielallokation für Portfolio {portfolio_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/rebalance")
+async def get_portfolio_rebalance(portfolio_id: int):
+    """Berechnet Rebalancing-Empfehlungen für das Portfolio."""
+    try:
+        from backend.db import get_portfolio_from_db, get_target_allocation, get_predictions_from_db
+        
+        target_alloc = await get_target_allocation(portfolio_id)
+        holdings = await get_portfolio_from_db(portfolio_id)
+        
+        # Falls das Portfolio leer ist, gebe leere Struktur zurück
+        if not holdings:
+            return {
+                "total_value": 0.0,
+                "allocations": {
+                    "stock": {
+                        "current_value": 0.0,
+                        "current_percentage": 0.0,
+                        "target_percentage": target_alloc.get("stock", 50.0),
+                        "difference_percentage": -target_alloc.get("stock", 50.0),
+                        "difference_value": 0.0
+                    },
+                    "crypto": {
+                        "current_value": 0.0,
+                        "current_percentage": 0.0,
+                        "target_percentage": target_alloc.get("crypto", 30.0),
+                        "difference_percentage": -target_alloc.get("crypto", 30.0),
+                        "difference_value": 0.0
+                    },
+                    "commodity": {
+                        "current_value": 0.0,
+                        "current_percentage": 0.0,
+                        "target_percentage": target_alloc.get("commodity", 20.0),
+                        "difference_percentage": -target_alloc.get("commodity", 20.0),
+                        "difference_value": 0.0
+                    }
+                },
+                "proposals": [],
+                "ai_explanation": "Füge deinem Portfolio Bestände hinzu, um ein Rebalancing durchführen zu können."
+            }
+            
+        predictions_data = (await get_predictions_from_db()).get("predictions", {})
+        
+        holdings_detail = []
+        total_value = 0.0
+        
+        for h in holdings:
+            symbol = h["symbol"].upper()
+            qty = h["quantity"]
+            buy_price = h["buy_price"]
+            
+            # Preis und Typ ermitteln
+            pred = predictions_data.get(symbol)
+            current_price = buy_price
+            asset_type = None
+            name = symbol
+            
+            if pred:
+                current_price = pred.get("price") or buy_price
+                asset_type = pred.get("type")
+                name = pred.get("name") or symbol
+                
+            if not asset_type:
+                try:
+                    from backend.db import get_db_connection
+                    conn = await get_db_connection()
+                    async with conn.execute("SELECT name, type FROM assets WHERE symbol = ?", (symbol,)) as cursor:
+                        row = await cursor.fetchone()
+                        if row:
+                            name = row["name"]
+                            asset_type = row["type"]
+                    await conn.close()
+                except Exception:
+                    pass
+                    
+            if not asset_type:
+                asset_type = "stock"
+                
+            if current_price == buy_price and not pred:
+                try:
+                    from backend.data_fetcher import fetch_market_data
+                    mdata = fetch_market_data(symbol, days=30)
+                    if mdata:
+                        current_price = mdata["current_price"]
+                except Exception:
+                    pass
+                    
+            val = qty * current_price
+            total_value += val
+            
+            holdings_detail.append({
+                "symbol": symbol,
+                "name": name,
+                "type": asset_type,
+                "quantity": qty,
+                "buy_price": buy_price,
+                "current_price": current_price,
+                "value": val,
+                "recommendation": pred.get("recommendation", "N/A") if pred else "N/A",
+                "rsi": pred.get("rsi") if pred else None,
+                "technical_trend": pred.get("technical_trend", "N/A") if pred else "N/A"
+            })
+            
+        # Summiere Ist-Werte je Kategorie
+        cat_values = {
+            "stock": 0.0,
+            "crypto": 0.0,
+            "commodity": 0.0
+        }
+        for h in holdings_detail:
+            t = h["type"]
+            if t in cat_values:
+                cat_values[t] += h["value"]
+            else:
+                cat_values["stock"] += h["value"]
+                
+        # Berechne Allokationen
+        allocations = {}
+        for cat in ["stock", "crypto", "commodity"]:
+            current_val = cat_values[cat]
+            current_pct = (current_val / total_value * 100.0) if total_value > 0.0 else 0.0
+            target_pct = target_alloc.get(cat, 0.0)
+            diff_pct = current_pct - target_pct
+            
+            target_val = total_value * (target_pct / 100.0)
+            diff_val = current_val - target_val
+            
+            allocations[cat] = {
+                "current_value": round(current_val, 2),
+                "current_percentage": round(current_pct, 1),
+                "target_percentage": round(target_pct, 1),
+                "difference_percentage": round(diff_pct, 1),
+                "difference_value": round(diff_val, 2)
+            }
+            
+        # KI Empfehlungen holen
+        from backend.ai_analyzer import generate_rebalancing_advice
+        advice = generate_rebalancing_advice(portfolio_id, total_value, allocations, holdings_detail)
+        
+        recommended_trades = []
+        for prop in advice.get("proposals", []):
+            recommended_trades.append({
+                "symbol": prop.get("symbol"),
+                "action": "Kauf" if prop.get("type") == "BUY" else "Verkauf",
+                "amount_eur": prop.get("value", 0.0),
+                "reason": prop.get("reason", "")
+            })
+            
+        # Generiere ein paar allgemeine Rebalancing-Tipps
+        rebalance_tips = [
+            "Führen Sie ein Rebalancing regelmäßig (z.B. alle 6 bis 12 Monate) durch, um Transaktionskosten gering zu halten.",
+            "Berücksichtigen Sie steuerliche Auswirkungen (FIFO-Gewinne) vor dem Verkauf von Assets.",
+            "Nutzen Sie Sparpläne, um untergewichtete Kategorien schrittweise und kostengünstig aufzubauen.",
+            "Überprüfen Sie Ihre Zielallokation, wenn sich Ihre persönliche Risikotoleranz oder Ihre Lebensumstände ändern."
+        ]
+        
+        return {
+            "advice_summary": advice.get("ai_explanation", "Keine KI-Erklärung verfügbar."),
+            "recommended_trades": recommended_trades,
+            "rebalance_tips": rebalance_tips,
+            "target_allocation": {
+                "stock": target_alloc.get("stock", 50.0),
+                "crypto": target_alloc.get("crypto", 30.0),
+                "commodity": target_alloc.get("commodity", 20.0)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Fehler beim Portfolio-Rebalancing für Portfolio {portfolio_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
@@ -637,6 +848,230 @@ def export_portfolio_print(portfolio_id: int):
         return HTMLResponse(content=html_content)
     except Exception as e:
         logger.error(f"Fehler beim Druckexport: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/target-allocation")
+async def get_portfolio_target_allocation(portfolio_id: int):
+    """Holt die Ziel-Allokation für ein Portfolio."""
+    try:
+        from backend.db import get_target_allocation
+        alloc = await get_target_allocation(portfolio_id)
+        return alloc
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Zielallokation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/portfolio/{portfolio_id}/target-allocation")
+async def save_portfolio_target_allocation(portfolio_id: int, req: TargetAllocationRequest):
+    """Speichert die Ziel-Allokation für ein Portfolio."""
+    try:
+        from backend.db import save_target_allocation
+        alloc_dict = {
+            "stock": req.stock,
+            "crypto": req.crypto,
+            "commodity": req.commodity
+        }
+        if not (99.0 <= (req.stock + req.crypto + req.commodity) <= 101.0):
+            raise HTTPException(status_code=400, detail="Die Allokationswerte müssen in Summe 100% ergeben.")
+            
+        success = await save_target_allocation(portfolio_id, alloc_dict)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Speichern der Zielallokation.")
+        return {"status": "success", "message": "Zielallokation erfolgreich gespeichert."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern der Zielallokation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/rebalance")
+async def rebalance_portfolio_route(portfolio_id: int):
+    """Berechnet die Rebalancing-Bedarfe und ruft KI-Empfehlungen ab."""
+    try:
+        from backend.db import get_portfolio_from_db, get_target_allocation, get_predictions_from_db, get_all_assets
+        from backend.ai_analyzer import client, HAS_NEW_GENAI, HAS_LEGACY_GENAI, GEMINI_API_KEY
+        
+        # 1. Bestände, Zielallokation & Prognosen laden
+        holdings = await get_portfolio_from_db(portfolio_id)
+        target_alloc = await get_target_allocation(portfolio_id)
+        predictions_data = await get_predictions_from_db()
+        predictions = predictions_data.get("predictions", {})
+        
+        # Assets holen für Typermittlung (stock, crypto, commodity)
+        assets = await get_all_assets()
+        asset_types = {a["symbol"]: a["type"] for a in assets}
+        
+        # 2. Berechnungen durchführen
+        total_val = 0.0
+        category_values = {"stock": 0.0, "crypto": 0.0, "commodity": 0.0}
+        
+        holdings_summary = []
+        
+        for item in holdings:
+            symbol = item["symbol"]
+            qty = item["quantity"]
+            buy_price = item["buy_price"]
+            
+            pred = predictions.get(symbol, {})
+            price = pred.get("price") or buy_price
+            val = qty * price
+            total_val += val
+            
+            # Typ bestimmen
+            atype = asset_types.get(symbol, "stock")
+            if atype in category_values:
+                category_values[atype] += val
+                
+            holdings_summary.append({
+                "symbol": symbol,
+                "type": atype,
+                "quantity": qty,
+                "buy_price": buy_price,
+                "current_price": price,
+                "current_value": val,
+                "rsi": pred.get("rsi", 50),
+                "recommendation": pred.get("recommendation", "Halten")
+            })
+            
+        # Aktuelle Prozentsätze berechnen
+        current_alloc = {
+            "stock": round((category_values["stock"] / total_val * 100), 2) if total_val > 0 else 0.0,
+            "crypto": round((category_values["crypto"] / total_val * 100), 2) if total_val > 0 else 0.0,
+            "commodity": round((category_values["commodity"] / total_val * 100), 2) if total_val > 0 else 0.0
+        }
+        
+        # 3. KI-Prompt zusammenbauen
+        holdings_text = ""
+        for h in holdings_summary:
+            holdings_text += f"- {h['symbol']} ({h['type'].upper()}): Menge={h['quantity']}, Wert={h['current_value']:.2f} € (RSI={h['rsi']}, KI={h['recommendation']})\n"
+            
+        predictions_text = ""
+        for symbol, p in predictions.items():
+            predictions_text += f"- {symbol}: Preis={p.get('price')} €, RSI={p.get('rsi')}, Empfehlung={p.get('recommendation')}\n"
+            
+        prompt = f"""
+        Du bist ein erstklassiger KI-Finanzberater. Ein Nutzer möchte sein Portfolio rebalancen.
+        Hier sind die Daten:
+        
+        Aktuelle Allokation:
+        - Aktien (stock): {category_values['stock']:.2f} € ({current_alloc['stock']:.1f}%) - Ziel: {target_alloc.get('stock')}%
+        - Krypto (crypto): {category_values['crypto']:.2f} € ({current_alloc['crypto']:.1f}%) - Ziel: {target_alloc.get('crypto')}%
+        - Rohstoffe (commodity): {category_values['commodity']:.2f} € ({current_alloc['commodity']:.1f}%) - Ziel: {target_alloc.get('commodity')}%
+        Gesamtwert des Portfolios: {total_val:.2f} €
+        
+        Aktuelle Bestände im Portfolio:
+        {holdings_text}
+        
+        Verfügbare Marktprognosen / KI-Analysen:
+        {predictions_text}
+        
+        Analysiere, wie das Portfolio umgeschichtet werden sollte, um die Zielallokationen zu erreichen. Beachte dabei die aktuellen KI-Empfehlungen: Verkaufe bevorzugt Assets mit schlechter Prognose/hohem RSI, und kaufe bevorzugt Assets mit bester Prognose (Kauf/Starker Kauf).
+        
+        Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit diesem JSON-Objekt. Verwende genau folgendes Schema:
+        {{
+          "advice_summary": "<Zusammenfassende Einschätzung des aktuellen Rebalancing-Bedarfs auf Deutsch (ca. 3 Sätze).>",
+          "recommended_trades": [
+             {{
+               "symbol": "<SYMBOL>",
+               "action": "Kauf" | "Verkauf",
+               "amount_eur": <Betrag in Euro>,
+               "reason": "<Kurze Begründung bezogen auf Allokation und KI-Empfehlung auf Deutsch.>"
+             }}
+          ],
+          "rebalance_tips": ["Tipp 1", "Tipp 2"]
+        }}
+        """
+        
+        # Mock-Fallback, falls kein Gemini Key vorhanden
+        if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
+            recommended_trades = []
+            rebalance_tips = [
+                "Umschichtungen verursachen ggf. Transaktionsgebühren. Versuchen Sie, Abweichungen gering zu halten.",
+                "Nutzen Sie neue Einzahlungen, um untergewichtete Assetklassen aufzustocken (kostenschonendes Rebalancing)."
+            ]
+            
+            for cat in ["stock", "crypto", "commodity"]:
+                target = target_alloc.get(cat, 0.0)
+                curr = current_alloc[cat]
+                diff_pct = target - curr
+                diff_val = (diff_pct / 100.0) * total_val
+                
+                if abs(diff_val) > 10.0:
+                    cat_assets = [h for h in holdings_summary if h["type"] == cat]
+                    if diff_val < 0:
+                        if cat_assets:
+                            cat_assets.sort(key=lambda x: x["rsi"], reverse=True)
+                            target_asset = cat_assets[0]
+                            recommended_trades.append({
+                                "symbol": target_asset["symbol"],
+                                "action": "Verkauf",
+                                "amount_eur": round(abs(diff_val), 2),
+                                "reason": f"Übergewicht in Kategorie {cat} abbauen. {target_asset['symbol']} hat aktuell einen RSI von {target_asset['rsi']}."
+                            })
+                    else:
+                        candidates = [p for p in predictions.values() if p["type"] == cat]
+                        if candidates:
+                            candidates.sort(key=lambda x: x.get("rsi", 50))
+                            target_asset = candidates[0]
+                            recommended_trades.append({
+                                "symbol": target_asset["symbol"],
+                                "action": "Kauf",
+                                "amount_eur": round(diff_val, 2),
+                                "reason": f"Untergewicht in Kategorie {cat} ausgleichen. {target_asset['symbol']} bietet sich an (RSI: {target_asset.get('rsi')})."
+                            })
+            
+            summary = f"Ihr Portfolio weicht leicht von der Zielallokation ab. Die größten Verschiebungen liegen im Bereich Krypto (Abweichung: {target_alloc.get('crypto', 0.0) - current_alloc['crypto']:.1f}%). Ein schrittweises Rebalancing wird empfohlen."
+            
+            return {
+                "total_value": round(total_val, 2),
+                "current_allocation": current_alloc,
+                "target_allocation": target_alloc,
+                "category_values": category_values,
+                "advice_summary": summary,
+                "recommended_trades": recommended_trades,
+                "rebalance_tips": rebalance_tips
+            }
+        
+        # Gemini API Aufruf
+        response_text = ""
+        if HAS_NEW_GENAI and client:
+            from google.genai import types
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.2,
+                )
+            )
+            response_text = response.text
+        elif HAS_LEGACY_GENAI:
+            import google.generativeai as legacy_genai
+            model = legacy_genai.GenerativeModel("gemini-1.5-flash")
+            generation_config = {
+                "response_mime_type": "application/json",
+                "temperature": 0.2
+            }
+            response = model.generate_content(prompt, generation_config=generation_config)
+            response_text = response.text
+            
+        ai_result = json.loads(response_text.strip())
+        
+        return {
+            "total_value": round(total_val, 2),
+            "current_allocation": current_alloc,
+            "target_allocation": target_alloc,
+            "category_values": category_values,
+            "advice_summary": ai_result.get("advice_summary", ""),
+            "recommended_trades": ai_result.get("recommended_trades", []),
+            "rebalance_tips": ai_result.get("rebalance_tips", [])
+        }
+        
+    except Exception as e:
+        logger.error(f"Fehler beim Rebalancing: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

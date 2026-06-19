@@ -395,6 +395,7 @@
                             <button class="portfolio-sub-tab active" data-port-tab="holdings-tab-content">Bestände</button>
                             <button class="portfolio-sub-tab" data-port-tab="transactions-tab-content">Transaktionsverlauf</button>
                             <button class="portfolio-sub-tab" data-port-tab="tax-tab-content">FIFO-Steuer-Rechner</button>
+                            <button class="portfolio-sub-tab" data-port-tab="rebalance-tab-content">Rebalancing</button>
                         </div>
 
                         <!-- 1. Bestände Tab Content -->
@@ -568,6 +569,132 @@
                                     <ul id="tax-res-matched-list" class="matched-list">
                                         <!-- Dynamisch befüllt -->
                                     </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Rebalancing & Asset-Allokation Content -->
+                        <div id="rebalance-tab-content" class="portfolio-tab-pane hidden">
+                            <div class="rebalance-container">
+                                <!-- target allocation form -->
+                                <form id="target-allocation-form" class="add-investment-form">
+                                    <h3>Zielallokation festlegen</h3>
+                                    <p class="section-subtitle">Geben Sie Ihre gewünschte Verteilung in % ein. Die Summe muss 100% ergeben.</p>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="target-stock">Aktien (Stock) %</label>
+                                            <input type="number" id="target-stock" class="glass-input" min="0" max="100" placeholder="50" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="target-crypto">Kryptowährungen (Crypto) %</label>
+                                            <input type="number" id="target-crypto" class="glass-input" min="0" max="100" placeholder="30" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="target-commodity">Rohstoffe (Commodity) %</label>
+                                            <input type="number" id="target-commodity" class="glass-input" min="0" max="100" placeholder="20" required>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-add-inv">
+                                        <i data-lucide="save"></i> Zielallokation speichern
+                                    </button>
+                                </form>
+
+                                <!-- comparison & advice grid -->
+                                <div class="rebalance-grid-layout">
+                                    <!-- comparison chart card -->
+                                    <div class="portfolio-chart-card glass-panel rebalance-chart-card">
+                                        <h3>Vergleich: Ist- vs. Soll-Allokation</h3>
+                                        <div class="rebalance-chart-comparison">
+                                            <div class="allocation-bar-group">
+                                                <div class="allocation-bar-label">
+                                                    <span>Aktien (Stock)</span>
+                                                    <span id="alloc-stock-diff">+0.0%</span>
+                                                </div>
+                                                <div class="allocation-progress-wrapper">
+                                                    <div class="progress-bar-current" id="bar-stock-current" style="width: 0%" title="Aktuell"></div>
+                                                    <div class="progress-bar-target" id="bar-stock-target" style="left: 0%" title="Ziel"></div>
+                                                </div>
+                                                <div class="allocation-bar-footer">
+                                                    <span>Ist: <strong id="alloc-stock-current-val">0.0%</strong></span>
+                                                    <span>Soll: <strong id="alloc-stock-target-val">50.0%</strong></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="allocation-bar-group">
+                                                <div class="allocation-bar-label">
+                                                    <span>Kryptowährungen (Crypto)</span>
+                                                    <span id="alloc-crypto-diff">+0.0%</span>
+                                                </div>
+                                                <div class="allocation-progress-wrapper">
+                                                    <div class="progress-bar-current" id="bar-crypto-current" style="width: 0%" title="Aktuell"></div>
+                                                    <div class="progress-bar-target" id="bar-crypto-target" style="left: 0%" title="Ziel"></div>
+                                                </div>
+                                                <div class="allocation-bar-footer">
+                                                    <span>Ist: <strong id="alloc-crypto-current-val">0.0%</strong></span>
+                                                    <span>Soll: <strong id="alloc-crypto-target-val">30.0%</strong></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="allocation-bar-group">
+                                                <div class="allocation-bar-label">
+                                                    <span>Rohstoffe (Commodity)</span>
+                                                    <span id="alloc-commodity-diff">+0.0%</span>
+                                                </div>
+                                                <div class="allocation-progress-wrapper">
+                                                    <div class="progress-bar-current" id="bar-commodity-current" style="width: 0%" title="Aktuell"></div>
+                                                    <div class="progress-bar-target" id="bar-commodity-target" style="left: 0%" title="Ziel"></div>
+                                                </div>
+                                                <div class="allocation-bar-footer">
+                                                    <span>Ist: <strong id="alloc-commodity-current-val">0.0%</strong></span>
+                                                    <span>Soll: <strong id="alloc-commodity-target-val">20.0%</strong></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- AI rebalance advice card -->
+                                    <div class="detail-section glass-panel rebalance-advice-card">
+                                        <h3>KI Rebalancing-Berater</h3>
+                                        <button id="rebalance-analyze-btn" class="btn btn-primary btn-analyze-portfolio">
+                                            <i data-lucide="scale"></i> Rebalancing berechnen
+                                        </button>
+
+                                        <div id="rebalance-ai-report" class="ai-report-panel hidden">
+                                            <div class="ai-portfolio-summary-text" id="rebalance-ai-summary" style="margin-bottom: 15px;">
+                                                Lade Rebalancing-Bericht...
+                                            </div>
+                                            <div class="ai-details-panel">
+                                                <div class="ai-report-section">
+                                                    <h5>
+                                                        <i data-lucide="refresh-cw" class="text-green"></i> Empfohlene Transaktionen
+                                                    </h5>
+                                                    <div class="holdings-table-container">
+                                                        <table class="holdings-table forecasts-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Asset</th>
+                                                                    <th>Aktion</th>
+                                                                    <th>Betrag</th>
+                                                                    <th>Begründung</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody id="rebalance-trades-body">
+                                                                <!-- Dynamically filled -->
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                                <div class="ai-report-section">
+                                                    <h5>
+                                                        <i data-lucide="lightbulb" class="icon-lightbulb-yellow"></i> Rebalancing-Tipps
+                                                    </h5>
+                                                    <ul id="rebalance-ai-tips" class="ai-list-bullet">
+                                                        <!-- Dynamically filled -->
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

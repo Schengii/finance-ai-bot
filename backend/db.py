@@ -802,3 +802,36 @@ async def clear_chat_history(portfolio_id: int):
         return False
     finally:
         await conn.close()
+
+async def get_target_allocation(portfolio_id: int):
+    """Liest die Ziel-Allokation für ein Portfolio aus den Einstellungen."""
+    key = f"portfolio_target_allocation_{portfolio_id}"
+    conn = await get_db_connection()
+    try:
+        async with conn.execute("SELECT value FROM settings WHERE key = ?", (key,)) as cursor:
+            row = await cursor.fetchone()
+            if row and row[0]:
+                return json.loads(row[0])
+            # Standardwert, falls nicht gesetzt
+            return {"stock": 50.0, "crypto": 30.0, "commodity": 20.0}
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Zielallokation für Portfolio {portfolio_id}: {e}")
+        return {"stock": 50.0, "crypto": 30.0, "commodity": 20.0}
+    finally:
+        await conn.close()
+
+async def save_target_allocation(portfolio_id: int, target_alloc: dict):
+    """Speichert die Ziel-Allokation für ein Portfolio in den Einstellungen."""
+    key = f"portfolio_target_allocation_{portfolio_id}"
+    conn = await get_db_connection()
+    try:
+        val_str = json.dumps(target_alloc)
+        await conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, val_str))
+        await conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern der Zielallokation für Portfolio {portfolio_id}: {e}")
+        return False
+    finally:
+        await conn.close()
+
