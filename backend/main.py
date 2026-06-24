@@ -233,6 +233,13 @@ class TargetAllocationRequest(BaseModel):
     crypto: float
     commodity: float
 
+class PaperTradingRequest(BaseModel):
+    portfolio_id: int = 1
+    trades: List[dict]
+
+class DailySummaryRequest(BaseModel):
+    portfolio_id: int = 1
+    strategy: str = "Ausgewogen"
 
 
 @app.get("/api/assets")
@@ -307,6 +314,141 @@ def get_portfolio(portfolio_id: int = 1):
     except Exception as e:
         logger.error(f"Fehler beim Laden des Portfolios: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden des Portfolios.")
+
+
+@app.post("/api/paper-trading/portfolio")
+async def paper_trading_summary_route(req: PaperTradingRequest):
+    """Simuliert einen kurzen Paper-Trading-Überblick auf Basis von Trades."""
+    try:
+        from backend.db import get_predictions_from_db
+        db_data = await get_predictions_from_db()
+        predictions = db_data.get("predictions", {})
+
+        total_value = 0.0
+        holdings = []
+        for trade in req.trades:
+            symbol = str(trade.get("symbol", "")).upper()
+            quantity = float(trade.get("quantity", 0) or 0)
+            price = float(trade.get("price", 0) or 0)
+            pred = predictions.get(symbol, {})
+            current_price = pred.get("price") or price
+            value = quantity * float(current_price)
+            total_value += value
+            holdings.append({
+                "symbol": symbol,
+                "quantity": quantity,
+                "entry_price": price,
+                "current_price": current_price,
+                "value": round(value, 2),
+            })
+
+        summary = (
+            f"Die Simulation umfasst {len(req.trades)} Trades mit einem geschätzten Gesamtwert von {total_value:,.2f}. "
+            f"Die Auswahl ist auf Basis aktueller Prognosen und Kursdaten entstanden."
+        )
+        return {
+            "summary": summary,
+            "total_value": round(total_value, 2),
+            "holdings": holdings,
+            "portfolio_id": req.portfolio_id,
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei der Paper-Trading-Simulation: {e}")
+        raise HTTPException(status_code=500, detail="Paper-Trading konnte nicht berechnet werden.")
+
+
+@app.get("/api/risk/summary")
+async def get_risk_summary_route(portfolio_id: int = 1):
+    """Gibt eine einfache Risikoübersicht für ein Portfolio zurück."""
+    try:
+        from backend.db import get_portfolio_from_db, get_predictions_from_db
+        holdings = await get_portfolio_from_db(portfolio_id)
+        db_data = await get_predictions_from_db()
+        predictions = db_data.get("predictions", {})
+
+        if not holdings:
+            return {
+                "max_drawdown": 0.0,
+                "volatility": 0.0,
+                "risk_level": "Gering",
+                "details": "Noch keine Positionen vorhanden."
+            }
+
+        total_value = 0.0
+        total_change = 0.0
+        for holding in holdings:
+            symbol = str(holding.get("symbol", "")).upper()
+            quantity = float(holding.get("quantity", 0) or 0)
+            buy_price = float(holding.get("buy_price", 0) or 0)
+            pred = predictions.get(symbol, {})
+            current_price = pred.get("price") or buy_price
+            value = quantity * float(current_price)
+            total_value += value
+            change = pred.get("price_change_7d", 0) or 0
+            total_change += abs(float(change))
+
+        avg_change = total_change / max(1, len(holdings))
+        volatility = round(min(100.0, max(5.0, avg_change * 0.9)), 2)
+        drawdown = round(min(100.0, max(0.0, avg_change * 0.6)), 2)
+
+        if volatility >= 50 or drawdown >= 25:
+            risk_level = "Hoch"
+        elif volatility >= 20 or drawdown >= 10:
+            risk_level = "Mittel"
+        else:
+            risk_level = "Gering"
+
+        return {
+            "max_drawdown": drawdown,
+            "volatility": volatility,
+            "risk_level": risk_level,
+            "portfolio_value": round(total_value, 2),
+            "details": "Basierend auf aktueller Volatilität und 7-Tage-Performance der Positionen."
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei der Risikoanalyse: {e}")
+        raise HTTPException(status_code=500, detail="Risikozusammenfassung konnte nicht berechnet werden.")
+
+
+@app.get("/api/economic-calendar")
+def get_economic_calendar_route():
+    """Gibt eine einfache Liste relevanter Wirtschaftstermine zurück."""
+    events = [
+        {
+            "date": "2026-06-25",
+            "title": "Fed-Zinsentscheidung",
+            "impact": "hoch",
+            "summary": "Der Markt reagiert oft sensibel auf Aussagen zur Geldpolitik."
+        },
+        {
+            "date": "2026-06-27",
+            "title": "US-BIP-Daten",
+            "impact": "mittel",
+            "summary": "Wachstumsdaten können Aktien und Rohstoffe beeinflussen."
+        },
+        {
+            "date": "2026-07-01",
+            "title": "Inflationsdaten",
+            "impact": "hoch",
+            "summary": "Inflationsberichte sind oft Katalysatoren für Zinserwartungen."
+        }
+    ]
+    return {"events": events}
+
+
+@app.post("/api/portfolio/daily-summary")
+async def get_daily_summary_route(req: DailySummaryRequest):
+    """Erzeugt eine tägliche Zusammenfassung des Portfolios über die KI-Analyse."""
+    try:
+        from backend.ai_analyzer import generate_daily_summary
+        from backend.db import get_portfolio_from_db, get_predictions_from_db
+        portfolio = await get_portfolio_from_db(req.portfolio_id)
+        db_data = await get_predictions_from_db()
+        summary = generate_daily_summary(portfolio, db_data.get("predictions", {}), req.strategy)
+        return summary
+    except Exception as e:
+        logger.error(f"Fehler bei der täglichen Portfolio-Zusammenfassung: {e}")
+        raise HTTPException(status_code=500, detail="Tägliche Zusammenfassung konnte nicht erzeugt werden.")
 
 
 @app.post("/api/portfolio")

@@ -730,6 +730,36 @@
                             <i data-lucide="brain"></i> Portfolio analysieren
                         </button>
 
+                        <div class="ai-details-panel">
+                            <div class="ai-report-section">
+                                <h5><i data-lucide="book-open" class="text-blue"></i> Paper Trading Snapshot</h5>
+                                <p class="ai-text-explanation" id="paper-trading-summary">Noch keine Simulation erstellt.</p>
+                                <button id="paper-trading-btn" class="btn btn-secondary btn-sm" type="button">
+                                    <i data-lucide="play-circle"></i> Simulation starten
+                                </button>
+                            </div>
+
+                            <div class="ai-report-section">
+                                <h5><i data-lucide="shield" class="text-yellow"></i> Risikoübersicht</h5>
+                                <div id="risk-summary-card" class="ai-text-explanation">Lade Risiko-Analyse...</div>
+                            </div>
+
+                            <div class="ai-report-section">
+                                <h5><i data-lucide="sparkles" class="text-green"></i> Tageszusammenfassung</h5>
+                                <button id="daily-summary-btn" class="btn btn-secondary btn-sm" type="button">
+                                    <i data-lucide="refresh-cw"></i> Zusammenfassung erzeugen
+                                </button>
+                                <div id="daily-summary-card" class="ai-text-explanation" style="margin-top: 10px;">Noch keine Zusammenfassung verfügbar.</div>
+                            </div>
+
+                            <div class="ai-report-section">
+                                <h5><i data-lucide="calendar" class="icon-calendar-blue"></i> Wirtschaftskalender</h5>
+                                <ul id="economic-calendar-list" class="ai-list-bullet">
+                                    <li>Lade Wirtschaftstermine...</li>
+                                </ul>
+                            </div>
+                        </div>
+
                         <!-- AI Analysis Card -->
                         <div id="portfolio-ai-report" class="ai-report-panel hidden">
                             <div class="recommendation-hero portfolio-score-hero">

@@ -90,5 +90,46 @@ def test_endpoints():
     print("             ALLE ENDPUNKT-TESTS ERFOLGREICH!      ")
     print("==================================================")
 
+def test_new_feature_endpoints():
+    # Paper Trading
+    response_paper = client.post("/api/paper-trading/portfolio", json={
+        "portfolio_id": 1,
+        "trades": [
+            {"symbol": "AAPL", "type": "BUY", "quantity": 2, "price": 180.0},
+            {"symbol": "BTC-USD", "type": "BUY", "quantity": 0.05, "price": 60000.0}
+        ]
+    })
+    assert response_paper.status_code == 200
+    paper_data = response_paper.json()
+    assert "summary" in paper_data
+    assert "total_value" in paper_data
+
+    # Risk Summary
+    response_risk = client.get("/api/risk/summary?portfolio_id=1")
+    assert response_risk.status_code == 200
+    risk_data = response_risk.json()
+    assert "max_drawdown" in risk_data
+    assert "volatility" in risk_data
+    assert "risk_level" in risk_data
+
+    # Economic Calendar
+    response_calendar = client.get("/api/economic-calendar")
+    assert response_calendar.status_code == 200
+    calendar_data = response_calendar.json()
+    assert isinstance(calendar_data.get("events"), list)
+    assert len(calendar_data["events"]) > 0
+
+    # Daily AI Summary
+    response_summary = client.post("/api/portfolio/daily-summary", json={
+        "portfolio_id": 1,
+        "strategy": "Ausgewogen"
+    })
+    assert response_summary.status_code == 200
+    summary_data = response_summary.json()
+    assert "headline" in summary_data
+    assert "summary" in summary_data
+
+
 if __name__ == "__main__":
     test_endpoints()
+    test_new_feature_endpoints()

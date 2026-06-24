@@ -1106,6 +1106,9 @@ function switchView(viewId) {
         elements.portfolioView.classList.add("active");
         elements.portfolioView.classList.remove("hidden");
         renderPortfolio();
+        loadRiskSummary();
+        loadEconomicCalendar();
+        loadDailySummary();
     } else if (viewId === "alerts-view" && alertsView) {
         if (navAlerts) navAlerts.classList.add("active");
         alertsView.classList.add("active");
@@ -1584,6 +1587,77 @@ function renderAiReport(report) {
     
     // Smooth scroll into view
     elements.portfolioAiReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function runPaperTradingSummary() {
+    const summaryEl = document.getElementById('paper-trading-summary');
+    if (!summaryEl) return;
+
+    const trades = portfolio.map(item => ({
+        symbol: item.symbol,
+        type: 'BUY',
+        quantity: item.quantity,
+        price: item.buy_price
+    }));
+
+    try {
+        const response = await fetch(`${API_BASE}/api/paper-trading/portfolio`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ portfolio_id: currentPortfolioId, trades })
+        });
+        if (!response.ok) throw new Error('Paper Trading konnte nicht geladen werden.');
+        const data = await response.json();
+        summaryEl.innerText = data.summary;
+    } catch (error) {
+        summaryEl.innerText = error.message;
+    }
+}
+
+async function loadRiskSummary() {
+    const container = document.getElementById('risk-summary-card');
+    if (!container) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/risk/summary?portfolio_id=${currentPortfolioId}`);
+        if (!response.ok) throw new Error('Risikodaten konnten nicht geladen werden.');
+        const data = await response.json();
+        container.innerHTML = `Risk-Level: <strong>${data.risk_level}</strong><br>Volatilität: <strong>${data.volatility}%</strong><br>Max. Drawdown: <strong>${data.max_drawdown}%</strong><br><small>${data.details}</small>`;
+    } catch (error) {
+        container.innerText = error.message;
+    }
+}
+
+async function loadDailySummary() {
+    const container = document.getElementById('daily-summary-card');
+    if (!container) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/portfolio/daily-summary`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ portfolio_id: currentPortfolioId, strategy: selectedStrategy })
+        });
+        if (!response.ok) throw new Error('Tageszusammenfassung konnte nicht geladen werden.');
+        const data = await response.json();
+        container.innerHTML = `<strong>${data.headline}</strong><br>${data.summary}<br><br><small>${(data.recommendations || []).join(' ')}</small>`;
+    } catch (error) {
+        container.innerText = error.message;
+    }
+}
+
+async function loadEconomicCalendar() {
+    const list = document.getElementById('economic-calendar-list');
+    if (!list) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/economic-calendar`);
+        if (!response.ok) throw new Error('Wirtschaftskalender konnte nicht geladen werden.');
+        const data = await response.json();
+        list.innerHTML = (data.events || []).map(event => `<li><strong>${event.date}</strong> - ${event.title} (${event.impact})<br><small>${event.summary}</small></li>`).join('');
+    } catch (error) {
+        list.innerHTML = `<li>${error.message}</li>`;
+    }
 }
 
 function updatePortScoreRing(percent, color) {

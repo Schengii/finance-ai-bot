@@ -227,6 +227,67 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
         return get_mock_prediction(asset_info, market_data)
 
 
+def generate_daily_summary(portfolio_data, predictions_data, strategy="Ausgewogen"):
+    """Erstellt eine knappe Tageszusammenfassung für das Portfolio."""
+    holdings = portfolio_data or []
+    if not holdings:
+        return {
+            "headline": "Portfolio ist noch leer",
+            "summary": "Füge erste Positionen hinzu, um eine tägliche Zusammenfassung zu erhalten.",
+            "recommendations": [],
+            "strategy": strategy,
+        }
+
+    total_value = 0.0
+    total_cost = 0.0
+    positives = []
+    risks = []
+
+    for holding in holdings:
+        symbol = str(holding.get("symbol", "")).upper()
+        quantity = float(holding.get("quantity", 0) or 0)
+        buy_price = float(holding.get("buy_price", 0) or 0)
+        pred = predictions_data.get(symbol, {}) if predictions_data else {}
+        current_price = pred.get("price") or buy_price
+        current_value = quantity * float(current_price)
+        cost_value = quantity * buy_price
+        total_value += current_value
+        total_cost += cost_value
+
+        recommendation = pred.get("recommendation", "Halten")
+        if recommendation in ["Starker Kauf", "Kauf"]:
+            positives.append(f"{symbol} wird aktuell positiv bewertet ({recommendation}).")
+        elif recommendation in ["Verkauf", "Starker Verkauf"]:
+            risks.append(f"{symbol} zeigt ein riskanteres Setup ({recommendation}).")
+
+    pnl = total_value - total_cost
+    pnl_pct = (pnl / total_cost * 100.0) if total_cost else 0.0
+    headline = "Portfolio verhalten sich stabil" if pnl >= 0 else "Portfolio braucht Aufmerksamkeit"
+    summary = (
+        f"Dein {strategy}-Portfolio hat aktuell einen geschätzten Wert von {total_value:,.2f} und einen {pnl_pct:+.1f}% "
+        f"{'Gewinn' if pnl >= 0 else 'Verlust'} gegenüber den Anschaffungskosten."
+    )
+    if positives:
+        summary += " Starke Positionen: " + " ".join(positives[:2])
+    if risks:
+        summary += " Risiken: " + " ".join(risks[:2])
+
+    recommendations = []
+    if positives:
+        recommendations.append("Schau dir die positiven Positionen im Detail an und prüfe, ob zusätzliche Skalierung sinnvoll ist.")
+    if risks:
+        recommendations.append("Reduziere im Zweifel das Risiko bei schwachen Positionen und halte Liquidität für neue Chancen bereit.")
+    if not recommendations:
+        recommendations.append("Die aktuelle Verteilung scheint ausgewogen. Beobachte die Marktbewegungen im Tagesverlauf.")
+
+    return {
+        "headline": headline,
+        "summary": summary,
+        "recommendations": recommendations,
+        "strategy": strategy,
+    }
+
+
 def generate_chat_response(query, portfolio_data, predictions_data, portfolio_id=1):
     """Generiert eine Antwort auf eine Nutzerfrage basierend auf Portfolio, Prognosen und Chatverlauf."""
     
