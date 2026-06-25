@@ -185,6 +185,25 @@ async def init_db():
                 is_triggered INTEGER DEFAULT 0,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY (symbol) REFERENCES assets (symbol) ON DELETE CASCADE
+            );
+
+            -- Users table for JWT auth
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                hashed_password TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'viewer'
+            );
+
+            -- Table for storing push subscription endpoints per user
+            CREATE TABLE IF NOT EXISTS user_devices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                endpoint TEXT NOT NULL,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
             )
         """)
         

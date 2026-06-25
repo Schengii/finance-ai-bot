@@ -11,3 +11,8 @@ python-dotenv
 aiofiles
 aiosqlite
 pydantic-settings
+pywebpush
+passlib[bcrypt]
+python-jose[cryptography]
+backtrader
+redis
