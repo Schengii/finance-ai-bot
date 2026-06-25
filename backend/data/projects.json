@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Finance AI Bot",
+    "description": "AI‑gestützte Analyse und Vorhersage von Aktien und Kryptowährungen.",
+    "image": "https://via.placeholder.com/300x200.png?text=Finance+AI+Bot",
+    "tags": ["Python", "FastAPI", "Machine Learning"],
+    "demoUrl": "https://github.com/yourusername/finance-ai-bot"
+  },
+  {
+    "title": "Portfolio Website",
+    "description": "Persönliche Portfolio‑Website mit interaktivem Projekt‑Grid und Blog.",
+    "image": "https://via.placeholder.com/300x200.png?text=Portfolio+Website",
+    "tags": ["HTML", "CSS", "JavaScript"],
+    "demoUrl": "https://github.com/yourusername/portfolio-site"
+  }
+]

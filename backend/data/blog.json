@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Introducing My Portfolio",
+    "date": "2026-06-01",
+    "excerpt": "A brief introduction to my new portfolio website with project showcase and blog.",
+    "url": "#"
+  },
+  {
+    "title": "Behind the Scenes of Finance AI Bot",
+    "date": "2026-05-20",
+    "excerpt": "How I built an AI‑driven finance analysis tool using FastAPI and machine learning.",
+    "url": "#"
+  }
+]
