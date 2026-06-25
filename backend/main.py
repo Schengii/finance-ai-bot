@@ -28,6 +28,15 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Finance AI Bot API", version="1.0.0")
 
+# Import custom routers
+from backend.routes import projects, blog, contact, notifications_endpoints
+
+# Register routers
+app.include_router(projects.router)
+app.include_router(blog.router)
+app.include_router(contact.router)
+app.include_router(notifications_endpoints.router)
+
 # CORS-Konfiguration für das Frontend
 app.add_middleware(
     CORSMiddleware,
