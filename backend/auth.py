@@ -9,14 +9,16 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 
 from backend.db import get_user_by_username, create_user
+from backend.config import JWT_SECRET_KEY
 
 # Settings for JWT
-SECRET_KEY = "YOUR_SECRET_KEY_CHANGE_ME"
+SECRET_KEY = JWT_SECRET_KEY  # Aus .env geladen (nie hard-coden!)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 logger = logging.getLogger(__name__)
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

@@ -695,7 +695,7 @@ body {
     gap: 0.5rem;
 }
 
-.detail-tabactive {
+.detail-tabs button {
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -711,11 +711,11 @@ body {
     transition: var(--transition-fast);
 }
 
-.detail-tabactive:hover {
+.detail-tabs button:hover {
     color: var(--text-primary);
 }
 
-.detail-tabactive.active {
+.detail-tabs button.active {
     color: var(--accent);
     border-bottom-color: var(--accent);
 }
@@ -2729,5 +2729,3 @@ h1, h2, h3, h4, h5, h6 {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-secondary);
 }
-
-
