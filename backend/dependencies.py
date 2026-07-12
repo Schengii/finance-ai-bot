@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # OAuth2 scheme for token extraction
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-async def get_current_user(token: str = Depends(auth2_scheme)) -> dict:
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
     """Validate JWT token and return the user record.
     Returns the user dict from the database if the token is valid.
     Raises 401 Unauthorized if invalid.

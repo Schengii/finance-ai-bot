@@ -1,16 +1,12 @@
 import json
 import logging
 import threading
+import asyncio
 from datetime import datetime
-# pyrefly: ignore [missing-import]
 from apscheduler.schedulers.background import BackgroundScheduler
-# pyrefly: ignore [missing-import]
 from backend.config import DEFAULT_ASSETS, UPDATE_INTERVAL_HOURS
-# pyrefly: ignore [missing-import]
 from backend.data_fetcher import fetch_market_data, fetch_news
-# pyrefly: ignore [missing-import]
 from backend.ai_analyzer import analyze_asset_with_ai
-# pyrefly: ignore [missing-import]
 from backend.db import get_all_assets, save_prediction, get_predictions_from_db, init_db
 
 logger = logging.getLogger(__name__)
@@ -18,8 +14,8 @@ logger = logging.getLogger(__name__)
 # Status-Variable, um zu sehen, ob gerade eine Aktualisierung läuft
 is_updating = False
 
-def run_update_cycle():
-    """Führt einen vollständigen Aktualisierungszyklus für alle Assets durch."""
+async def _run_update_cycle_async():
+    """Asynchroner Kern des Aktualisierungszyklus."""
     global is_updating
     if is_updating:
         logger.warning("Aktualisierungszyklus läuft bereits. Überspringe...")
@@ -32,7 +28,7 @@ def run_update_cycle():
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
         
         # Assets aus der Datenbank laden (dynamische Watchlist)
-        assets = get_all_assets()
+        assets = await get_all_assets()
         
         if not assets:
             logger.warning("Keine Assets in der Watchlist. Überspringe Aktualisierungszyklus.")
@@ -53,7 +49,7 @@ def run_update_cycle():
                 news_items = fetch_news(symbol, asset["name"])
                 
                 # 3. KI-Prognose generieren
-                prediction = analyze_asset_with_ai(asset, market_data, news_items)
+                prediction = await analyze_asset_with_ai(asset, market_data, news_items)
                 
                 # Ergänze die Nachrichten und den Chartverlauf in dem gespeicherten Objekt
                 prediction["news"] = news_items
@@ -61,7 +57,7 @@ def run_update_cycle():
                 prediction["last_updated"] = timestamp
                 
                 # 4. In Datenbank speichern (aktuelle Prognose + Historie)
-                save_prediction(prediction)
+                await save_prediction(prediction)
                 
                 logger.info(f"Analyse für {symbol} erfolgreich abgeschlossen und in DB gespeichert.")
                 
@@ -69,21 +65,27 @@ def run_update_cycle():
                 logger.error(f"Unerwarteter Fehler bei der Analyse von {symbol}: {e}")
                     
         # Alarme prüfen
-        check_alerts()
+        await _check_alerts_async()
         logger.info("Aktualisierungszyklus abgeschlossen. Daten in DB gespeichert.")
     finally:
         is_updating = False
 
+def run_update_cycle():
+    """Führt einen vollständigen Aktualisierungszyklus für alle Assets durch."""
+    try:
+        asyncio.run(_run_update_cycle_async())
+    except Exception as e:
+        logger.error(f"Fehler im run_update_cycle: {e}")
 
-def check_alerts():
+async def _check_alerts_async():
     """Prüft alle aktiven Alarme gegen die aktuellen Prognosedaten."""
     try:
         from backend.db import get_all_alerts, get_predictions_from_db, mark_alert_triggered
-        alerts = get_all_alerts()
+        alerts = await get_all_alerts()
         if not alerts:
             return
             
-        predictions_data = get_predictions_from_db().get("predictions", {})
+        predictions_data = (await get_predictions_from_db()).get("predictions", {})
         
         for alert in alerts:
             if alert["is_triggered"]:
@@ -117,7 +119,7 @@ def check_alerts():
                 logger.error(f"Fehler bei Alarm-Auswertung für {symbol}: {e}")
                 
             if trigger:
-                mark_alert_triggered(alert["id"])
+                await mark_alert_triggered(alert["id"])
                 logger.info(f"ALARM AUSGELÖST: {symbol} ({alert_type}) erreicht Zielwert {target_value}")
                 
                 try:
@@ -151,15 +153,21 @@ def check_alerts():
                         f"• RSI: {rsi:.1f if rsi else 0.0}<br>"
                         f"• Empfehlung: <b>{rec}</b></p>"
                     )
-                    send_all_notifications(subj, html_msg, text_msg)
+                    await send_all_notifications(subj, html_msg, text_msg)
                 except Exception as e_notif:
                     logger.error(f"Fehler beim Versenden der Alarm-Benachrichtigung: {e_notif}")
     except Exception as e:
-        logger.error(f"Fehler in check_alerts: {e}")
+        logger.error(f"Fehler in _check_alerts_async: {e}")
 
+def check_alerts():
+    """Wrapper für die synchrone Ausführung des Alarm-Checks."""
+    try:
+        asyncio.run(_check_alerts_async())
+    except Exception as e:
+        logger.error(f"Fehler im check_alerts Wrapper: {e}")
 
-def analyze_single_asset_background(asset_info):
-    """Führe eine sofortige Analyse für ein einzelnes Asset im Hintergrund aus."""
+async def analyze_single_asset_background(asset_info):
+    """Führe eine sofortige Analyse für ein einzelnes Asset im Hintergrund aus (FastAPI BackgroundTask)."""
     symbol = asset_info["symbol"]
     name = asset_info["name"]
     logger.info(f"Starte sofortige Hintergrundanalyse für das neue Asset: {symbol}...")
@@ -178,7 +186,7 @@ def analyze_single_asset_background(asset_info):
         news_items = fetch_news(symbol, name)
         
         # 3. KI-Prognose generieren
-        prediction = analyze_asset_with_ai(asset_info, market_data, news_items)
+        prediction = await analyze_asset_with_ai(asset_info, market_data, news_items)
         
         # Ergänze die Nachrichten und den Chartverlauf in dem gespeicherten Objekt
         prediction["news"] = news_items
@@ -186,22 +194,18 @@ def analyze_single_asset_background(asset_info):
         prediction["last_updated"] = timestamp
         
         # 4. In Datenbank speichern (aktuelle Prognose + Historie)
-        save_prediction(prediction)
+        await save_prediction(prediction)
         
         # Alarme prüfen
-        check_alerts()
+        await _check_alerts_async()
         logger.info(f"Sofortige Analyse für {symbol} erfolgreich abgeschlossen und in DB gespeichert.")
-        
-
     except Exception as e:
         logger.error(f"Unerwarteter Fehler bei der sofortigen Analyse von {symbol}: {e}")
-
-
 
 def start_scheduler():
     """Initialisiert und startet den Hintergrund-Scheduler."""
     # Datenbank initialisieren
-    init_db()
+    asyncio.run(init_db())
     
     scheduler = BackgroundScheduler()
     scheduler.add_job(
@@ -214,7 +218,7 @@ def start_scheduler():
     logger.info(f"Hintergrund-Scheduler gestartet (Intervall: {UPDATE_INTERVAL_HOURS} Stunden).")
     
     # Führe einen ersten Lauf asynchron aus, falls die DB noch keine Prognosen enthält
-    db_data = get_predictions_from_db()
+    db_data = asyncio.run(get_predictions_from_db())
     should_update = not db_data["predictions"]
             
     if should_update:

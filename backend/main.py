@@ -29,13 +29,11 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Finance AI Bot API", version="1.0.0")
 
 # Import custom routers
-from backend.routes import projects, blog, contact, notifications_endpoints
+from backend import notifications_endpoints, auth_endpoints
 
 # Register routers
-app.include_router(projects.router)
-app.include_router(blog.router)
-app.include_router(contact.router)
 app.include_router(notifications_endpoints.router)
+app.include_router(auth_endpoints.router)
 
 # CORS-Konfiguration für das Frontend
 app.add_middleware(
@@ -70,12 +68,12 @@ async def startup_event():
     scheduler.start_scheduler()
 
 @app.get("/api/status")
-def get_status():
+async def get_status():
     """Gibt den aktuellen Status des Update-Prozesses zurück."""
     last_updated = "Nie"
     try:
         from backend.db import get_predictions_from_db
-        db_data = get_predictions_from_db()
+        db_data = await get_predictions_from_db()
         last_updated = db_data.get("last_updated", "Unbekannt") or "Nie"
     except Exception as e:
         logger.error(f"Fehler beim Lesen des Update-Zeitstempels aus DB: {e}")
@@ -86,11 +84,11 @@ def get_status():
     }
 
 @app.get("/api/predictions")
-def get_predictions():
+async def get_predictions():
     """Gibt alle aktuellen Krypto- und Aktienprognosen aus der Datenbank zurück."""
     try:
         from backend.db import get_predictions_from_db
-        db_data = get_predictions_from_db()
+        db_data = await get_predictions_from_db()
         if not db_data or not db_data.get("predictions"):
             return {
                 "last_updated": "Nie",
@@ -252,18 +250,18 @@ class DailySummaryRequest(BaseModel):
 
 
 @app.get("/api/assets")
-def get_watchlist():
+async def get_watchlist():
     """Holt alle überwachten Assets aus der Watchlist."""
     try:
         from backend.db import get_all_assets
-        return get_all_assets()
+        return await get_all_assets()
     except Exception as e:
         logger.error(f"Fehler beim Laden der Watchlist: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden der Watchlist.")
 
 
 @app.post("/api/assets")
-def add_watchlist_item(item: WatchlistItem, background_tasks: BackgroundTasks):
+async def add_watchlist_item(item: WatchlistItem, background_tasks: BackgroundTasks):
     """Fügt ein neues Asset zur Watchlist hinzu und stößt dessen Analyse an."""
     try:
         from backend.db import add_asset, asset_exists
@@ -274,10 +272,10 @@ def add_watchlist_item(item: WatchlistItem, background_tasks: BackgroundTasks):
         if not symbol or not name or asset_type not in ["stock", "crypto", "commodity"]:
             raise HTTPException(status_code=400, detail="Ungültige Asset-Daten.")
             
-        if asset_exists(symbol):
+        if await asset_exists(symbol):
             raise HTTPException(status_code=400, detail=f"Asset {symbol} existiert bereits in der Watchlist.")
             
-        success = add_asset(symbol, name, asset_type)
+        success = await add_asset(symbol, name, asset_type)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Speichern in der Watchlist.")
             
@@ -298,12 +296,12 @@ def add_watchlist_item(item: WatchlistItem, background_tasks: BackgroundTasks):
 
 
 @app.delete("/api/assets/{symbol}")
-def delete_watchlist_item(symbol: str):
+async def delete_watchlist_item(symbol: str):
     """Löscht ein Asset aus der Watchlist."""
     try:
         from backend.db import delete_asset, get_predictions_from_db
         symbol_upper = symbol.strip().upper()
-        success = delete_asset(symbol_upper)
+        success = await delete_asset(symbol_upper)
         if not success:
             raise HTTPException(status_code=500, detail=f"Fehler beim Löschen von {symbol_upper} aus Watchlist.")
             
@@ -315,11 +313,11 @@ def delete_watchlist_item(symbol: str):
 
 
 @app.get("/api/portfolio")
-def get_portfolio(portfolio_id: int = 1):
+async def get_portfolio(portfolio_id: int = 1):
     """Holt das Portfolio des Nutzers aus der Datenbank."""
     try:
         from backend.db import get_portfolio_from_db
-        return get_portfolio_from_db(portfolio_id)
+        return await get_portfolio_from_db(portfolio_id)
     except Exception as e:
         logger.error(f"Fehler beim Laden des Portfolios: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden des Portfolios.")
@@ -461,11 +459,11 @@ async def get_daily_summary_route(req: DailySummaryRequest):
 
 
 @app.post("/api/portfolio")
-def add_portfolio_item_route(item: PortfolioItem, portfolio_id: int = 1):
+async def add_portfolio_item_route(item: PortfolioItem, portfolio_id: int = 1):
     """Speichert oder aktualisiert ein Asset im Portfolio."""
     try:
         from backend.db import save_portfolio_item
-        success = save_portfolio_item(item.symbol, item.quantity, item.buy_price, portfolio_id)
+        success = await save_portfolio_item(item.symbol, item.quantity, item.buy_price, portfolio_id)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Speichern in der Datenbank.")
         return {"status": "success", "message": f"Asset {item.symbol} im Portfolio gespeichert."}
@@ -475,11 +473,11 @@ def add_portfolio_item_route(item: PortfolioItem, portfolio_id: int = 1):
 
 
 @app.delete("/api/portfolio/{symbol}")
-def delete_portfolio_item_route(symbol: str, portfolio_id: int = 1):
+async def delete_portfolio_item_route(symbol: str, portfolio_id: int = 1):
     """Löscht ein Asset aus dem Portfolio."""
     try:
         from backend.db import delete_portfolio_item
-        success = delete_portfolio_item(symbol, portfolio_id)
+        success = await delete_portfolio_item(symbol, portfolio_id)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Löschen in der Datenbank.")
         return {"status": "success", "message": f"Asset {symbol} aus dem Portfolio gelöscht."}
@@ -491,22 +489,22 @@ def delete_portfolio_item_route(symbol: str, portfolio_id: int = 1):
 # --- Neue Routen für Settings, Multi-Portfolio & FIFO ---
 
 @app.get("/api/portfolios")
-def get_portfolios_route():
+async def get_portfolios_route():
     """Holt alle Portfolio-Profile."""
     try:
         from backend.db import get_portfolios
-        return get_portfolios()
+        return await get_portfolios()
     except Exception as e:
         logger.error(f"Fehler beim Laden der Portfolios: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden der Portfolio-Profile.")
 
 
 @app.post("/api/portfolios")
-def create_portfolio_route(req: PortfolioCreateRequest):
+async def create_portfolio_route(req: PortfolioCreateRequest):
     """Erstellt ein neues Portfolio-Profil."""
     try:
         from backend.db import create_portfolio
-        success = create_portfolio(req.name)
+        success = await create_portfolio(req.name)
         if not success:
             raise HTTPException(status_code=400, detail="Portfolio-Profil konnte nicht erstellt werden (Name evtl. bereits vergeben).")
         return {"status": "success", "message": f"Portfolio '{req.name}' erfolgreich erstellt."}
@@ -516,13 +514,13 @@ def create_portfolio_route(req: PortfolioCreateRequest):
 
 
 @app.delete("/api/portfolios/{portfolio_id}")
-def delete_portfolio_route(portfolio_id: int):
+async def delete_portfolio_route(portfolio_id: int):
     """Löscht ein Portfolio-Profil."""
     try:
         from backend.db import delete_portfolio
         if portfolio_id == 1:
             raise HTTPException(status_code=400, detail="Das Standard-Portfolio darf nicht gelöscht werden.")
-        success = delete_portfolio(portfolio_id)
+        success = await delete_portfolio(portfolio_id)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Löschen des Portfolios.")
         return {"status": "success", "message": "Portfolio erfolgreich gelöscht."}
@@ -534,21 +532,21 @@ def delete_portfolio_route(portfolio_id: int):
 
 
 @app.get("/api/settings")
-def get_settings_route():
+async def get_settings_route():
     """Holt alle KI- und System-Einstellungen."""
     try:
         from backend.db import get_setting
         return {
-            "custom_prompt": get_setting("custom_prompt", ""),
-            "ai_tone": get_setting("ai_tone", "professionell"),
-            "telegram_bot_token": get_setting("telegram_bot_token", ""),
-            "telegram_chat_id": get_setting("telegram_chat_id", ""),
-            "discord_webhook_url": get_setting("discord_webhook_url", ""),
-            "email_smtp_server": get_setting("email_smtp_server", ""),
-            "email_smtp_port": get_setting("email_smtp_port", ""),
-            "email_sender": get_setting("email_sender", ""),
-            "email_password": get_setting("email_password", ""),
-            "email_recipient": get_setting("email_recipient", "")
+            "custom_prompt": await get_setting("custom_prompt", ""),
+            "ai_tone": await get_setting("ai_tone", "professionell"),
+            "telegram_bot_token": await get_setting("telegram_bot_token", ""),
+            "telegram_chat_id": await get_setting("telegram_chat_id", ""),
+            "discord_webhook_url": await get_setting("discord_webhook_url", ""),
+            "email_smtp_server": await get_setting("email_smtp_server", ""),
+            "email_smtp_port": await get_setting("email_smtp_port", ""),
+            "email_sender": await get_setting("email_sender", ""),
+            "email_password": await get_setting("email_password", ""),
+            "email_recipient": await get_setting("email_recipient", "")
         }
     except Exception as e:
         logger.error(f"Fehler beim Laden der Einstellungen: {e}")
@@ -556,22 +554,22 @@ def get_settings_route():
 
 
 @app.post("/api/settings")
-def save_settings_route(settings: SettingsRequest):
+async def save_settings_route(settings: SettingsRequest):
     """Speichert die KI- und System-Einstellungen."""
     try:
         from backend.db import save_setting
-        success_prompt = save_setting("custom_prompt", settings.custom_prompt)
-        success_tone = save_setting("ai_tone", settings.ai_tone)
+        success_prompt = await save_setting("custom_prompt", settings.custom_prompt)
+        success_tone = await save_setting("ai_tone", settings.ai_tone)
         
         # Save notification settings
-        save_setting("telegram_bot_token", settings.telegram_bot_token)
-        save_setting("telegram_chat_id", settings.telegram_chat_id)
-        save_setting("discord_webhook_url", settings.discord_webhook_url)
-        save_setting("email_smtp_server", settings.email_smtp_server)
-        save_setting("email_smtp_port", settings.email_smtp_port)
-        save_setting("email_sender", settings.email_sender)
-        save_setting("email_password", settings.email_password)
-        save_setting("email_recipient", settings.email_recipient)
+        await save_setting("telegram_bot_token", settings.telegram_bot_token)
+        await save_setting("telegram_chat_id", settings.telegram_chat_id)
+        await save_setting("discord_webhook_url", settings.discord_webhook_url)
+        await save_setting("email_smtp_server", settings.email_smtp_server)
+        await save_setting("email_smtp_port", settings.email_smtp_port)
+        await save_setting("email_sender", settings.email_sender)
+        await save_setting("email_password", settings.email_password)
+        await save_setting("email_recipient", settings.email_recipient)
         
         if not success_prompt or not success_tone:
             raise HTTPException(status_code=500, detail="Fehler beim Speichern der Haupteinstellungen.")
@@ -582,22 +580,22 @@ def save_settings_route(settings: SettingsRequest):
 
 
 @app.get("/api/portfolio/{portfolio_id}/transactions")
-def get_transactions_route(portfolio_id: int):
+async def get_transactions_route(portfolio_id: int):
     """Holt alle Transaktionen eines Portfolios."""
     try:
         from backend.db import get_transactions
-        return get_transactions(portfolio_id)
+        return await get_transactions(portfolio_id)
     except Exception as e:
         logger.error(f"Fehler beim Laden der Transaktionen: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden der Transaktionen.")
 
 
 @app.post("/api/portfolio/{portfolio_id}/transactions")
-def add_transaction_route(portfolio_id: int, tx: TransactionRequest):
+async def add_transaction_route(portfolio_id: int, tx: TransactionRequest):
     """Fügt eine Transaktion hinzu und passt den Portfolio-Bestand an."""
     try:
         from backend.db import add_transaction
-        success = add_transaction(
+        success = await add_transaction(
             portfolio_id=portfolio_id,
             symbol=tx.symbol,
             tx_type=tx.type,
@@ -614,11 +612,11 @@ def add_transaction_route(portfolio_id: int, tx: TransactionRequest):
 
 
 @app.delete("/api/portfolio/{portfolio_id}/transactions/{tx_id}")
-def delete_transaction_route(portfolio_id: int, tx_id: int):
+async def delete_transaction_route(portfolio_id: int, tx_id: int):
     """Löscht eine Transaktion und berechnet den Portfolio-Bestand neu."""
     try:
         from backend.db import delete_transaction
-        success = delete_transaction(tx_id, portfolio_id)
+        success = await delete_transaction(tx_id, portfolio_id)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Löschen der Transaktion.")
         return {"status": "success", "message": "Transaktion gelöscht und Portfolio-Bestand neu berechnet."}
@@ -733,7 +731,7 @@ async def rebalance_portfolio_route(portfolio_id: int):
             
         # KI Empfehlungen holen
         from backend.ai_analyzer import generate_rebalancing_advice
-        advice = generate_rebalancing_advice(portfolio_id, total_value, allocations, holdings_detail)
+        advice = await generate_rebalancing_advice(portfolio_id, total_value, allocations, holdings_detail)
         
         recommended_trades = []
         for prop in advice.get("proposals", []):
@@ -754,7 +752,8 @@ async def rebalance_portfolio_route(portfolio_id: int):
             "advice_summary": advice.get("ai_explanation", "Keine KI-Erklärung verfügbar."),
             "recommended_trades": recommended_trades,
             "rebalance_tips": rebalance_tips,
-            "target_allocation": target_alloc
+            "target_allocation": target_alloc,
+            "current_allocation": allocations
         }
     except Exception as e:
         logger.error(f"Fehler beim Portfolio-Rebalancing für Portfolio {portfolio_id}: {e}")
@@ -953,20 +952,20 @@ def search_ticker(symbol: str):
 
 
 @app.get("/api/accuracy")
-def get_prediction_accuracy():
+async def get_prediction_accuracy():
     """Berechnet die Genauigkeit der bisherigen KI-Prognosen (Trefferquote)."""
     try:
         from backend.db import get_db_connection
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        conn = await get_db_connection()
+        cursor = await conn.cursor()
         
-        cursor.execute("""
+        await cursor.execute("""
             SELECT h.symbol, h.price AS pred_price, h.recommendation, h.last_updated, p.price AS current_price
             FROM prediction_history h
             JOIN predictions p ON h.symbol = p.symbol
         """)
-        rows = cursor.fetchall()
-        conn.close()
+        rows = await cursor.fetchall()
+        await conn.close()
         
         if not rows:
             return {
@@ -1015,7 +1014,7 @@ def get_prediction_accuracy():
         logger.error(f"Fehler beim Berechnen der KI-Genauigkeit: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 @app.post("/api/chat")
-def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
+async def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
     """Beantwortet Fragen des Nutzers basierend auf Portfolio und Watchlist-Daten."""
     try:
         from backend.db import get_predictions_from_db, get_portfolio_from_db, add_asset, delete_asset, add_chat_message, add_transaction
@@ -1027,7 +1026,7 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
         current_date = datetime.date.today().strftime('%Y-%m-%d')
         
         # Save user message to chat history
-        add_chat_message(portfolio_id, "user", msg)
+        await add_chat_message(portfolio_id, "user", msg)
         
         # 1. Befehlserkennung
         if msg.startswith("/"):
@@ -1045,22 +1044,22 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
                     try:
                         ticker_info = search_ticker(symbol)
                         # Als Asset in Watchlist hinzufügen falls nicht vorhanden
-                        add_asset(symbol, ticker_info["name"], ticker_info["type"])
+                        await add_asset(symbol, ticker_info["name"], ticker_info["type"])
                     except Exception:
                         pass
                         
                     # Buchen einer Transaktion (dadurch wird das Portfolio automatisch aktualisiert)
-                    add_transaction(portfolio_id, symbol, 'BUY', qty, price, current_date)
+                    await add_transaction(portfolio_id, symbol, 'BUY', qty, price, current_date)
                     
                     response_text = f"✅ **Erfolgreich hinzugefügt!** {qty}x **{symbol}** für je {price}$ wurde als Kauf in dein Portfolio (Profil: {portfolio_id}) eingetragen."
-                    add_chat_message(portfolio_id, "bot", response_text)
+                    await add_chat_message(portfolio_id, "bot", response_text)
                     return {
                         "response": response_text,
                         "trigger_refresh": True
                     }
                 except Exception as e:
                     response_text = f"❌ Fehler beim Hinzufügen: {str(e)}. Syntax: `/add SYMBOL MENGE KAUFPREIS`"
-                    add_chat_message(portfolio_id, "bot", response_text)
+                    await add_chat_message(portfolio_id, "bot", response_text)
                     return {
                         "response": response_text,
                         "trigger_refresh": False
@@ -1071,28 +1070,28 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
                 symbol = parts[1].upper()
                 try:
                     # Finde den aktuellen Bestand im Portfolio, um ihn zu nullen
-                    holdings = get_portfolio_from_db(portfolio_id)
+                    holdings = await get_portfolio_from_db(portfolio_id)
                     item = next((h for h in holdings if h["symbol"] == symbol), None)
                     
                     if item and item["quantity"] > 0:
-                        predictions_data = get_predictions_from_db().get("predictions", {})
+                        predictions_data = await get_predictions_from_db().get("predictions", {})
                         pred = predictions_data.get(symbol, {})
                         sell_price = pred.get("price") or item["buy_price"]
                         
                         # Transaktion buchen, die den Bestand eliminiert
-                        add_transaction(portfolio_id, symbol, 'SELL', item["quantity"], sell_price, current_date)
+                        await add_transaction(portfolio_id, symbol, 'SELL', item["quantity"], sell_price, current_date)
                         response_text = f"🗑️ **Erfolgreich gelöscht!** Asset **{symbol}** wurde über einen Komplettverkauf aus deinem Portfolio entfernt."
                     else:
                         response_text = f"ℹ️ Asset **{symbol}** befindet sich nicht in diesem Portfolio."
                     
-                    add_chat_message(portfolio_id, "bot", response_text)
+                    await add_chat_message(portfolio_id, "bot", response_text)
                     return {
                         "response": response_text,
                         "trigger_refresh": True
                     }
                 except Exception as e:
                     response_text = f"❌ Fehler beim Entfernen: {str(e)}"
-                    add_chat_message(portfolio_id, "bot", response_text)
+                    await add_chat_message(portfolio_id, "bot", response_text)
                     return {
                         "response": response_text,
                         "trigger_refresh": False
@@ -1103,7 +1102,7 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
                 symbol = parts[1].upper()
                 try:
                     ticker_info = search_ticker(symbol)
-                    add_asset(symbol, ticker_info["name"], ticker_info["type"])
+                    await add_asset(symbol, ticker_info["name"], ticker_info["type"])
                     
                     # Asynchrone Analyse starten
                     from backend.scheduler import analyze_single_asset_background
@@ -1113,14 +1112,14 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
                         "type": ticker_info["type"]
                     })
                     response_text = f"👀 **Erfolgreich!** Asset **{symbol}** ({ticker_info['name']}) wird jetzt beobachtet. Die KI-Analyse läuft im Hintergrund."
-                    add_chat_message(portfolio_id, "bot", response_text)
+                    await add_chat_message(portfolio_id, "bot", response_text)
                     return {
                         "response": response_text,
                         "trigger_refresh": True
                     }
                 except Exception as e:
                     response_text = f"❌ Asset konnte nicht gefunden werden: {str(e)}"
-                    add_chat_message(portfolio_id, "bot", response_text)
+                    await add_chat_message(portfolio_id, "bot", response_text)
                     return {
                         "response": response_text,
                         "trigger_refresh": False
@@ -1129,9 +1128,9 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
             elif cmd == "/unwatch" and len(parts) >= 2:
                 # /unwatch SYMBOL
                 symbol = parts[1].upper()
-                delete_asset(symbol)
+                await delete_asset(symbol)
                 response_text = f"❌ **Beobachtung beendet!** Asset **{symbol}** wurde aus der Watchlist entfernt."
-                add_chat_message(portfolio_id, "bot", response_text)
+                await add_chat_message(portfolio_id, "bot", response_text)
                 return {
                     "response": response_text,
                     "trigger_refresh": True
@@ -1145,16 +1144,16 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
                     "- `/add SYMBOL MENGE KAUFPREIS` - Fügt Asset zum Portfolio hinzu\n"
                     "- `/remove SYMBOL` - Entfernt Asset aus Portfolio"
                 )
-                add_chat_message(portfolio_id, "bot", response_text)
+                await add_chat_message(portfolio_id, "bot", response_text)
                 return {
                     "response": response_text,
                     "trigger_refresh": False
                 }
         
         # Reguläre AI Chat-Antwort
-        predictions_data = get_predictions_from_db().get("predictions", {})
-        portfolio_data = get_portfolio_from_db(portfolio_id)
-        ai_response = generate_chat_response(msg, portfolio_data, predictions_data, portfolio_id=portfolio_id)
+        predictions_data = await get_predictions_from_db().get("predictions", {})
+        portfolio_data = await get_portfolio_from_db(portfolio_id)
+        ai_response = await generate_chat_response(msg, portfolio_data, predictions_data, portfolio_id=portfolio_id)
         
         add_chat_message(portfolio_id, "bot", ai_response)
         return {"response": ai_response, "trigger_refresh": False}
@@ -1164,21 +1163,21 @@ def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks):
 
 
 @app.get("/api/backtest")
-def get_backtest_history():
+async def get_backtest_history():
     """Holt die vollständige Historie der Prognosen für detailliertes Backtesting."""
     try:
         from backend.db import get_db_connection
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        conn = await get_db_connection()
+        cursor = await conn.cursor()
         
-        cursor.execute("""
+        await cursor.execute("""
             SELECT h.symbol, h.price AS pred_price, h.recommendation, h.confidence, h.last_updated, p.name, p.price AS current_price
             FROM prediction_history h
             JOIN predictions p ON h.symbol = p.symbol
             ORDER BY h.last_updated DESC
         """)
-        rows = cursor.fetchall()
-        conn.close()
+        rows = await cursor.fetchall()
+        await conn.close()
         
         history_list = []
         for row in rows:
@@ -1227,22 +1226,22 @@ def get_exchange_rate():
 
 
 @app.get("/api/alerts")
-def get_alerts():
+async def get_alerts():
     """Liefert alle aktiven Alarme."""
     try:
         from backend.db import get_all_alerts
-        return get_all_alerts()
+        return await get_all_alerts()
     except Exception as e:
         logger.error(f"Fehler beim Laden der Alarme: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden der Alarme.")
 
 
 @app.post("/api/alerts")
-def create_new_alert(alert: AlertRequest):
+async def create_new_alert(alert: AlertRequest):
     """Erstellt einen neuen Alarm."""
     try:
         from backend.db import add_alert
-        success = add_alert(alert.symbol, alert.alert_type, alert.target_value)
+        success = await add_alert(alert.symbol, alert.alert_type, alert.target_value)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Speichern des Alarms.")
         return {"status": "success", "message": f"Alarm für {alert.symbol} erstellt."}
@@ -1252,11 +1251,11 @@ def create_new_alert(alert: AlertRequest):
 
 
 @app.delete("/api/alerts/{alert_id}")
-def delete_alert_route(alert_id: int):
+async def delete_alert_route(alert_id: int):
     """Löscht einen bestehenden Alarm."""
     try:
         from backend.db import delete_alert
-        success = delete_alert(alert_id)
+        success = await delete_alert(alert_id)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Löschen des Alarms.")
         return {"status": "success", "message": f"Alarm {alert_id} gelöscht."}
@@ -1266,11 +1265,11 @@ def delete_alert_route(alert_id: int):
 
 
 @app.get("/api/alerts/triggered")
-def get_triggered_alerts_route():
+async def get_triggered_alerts_route():
     """Liefert alle ausgelösten Alarme."""
     try:
         from backend.db import get_triggered_alerts
-        return get_triggered_alerts()
+        return await get_triggered_alerts()
     except Exception as e:
         logger.error(f"Fehler beim Laden der ausgelösten Alarme: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1398,14 +1397,14 @@ def simulate_strategy(symbol: str, strategy: str, years: int = 1):
 
 
 @app.get("/api/portfolio/dividends")
-def get_portfolio_dividends(portfolio_id: int = 1):
+async def get_portfolio_dividends(portfolio_id: int = 1):
     """Berechnet die geschätzten monatlichen Dividenden-Zahlungen des Portfolios."""
     try:
         from backend.db import get_portfolio_from_db, get_predictions_from_db
         from backend.data_fetcher import fetch_dividend_history
         
-        holdings = get_portfolio_from_db(portfolio_id)
-        predictions = get_predictions_from_db().get("predictions", {})
+        holdings = await get_portfolio_from_db(portfolio_id)
+        predictions = (await get_predictions_from_db()).get("predictions", {})
 
         
         monthly_dividends = {m: 0.0 for m in range(1, 13)}
@@ -1454,22 +1453,22 @@ def get_portfolio_dividends(portfolio_id: int = 1):
 
 
 @app.get("/api/portfolio/{portfolio_id}/chat")
-def get_portfolio_chat_route(portfolio_id: int):
+async def get_portfolio_chat_route(portfolio_id: int):
     """Holt die Chat-Historie für das Portfolio."""
     try:
         from backend.db import get_chat_history
-        return get_chat_history(portfolio_id)
+        return await get_chat_history(portfolio_id)
     except Exception as e:
         logger.error(f"Fehler beim Laden des Chatverlaufs: {e}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden des Chatverlaufs.")
 
 
 @app.delete("/api/portfolio/{portfolio_id}/chat")
-def delete_portfolio_chat_route(portfolio_id: int):
+async def delete_portfolio_chat_route(portfolio_id: int):
     """Löscht die Chat-Historie für das Portfolio."""
     try:
         from backend.db import clear_chat_history
-        success = clear_chat_history(portfolio_id)
+        success = await clear_chat_history(portfolio_id)
         if not success:
             raise HTTPException(status_code=500, detail="Fehler beim Löschen des Chatverlaufs.")
         return {"status": "success", "message": "Chatverlauf gelöscht."}
@@ -1483,30 +1482,30 @@ class TestNotificationRequest(BaseModel):
 
 
 @app.post("/api/settings/test-telegram")
-def test_telegram_route(req: TestNotificationRequest):
+async def test_telegram_route(req: TestNotificationRequest):
     """Sendet eine Test-Benachrichtigung an Telegram."""
     from backend.notifications import send_telegram_notification
-    success = send_telegram_notification(req.message)
+    success = await send_telegram_notification(req.message)
     if not success:
         raise HTTPException(status_code=400, detail="Telegram Test fehlgeschlagen. Bitte Einstellungen prüfen.")
     return {"status": "success", "message": "Testnachricht an Telegram gesendet."}
 
 
 @app.post("/api/settings/test-discord")
-def test_discord_route(req: TestNotificationRequest):
+async def test_discord_route(req: TestNotificationRequest):
     """Sendet eine Test-Benachrichtigung an Discord."""
     from backend.notifications import send_discord_notification
-    success = send_discord_notification(req.message)
+    success = await send_discord_notification(req.message)
     if not success:
         raise HTTPException(status_code=400, detail="Discord Test fehlgeschlagen. Bitte Einstellungen prüfen.")
     return {"status": "success", "message": "Testnachricht an Discord gesendet."}
 
 
 @app.post("/api/settings/test-email")
-def test_email_route(req: TestNotificationRequest):
+async def test_email_route(req: TestNotificationRequest):
     """Sendet eine Test-E-Mail."""
     from backend.notifications import send_email_notification
-    success = send_email_notification("AlphaPulse AI Test E-Mail", f"<h3>Test</h3><p>{req.message}</p>")
+    success = await send_email_notification("AlphaPulse AI Test E-Mail", f"<h3>Test</h3><p>{req.message}</p>")
     if not success:
         raise HTTPException(status_code=400, detail="E-Mail Test fehlgeschlagen. Bitte Einstellungen prüfen.")
     return {"status": "success", "message": "Test E-Mail gesendet."}

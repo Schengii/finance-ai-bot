@@ -854,3 +854,90 @@ async def save_target_allocation(portfolio_id: int, target_alloc: dict):
     finally:
         await conn.close()
 
+async def save_user_device(user_id: int, subscription_info: dict):
+    """Speichert eine Push-Subscription in der SQLite-Datenbank."""
+    conn = await get_db_connection()
+    try:
+        endpoint = subscription_info.get("endpoint", "")
+        keys = subscription_info.get("keys", {})
+        p256dh = keys.get("p256dh", "")
+        auth = keys.get("auth", "")
+        
+        await conn.execute("""
+            INSERT OR REPLACE INTO user_devices (user_id, endpoint, p256dh, auth)
+            VALUES (?, ?, ?, ?)
+        """, (user_id, endpoint, p256dh, auth))
+        await conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern des User-Devices: {e}")
+        return False
+    finally:
+        await conn.close()
+
+async def get_user_device(user_id: int) -> dict | None:
+    """Holt die Push-Subscription für einen Benutzer aus der SQLite-Datenbank."""
+    conn = await get_db_connection()
+    try:
+        async with conn.execute("""
+            SELECT endpoint, p256dh, auth FROM user_devices 
+            WHERE user_id = ? ORDER BY id DESC LIMIT 1
+        """, (user_id,)) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return {
+                    "endpoint": row["endpoint"],
+                    "keys": {
+                        "p256dh": row["p256dh"],
+                        "auth": row["auth"]
+                    }
+                }
+            return None
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des User-Devices: {e}")
+        return None
+    finally:
+        await conn.close()
+
+async def get_user_by_username(username: str) -> dict | None:
+    """Holt einen Benutzer anhand des Benutzernamens aus der Datenbank."""
+    conn = await get_db_connection()
+    try:
+        async with conn.execute(
+            "SELECT id, username, email, hashed_password, role FROM users WHERE username = ?",
+            (username,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return {
+                    "id": row["id"],
+                    "username": row["username"],
+                    "email": row["email"],
+                    "hashed_password": row["hashed_password"],
+                    "role": row["role"]
+                }
+            return None
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des Benutzers {username}: {e}")
+        return None
+    finally:
+        await conn.close()
+
+async def create_user(username: str, email: str, hashed_password: str, role: str = "viewer") -> bool:
+    """Erstellt einen neuen Benutzer in der Datenbank."""
+    conn = await get_db_connection()
+    try:
+        await conn.execute(
+            "INSERT INTO users (username, email, hashed_password, role) VALUES (?, ?, ?, ?)",
+            (username, email, hashed_password, role)
+        )
+        await conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Erstellen des Benutzers {username}: {e}")
+        return False
+    finally:
+        await conn.close()
+
+
+

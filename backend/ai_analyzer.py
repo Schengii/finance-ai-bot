@@ -104,7 +104,7 @@ def get_mock_prediction(asset_info, market_data):
         "last_updated": market_data.get("last_updated", "")
     }
 
-def analyze_asset_with_ai(asset_info, market_data, news_items):
+async def analyze_asset_with_ai(asset_info, market_data, news_items):
     """
     Analysiert Kurse, technische Indikatoren und Nachrichten mit Gemini 
 
@@ -121,8 +121,8 @@ def analyze_asset_with_ai(asset_info, market_data, news_items):
     logger.info(f"Führe KI-Analyse für {symbol} mit Gemini durch...")
     
     # Einstellungen aus der Datenbank laden
-    custom_prompt = get_setting('custom_prompt', '')
-    ai_tone = get_setting('ai_tone', 'professionell')
+    custom_prompt = await get_setting('custom_prompt', '')
+    ai_tone = await get_setting('ai_tone', 'professionell')
     
     # News für den Prompt aufbereiten
     news_text = ""
@@ -288,7 +288,7 @@ def generate_daily_summary(portfolio_data, predictions_data, strategy="Ausgewoge
     }
 
 
-def generate_chat_response(query, portfolio_data, predictions_data, portfolio_id=1):
+async def generate_chat_response(query, portfolio_data, predictions_data, portfolio_id=1):
     """Generiert eine Antwort auf eine Nutzerfrage basierend auf Portfolio, Prognosen und Chatverlauf."""
     
     if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
@@ -335,7 +335,7 @@ def generate_chat_response(query, portfolio_data, predictions_data, portfolio_id
         
     # Chatverlauf aus DB laden
     from backend.db import get_chat_history
-    history = get_chat_history(portfolio_id)
+    history = await get_chat_history(portfolio_id)
     history_str = ""
     if history:
         history_str = "Bisheriger Chatverlauf:\n"
@@ -347,8 +347,8 @@ def generate_chat_response(query, portfolio_data, predictions_data, portfolio_id
         history_str += "\n"
 
     # Einstellungen aus der Datenbank laden
-    custom_prompt = get_setting('custom_prompt', '')
-    ai_tone = get_setting('ai_tone', 'professionell')
+    custom_prompt = await get_setting('custom_prompt', '')
+    ai_tone = await get_setting('ai_tone', 'professionell')
 
     prompt = f"""Du bist "AlphaPulse AI", ein hochentwickelter KI-Finanzberater. 
 
@@ -489,7 +489,7 @@ def get_mock_rebalancing_advice(total_value, allocations, holdings_detail):
     }
 
 
-def generate_rebalancing_advice(portfolio_id, total_value, allocations, holdings_detail):
+async def generate_rebalancing_advice(portfolio_id, total_value, allocations, holdings_detail):
     """Generiert KI-gestützte Rebalancing-Vorschläge basierend auf Abweichungen und Prognosen."""
     # Falls kein API-Key oder genai SDK, nutze Mock-Fallback
     if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
@@ -512,8 +512,8 @@ def generate_rebalancing_advice(portfolio_id, total_value, allocations, holdings
             f"  KI-Prognose/Empfehlung: {h.get('recommendation', 'N/A')}, RSI: {h.get('rsi', 'N/A')}, Trend: {h.get('technical_trend', 'N/A')}\n"
         )
         
-    custom_prompt = get_setting('custom_prompt', '')
-    ai_tone = get_setting('ai_tone', 'professionell')
+    custom_prompt = await get_setting('custom_prompt', '')
+    ai_tone = await get_setting('ai_tone', 'professionell')
     
     prompt = f"""
 Du bist ein erstklassiger KI-Investment-Berater. Deine Aufgabe ist es, dem Nutzer beim Rebalancing seines Portfolios zu helfen.
