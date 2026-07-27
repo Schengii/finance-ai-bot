@@ -129,11 +129,18 @@
                     <section class="assets-list-section glass-panel">
                         <div class="section-header">
                             <h2>Märkte & Prognosen</h2>
-                            <div class="filter-tabs">
-                                <button class="tab-btn active" data-filter="all">Alle</button>
-                                <button class="tab-btn" data-filter="stock">Aktien</button>
-                                <button class="tab-btn" data-filter="crypto">Kryptos</button>
-                                <button class="tab-btn" data-filter="commodity">Rohstoffe</button>
+                            <div class="header-tools-group">
+                                <div class="filter-tabs">
+                                    <button class="tab-btn active" data-filter="all">Alle</button>
+                                    <button class="tab-btn" data-filter="stock">Aktien</button>
+                                    <button class="tab-btn" data-filter="crypto">Kryptos</button>
+                                    <button class="tab-btn" data-filter="commodity">Rohstoffe</button>
+                                </div>
+                                <div class="view-mode-toggles">
+                                    <button class="btn btn-secondary btn-sm active" id="view-mode-list-btn" title="Listenansicht"><i data-lucide="list"></i> Liste</button>
+                                    <button class="btn btn-secondary btn-sm" id="view-mode-heatmap-btn" title="Heatmap-Ansicht"><i data-lucide="layout-grid"></i> Heatmap</button>
+                                    <button class="btn btn-secondary btn-sm" id="open-compare-btn" title="Assets vergleichen"><i data-lucide="columns"></i> Vergleich</button>
+                                </div>
                             </div>
                         </div>
                         
@@ -187,6 +194,11 @@
                                 <div class="spinner"></div>
                                 <p>Lade Marktdaten...</p>
                             </div>
+                        </div>
+
+                        <!-- Asset Heatmap Grid Container -->
+                        <div class="heatmap-container hidden" id="heatmap-grid">
+                            <!-- Dynamisch mit Heatmap-Kacheln befüllt -->
                         </div>
                     </section>
 
@@ -245,7 +257,7 @@
                             <!-- Tabs for Chart / AI / News -->
                             <div class="detail-tabs">
                                 <button class="detail-tabactive active" data-tab="chart-tab">
-                                    <i data-lucide="line-chart"></i> Kursverlauf
+                                    <i data-lucide="line-chart"></i> Kursverlauf &amp; Indikatoren
                                 </button>
                                 <button class="detail-tabactive" data-tab="ai-tab">
                                     <i data-lucide="cpu"></i> KI-Prognose
@@ -263,6 +275,8 @@
                                         <div class="indicator-toggles" id="indicator-toggles">
                                             <button class="ind-toggle-btn" id="toggle-sma20" data-active="false">SMA 20</button>
                                             <button class="ind-toggle-btn" id="toggle-sma50" data-active="false">SMA 50</button>
+                                            <button class="ind-toggle-btn" id="toggle-ema200" data-active="false">EMA 200</button>
+                                            <button class="ind-toggle-btn" id="toggle-bollinger" data-active="false">Bollinger Bands</button>
                                         </div>
                                         <div class="timeframe-selector" id="timeframe-selector">
                                             <button class="tf-btn" data-period="24h">24h</button>
@@ -288,6 +302,26 @@
                                         <div class="indicator-card">
                                             <span class="ind-label">MACD (12, 26, 9)</span>
                                             <span class="ind-value" id="ind-macd">0.824</span>
+                                        </div>
+                                        <div class="indicator-card">
+                                            <span class="ind-label">EMA 200</span>
+                                            <span class="ind-value" id="ind-ema200">-</span>
+                                        </div>
+                                        <div class="indicator-card">
+                                            <span class="ind-label">KGV / P/E</span>
+                                            <span class="ind-value" id="ind-pe">-</span>
+                                        </div>
+                                        <div class="indicator-card">
+                                            <span class="ind-label">Marktkapitalisierung</span>
+                                            <span class="ind-value" id="ind-mcap">-</span>
+                                        </div>
+                                        <div class="indicator-card">
+                                            <span class="ind-label">52W Range</span>
+                                            <span class="ind-value" id="ind-52w">-</span>
+                                        </div>
+                                        <div class="indicator-card">
+                                            <span class="ind-label">Beta / EPS</span>
+                                            <span class="ind-value" id="ind-beta-eps">-</span>
                                         </div>
                                     </div>
                                 </div>
@@ -340,8 +374,11 @@
                         <button id="btn-delete-portfolio" class="btn btn-secondary btn-sm btn-delete-profile" title="Dieses Profil löschen"><i data-lucide="trash-2"></i></button>
                     </div>
                     <div class="export-buttons">
+                        <button id="btn-import-csv" class="btn btn-secondary btn-sm"><i data-lucide="upload"></i> CSV Import</button>
                         <button id="btn-export-csv" class="btn btn-secondary btn-sm"><i data-lucide="download"></i> CSV Export</button>
                         <button id="btn-export-print" class="btn btn-secondary btn-sm"><i data-lucide="printer"></i> PDF / Drucken</button>
+                        <button id="btn-backup-db" class="btn btn-secondary btn-sm" title="Vollständiges JSON-Backup herunterladen"><i data-lucide="database"></i> Backup</button>
+                        <button id="btn-restore-db" class="btn btn-secondary btn-sm" title="JSON-Backup wiederherstellen"><i data-lucide="rotate-ccw"></i> Restore</button>
                     </div>
                 </div>
 
@@ -354,7 +391,7 @@
                         <div class="stat-info">
                             <h3>Portfolio-Wert</h3>
                             <p class="stat-value" id="port-total-value">$ 0.00</p>
-                            <span class="stat-desc">Aktueller Marktwert</span>
+                            <span class="stat-desc">Wert inklusive Cash</span>
                         </div>
                     </div>
                     
@@ -377,6 +414,17 @@
                             <h3>Gewinn / Verlust</h3>
                             <p class="stat-value" id="port-total-profit">$ 0.00 (+0.00%)</p>
                             <span class="stat-desc">Entwicklung seit Kauf</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glass-panel stat-card-clickable" id="cash-stat-card" title="Klicken zum Bearbeiten des Cash-Bestands">
+                        <div class="stat-icon accuracy" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                            <i data-lucide="wallet"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Cash-Bestand <span class="clickable-hint"><i data-lucide="edit-3"></i></span></h3>
+                            <p class="stat-value" id="port-cash-val">$ 0.00</p>
+                            <span class="stat-desc" id="port-sharpe-desc">Sharpe: 0.00 | CAGR: 0.0%</span>
                         </div>
                     </div>
                 </section>
@@ -946,8 +994,27 @@
                                 </select>
                             </div>
                             <div class="form-group-block">
+                                <label for="setting-gemini-model">Gemini KI-Modell</label>
+                                <select id="setting-gemini-model" class="glass-input">
+                                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Empfohlen - Schnell &amp; Präzise)</option>
+                                    <option value="gemini-2.5-pro">Gemini 2.5 Pro (Höchste Analysetiefe &amp; Fundamentaldaten)</option>
+                                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Legacy)</option>
+                                </select>
+                            </div>
+                            <div class="form-group-block">
+                                <label for="setting-ai-temp">KI-Kreativität / Temperatur: <span id="temp-val-display">0.2</span></label>
+                                <input type="range" id="setting-ai-temp" class="glass-range" min="0.0" max="1.0" step="0.05" value="0.2">
+                            </div>
+                            <div class="form-group-block">
+                                <label for="setting-daily-digest-enabled">Täglicher Morgen-Report (Daily Digest)</label>
+                                <select id="setting-daily-digest-enabled" class="glass-input">
+                                    <option value="0">Deaktiviert</option>
+                                    <option value="1">Aktiviert (Per E-Mail / Telegram / Discord)</option>
+                                </select>
+                            </div>
+                            <div class="form-group-block">
                                 <label for="setting-custom-prompt">Zusätzlicher Systemprompt / Anweisungen</label>
-                                <textarea id="setting-custom-prompt" class="glass-input text-area-prompt" rows="8" placeholder="z.B. Fokussiere dich besonders auf langfristiges Dividendenwachstum. Warne mich explizit vor geopolitischen Risiken."></textarea>
+                                <textarea id="setting-custom-prompt" class="glass-input text-area-prompt" rows="6" placeholder="z.B. Fokussiere dich besonders auf langfristiges Dividendenwachstum. Warne mich explizit vor geopolitischen Risiken."></textarea>
                             </div>
                             
                             <!-- Hidden notification fields linked to the right column fields -->
@@ -1127,6 +1194,94 @@
                 <div class="chart-container simulator-chart-container">
                     <canvas id="simulatorChart"></canvas>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ASSET COMPARISON MODAL -->
+    <div class="modal-overlay hidden" id="compare-modal">
+        <div class="modal-content glass-panel modal-lg">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon"><i data-lucide="columns"></i></div>
+                    <div>
+                        <h2>Asset-Direktvergleich</h2>
+                        <p class="modal-subtitle">Stelle bis zu 4 Titel direkt gegeneinander gegenüber</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="close-compare-modal" aria-label="Schließen"><i data-lucide="x"></i></button>
+            </div>
+            <div class="compare-search-row">
+                <input type="text" id="compare-symbols-input" class="glass-input" placeholder="Ticker eingeben (z.B. AAPL, MSFT, BTC-USD, GC=F)">
+                <button id="run-compare-btn" class="btn btn-primary"><i data-lucide="search"></i> Vergleichen</button>
+            </div>
+            <div class="compare-table-wrapper" id="compare-results-area">
+                <p class="text-center text-muted" style="padding: 20px;">Geben Sie oben Komma-getrennte Ticker ein und klicken Sie auf Vergleichen.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- BROKER CSV IMPORT MODAL -->
+    <div class="modal-overlay hidden" id="csv-import-modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon"><i data-lucide="upload"></i></div>
+                    <div>
+                        <h2>Broker CSV-Import</h2>
+                        <p class="modal-subtitle">Füge CSV-Daten deines Brokers (Trade Republic, Scalable, Coinbase etc.) ein</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="close-csv-modal" aria-label="Schließen"><i data-lucide="x"></i></button>
+            </div>
+            <form id="csv-import-form">
+                <div class="form-group-block">
+                    <label for="csv-textarea">CSV-Text einfügen (Spalten: Symbol, Quantity, Price, Type, Date)</label>
+                    <textarea id="csv-textarea" class="glass-input" rows="8" placeholder="Symbol,Quantity,Price,Type,Date&#10;AAPL,10,150.0,BUY,2026-01-15&#10;BTC-USD,0.05,60000.0,BUY,2026-02-01"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary"><i data-lucide="check-circle"></i> Transaktionen importieren</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CASH ADJUSTMENT MODAL -->
+    <div class="modal-overlay hidden" id="cash-modal">
+        <div class="modal-content glass-panel modal-sm">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon"><i data-lucide="wallet"></i></div>
+                    <div>
+                        <h2>Cash-Bestand anpassen</h2>
+                        <p class="modal-subtitle">Trage dein verfügbares Verrechnungsguthaben ein</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="close-cash-modal" aria-label="Schließen"><i data-lucide="x"></i></button>
+            </div>
+            <form id="cash-form">
+                <div class="form-group-block">
+                    <label for="cash-input-amount">Freies Guthaben (€ / $)</label>
+                    <input type="number" id="cash-input-amount" class="glass-input" step="any" min="0" placeholder="z.B. 2500.00" required>
+                </div>
+                <button type="submit" class="btn btn-primary"><i data-lucide="save"></i> Cash speichern</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- COMMAND PALETTE MODAL (Ctrl + K) -->
+    <div class="modal-overlay hidden" id="command-palette-modal">
+        <div class="modal-content glass-panel command-palette-content">
+            <div class="command-palette-header">
+                <i data-lucide="search" class="palette-search-icon"></i>
+                <input type="text" id="palette-input" placeholder="Tippe einen Befehl oder Asset-Symbol... (z.B. AAPL, /watch, Settings)" autocomplete="off">
+                <span class="palette-esc-badge">ESC zum Schließen</span>
+            </div>
+            <div class="command-palette-results" id="palette-results">
+                <div class="palette-group-title">Schnellaktionen</div>
+                <div class="palette-item active" data-action="tab-markets"><i data-lucide="line-chart"></i> Marktanalyse öffnen</div>
+                <div class="palette-item" data-action="tab-portfolio"><i data-lucide="wallet"></i> Portfolio Planer öffnen</div>
+                <div class="palette-item" data-action="open-compare"><i data-lucide="columns"></i> Asset-Vergleich starten</div>
+                <div class="palette-item" data-action="open-csv"><i data-lucide="upload"></i> Broker CSV Import</div>
+                <div class="palette-item" data-action="tab-settings"><i data-lucide="settings"></i> Einstellungen öffnen</div>
             </div>
         </div>
     </div>

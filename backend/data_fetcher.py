@@ -54,14 +54,49 @@ def calculate_macd(prices):
     
     return float(m), float(s), float(h)
 
+def calculate_bollinger_bands(prices, period=20, num_std=2):
+    """Berechnet Bollinger Bands (Oberes und Unteres Band)."""
+    if len(prices) < period:
+        cp = float(prices.iloc[-1]) if not prices.empty else 0.0
+        return cp, cp
+    sma = prices.rolling(window=period).mean()
+    std = prices.rolling(window=period).std()
+    upper = sma + (std * num_std)
+    lower = sma - (std * num_std)
+    u_val = float(upper.iloc[-1]) if not pd.isna(upper.iloc[-1]) else float(prices.iloc[-1])
+    l_val = float(lower.iloc[-1]) if not pd.isna(lower.iloc[-1]) else float(prices.iloc[-1])
+    return round(u_val, 2), round(l_val, 2)
+
+def calculate_ema(prices, period=200):
+    """Berechnet Exponential Moving Average (EMA)."""
+    if len(prices) < 10:
+        return float(prices.iloc[-1]) if not prices.empty else 0.0
+    ema_series = prices.ewm(span=period, adjust=False).mean()
+    val = float(ema_series.iloc[-1])
+    if pd.isna(val) or np.isnan(val) or np.isinf(val):
+        val = float(prices.iloc[-1])
+    return round(val, 2)
+
+def calculate_stochastic(df, period=14):
+    """Berechnet den Stochastik-Oszillator (%K)."""
+    if len(df) < period or 'Low' not in df or 'High' not in df or 'Close' not in df:
+        return 50.0
+    low_min = df['Low'].rolling(window=period).min()
+    high_max = df['High'].rolling(window=period).max()
+    k = 100 * ((df['Close'] - low_min) / (high_max - low_min + 1e-9))
+    val = float(k.iloc[-1])
+    if pd.isna(val) or np.isnan(val) or np.isinf(val):
+        return 50.0
+    return round(val, 2)
+
 def fetch_market_data(symbol, days=90):
-    """Holt historische Daten und berechnet technische Indikatoren."""
+    """Holt historische Daten und berechnet technische Indikatoren & Fundamentaldaten."""
     logger.info(f"Hole Marktdaten für {symbol}...")
     try:
         ticker = yf.Ticker(symbol)
-        # Ein bisschen mehr Daten abrufen, damit Indikatoren wie SMA 50 korrekt berechnet werden
+        # Genügend Daten abrufen für EMA 200 und 52-Wochen-Range
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=days + 60)
+        start_date = end_date - timedelta(days=max(days + 250, 400))
         
         df = ticker.history(start=start_date, end=end_date)
         
@@ -84,13 +119,16 @@ def fetch_market_data(symbol, days=90):
         price_30d_ago = float(close_prices.iloc[-22]) if len(close_prices) >= 22 else float(close_prices.iloc[0])
         price_change_30d = ((current_price - price_30d_ago) / price_30d_ago) * 100
         
-        # Gleitende Durchschnitte
+        # Gleitende Durchschnitte & EMA
         sma_20 = float(close_prices.rolling(window=20).mean().iloc[-1]) if len(close_prices) >= 20 else current_price
         sma_50 = float(close_prices.rolling(window=50).mean().iloc[-1]) if len(close_prices) >= 50 else current_price
+        ema_200 = calculate_ema(close_prices, 200)
         
-        # RSI und MACD
+        # RSI, MACD, Bollinger Bands, Stochastik
         rsi = calculate_rsi(close_prices)
         macd, macd_signal, macd_hist = calculate_macd(close_prices)
+        bb_upper, bb_lower = calculate_bollinger_bands(close_prices, 20, 2)
+        stoch_k = calculate_stochastic(df, 14)
         
         # Trend-Einschätzung (Technisch)
         tech_trend = "Neutral"
@@ -99,28 +137,61 @@ def fetch_market_data(symbol, days=90):
         elif current_price < sma_20 and sma_20 < sma_50:
             tech_trend = "Bearish"
             
-        # Historie für den Chart (letzten 90 Tage)
+        # Historie für den Chart (letzten 90 Tage) mit Bollinger & EMA
         chart_df = df.tail(days)
+        bb_upper_series = df['Close'].rolling(window=20).mean() + (df['Close'].rolling(window=20).std() * 2)
+        bb_lower_series = df['Close'].rolling(window=20).mean() - (df['Close'].rolling(window=20).std() * 2)
+        ema_200_series = df['Close'].ewm(span=200, adjust=False).mean()
+        
         history = []
         for index, row in chart_df.iterrows():
+            idx_pos = df.index.get_loc(index)
             history.append({
                 "date": index.strftime('%Y-%m-%d'),
                 "price": round(float(row['Close']), 2),
-                "volume": int(row['Volume'])
+                "volume": int(row['Volume']) if 'Volume' in row else 0,
+                "ema_200": round(float(ema_200_series.iloc[idx_pos]), 2) if not pd.isna(ema_200_series.iloc[idx_pos]) else round(float(row['Close']), 2),
+                "bb_upper": round(float(bb_upper_series.iloc[idx_pos]), 2) if not pd.isna(bb_upper_series.iloc[idx_pos]) else round(float(row['Close']), 2),
+                "bb_lower": round(float(bb_lower_series.iloc[idx_pos]), 2) if not pd.isna(bb_lower_series.iloc[idx_pos]) else round(float(row['Close']), 2)
             })
-        # Dividenden auslesen
+            
+        # Fundamentaldaten & Dividenden auslesen
         div_yield = 0.0
         div_rate = 0.0
+        pe_ratio = None
+        market_cap = None
+        fifty_two_high = round(float(close_prices.max()), 2)
+        fifty_two_low = round(float(close_prices.min()), 2)
+        beta = 1.0
+        eps = None
+        
         try:
             info = ticker.info
             if info:
                 div_yield = float(info.get('dividendYield') or 0.0)
                 div_rate = float(info.get('dividendRate') or 0.0)
-                # Falls yield als Prozent geliefert wird (z.B. 1.5 statt 0.015), korrigieren
                 if div_yield > 1.0:
                     div_yield = div_yield / 100.0
-        except Exception:
-            pass
+                
+                pe_val = info.get('forwardPE') or info.get('trailingPE')
+                if pe_val: pe_ratio = round(float(pe_val), 2)
+                
+                mcap = info.get('marketCap')
+                if mcap: market_cap = int(mcap)
+                
+                f_high = info.get('fiftyTwoWeekHigh')
+                if f_high: fifty_two_high = round(float(f_high), 2)
+                
+                f_low = info.get('fiftyTwoWeekLow')
+                if f_low: fifty_two_low = round(float(f_low), 2)
+                
+                beta_val = info.get('beta')
+                if beta_val: beta = round(float(beta_val), 2)
+                
+                eps_val = info.get('trailingEps') or info.get('forwardEps')
+                if eps_val: eps = round(float(eps_val), 2)
+        except Exception as e_info:
+            logger.warning(f"Fundamentaldaten für {symbol} teilweise nicht verfügbar: {e_info}")
 
         return {
             "symbol": symbol,
@@ -130,15 +201,28 @@ def fetch_market_data(symbol, days=90):
             "price_change_30d": round(price_change_30d, 2),
             "sma_20": round(sma_20, 2),
             "sma_50": round(sma_50, 2),
+            "ema_200": round(ema_200, 2),
             "rsi": round(rsi, 2),
             "macd": round(macd, 4),
             "macd_signal": round(macd_signal, 4),
             "macd_hist": round(macd_hist, 4),
+            "bb_upper": bb_upper,
+            "bb_lower": bb_lower,
+            "stoch_k": stoch_k,
             "technical_trend": tech_trend,
             "history": history,
             "dividend_yield": div_yield,
-            "dividend_rate": div_rate
+            "dividend_rate": div_rate,
+            "pe_ratio": pe_ratio,
+            "market_cap": market_cap,
+            "fifty_two_high": fifty_two_high,
+            "fifty_two_low": fifty_two_low,
+            "beta": beta,
+            "eps": eps
         }
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Marktdaten für {symbol}: {e}")
+        return None
     except Exception as e:
         logger.error(f"Fehler beim Laden der Marktdaten für {symbol}: {e}")
         return None

@@ -137,6 +137,10 @@ async def init_db():
         # Standard-Einstellungen einfügen
         await cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('custom_prompt', '')")
         await cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ai_tone', 'professionell')")
+        await cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('gemini_model', 'gemini-2.5-flash')")
+        await cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ai_temperature', '0.2')")
+        await cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_digest_enabled', '0')")
+        await cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('daily_digest_time', '08:00')")
         
         # Benachrichtigungskanäle Standard-Einstellungen einfügen
         await cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('telegram_bot_token', '')")
@@ -185,18 +189,22 @@ async def init_db():
                 is_triggered INTEGER DEFAULT 0,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY (symbol) REFERENCES assets (symbol) ON DELETE CASCADE
-            );
+            )
+        """)
 
-            -- Users table for JWT auth
+        # 10. Users table for JWT auth
+        await cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 hashed_password TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'viewer'
-            );
+            )
+        """)
 
-            -- Table for storing push subscription endpoints per user
+        # 11. Table for storing push subscription endpoints per user
+        await cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_devices (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
@@ -207,13 +215,22 @@ async def init_db():
             )
         """)
         
-        # Migrations: Add dividend columns to predictions table if they do not exist
+        # Migrations: Add dividend, indicator & fundamental columns to predictions table if they do not exist
+        for col, col_type in [
+            ("dividend_yield", "REAL"), ("dividend_rate", "REAL"),
+            ("sma_20", "REAL"), ("sma_50", "REAL"), ("ema_200", "REAL"),
+            ("bb_upper", "REAL"), ("bb_lower", "REAL"), ("stoch_k", "REAL"),
+            ("pe_ratio", "REAL"), ("market_cap", "INTEGER"),
+            ("fifty_two_high", "REAL"), ("fifty_two_low", "REAL"),
+            ("beta", "REAL"), ("eps", "REAL")
+        ]:
+            try:
+                await cursor.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
+            except aiosqlite.OperationalError:
+                pass
+
         try:
-            await cursor.execute("ALTER TABLE predictions ADD COLUMN dividend_yield REAL")
-        except aiosqlite.OperationalError:
-            pass
-        try:
-            await cursor.execute("ALTER TABLE predictions ADD COLUMN dividend_rate REAL")
+            await cursor.execute("ALTER TABLE portfolios_list ADD COLUMN cash_balance REAL DEFAULT 0.0")
         except aiosqlite.OperationalError:
             pass
             
@@ -293,8 +310,9 @@ async def save_prediction(pred):
                 symbol, name, type, price, price_change_1d, price_change_7d, price_change_30d,
                 rsi, technical_trend, recommendation, confidence, sentiment_score, risk_level,
                 ai_explanation, key_drivers, key_risks, news, history, last_updated,
-                dividend_yield, dividend_rate
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                dividend_yield, dividend_rate, sma_20, sma_50, ema_200, bb_upper, bb_lower,
+                stoch_k, pe_ratio, market_cap, fifty_two_high, fifty_two_low, beta, eps
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             pred["symbol"], pred["name"], pred["type"], pred["price"],
             pred["price_change_1d"], pred["price_change_7d"], pred["price_change_30d"],
@@ -306,7 +324,19 @@ async def save_prediction(pred):
             json.dumps(pred.get("history", [])),
             pred["last_updated"],
             pred.get("dividend_yield", 0.0),
-            pred.get("dividend_rate", 0.0)
+            pred.get("dividend_rate", 0.0),
+            pred.get("sma_20"),
+            pred.get("sma_50"),
+            pred.get("ema_200"),
+            pred.get("bb_upper"),
+            pred.get("bb_lower"),
+            pred.get("stoch_k"),
+            pred.get("pe_ratio"),
+            pred.get("market_cap"),
+            pred.get("fifty_two_high"),
+            pred.get("fifty_two_low"),
+            pred.get("beta"),
+            pred.get("eps")
         ))
         
         # In History-Tabelle archivieren (für Backtesting)
@@ -337,14 +367,12 @@ async def get_predictions_from_db():
             for row in rows:
                 last_updated = row["last_updated"]
                 
-                # Check if dividend columns exist in query result (safeguard)
-                dividend_yield = 0.0
-                dividend_rate = 0.0
-                try:
-                    dividend_yield = row["dividend_yield"]
-                    dividend_rate = row["dividend_rate"]
-                except Exception:
-                    pass
+                def get_row_val(r, col, default=None):
+                    try:
+                        v = r[col]
+                        return v if v is not None else default
+                    except Exception:
+                        return default
                     
                 predictions[row["symbol"]] = {
                     "symbol": row["symbol"],
@@ -355,6 +383,18 @@ async def get_predictions_from_db():
                     "price_change_7d": row["price_change_7d"],
                     "price_change_30d": row["price_change_30d"],
                     "rsi": row["rsi"],
+                    "sma_20": get_row_val(row, "sma_20"),
+                    "sma_50": get_row_val(row, "sma_50"),
+                    "ema_200": get_row_val(row, "ema_200"),
+                    "bb_upper": get_row_val(row, "bb_upper"),
+                    "bb_lower": get_row_val(row, "bb_lower"),
+                    "stoch_k": get_row_val(row, "stoch_k"),
+                    "pe_ratio": get_row_val(row, "pe_ratio"),
+                    "market_cap": get_row_val(row, "market_cap"),
+                    "fifty_two_high": get_row_val(row, "fifty_two_high"),
+                    "fifty_two_low": get_row_val(row, "fifty_two_low"),
+                    "beta": get_row_val(row, "beta"),
+                    "eps": get_row_val(row, "eps"),
                     "technical_trend": row["technical_trend"],
                     "recommendation": row["recommendation"],
                     "confidence": row["confidence"],
@@ -366,8 +406,8 @@ async def get_predictions_from_db():
                     "news": json.loads(row["news"] or "[]"),
                     "history": json.loads(row["history"] or "[]"),
                     "last_updated": row["last_updated"],
-                    "dividend_yield": dividend_yield,
-                    "dividend_rate": dividend_rate
+                    "dividend_yield": get_row_val(row, "dividend_yield", 0.0),
+                    "dividend_rate": get_row_val(row, "dividend_rate", 0.0)
                 }
                 
             return {"last_updated": last_updated, "predictions": predictions}
@@ -938,6 +978,69 @@ async def create_user(username: str, email: str, hashed_password: str, role: str
         return False
     finally:
         await conn.close()
+
+async def get_portfolio_cash(portfolio_id: int = 1) -> float:
+    """Holt den aktuellen Cash-Bestand für ein Portfolio."""
+    conn = await get_db_connection()
+    try:
+        async with conn.execute("SELECT cash_balance FROM portfolios_list WHERE id = ?", (portfolio_id,)) as cursor:
+            row = await cursor.fetchone()
+            return float(row[0]) if row and row[0] is not None else 0.0
+    except Exception as e:
+        logger.error(f"Fehler beim Lesen des Cash-Bestands für Portfolio {portfolio_id}: {e}")
+        return 0.0
+    finally:
+        await conn.close()
+
+async def update_portfolio_cash(portfolio_id: int, amount: float) -> bool:
+    """Aktualisiert den Cash-Bestand für ein Portfolio."""
+    conn = await get_db_connection()
+    try:
+        await conn.execute("UPDATE portfolios_list SET cash_balance = ? WHERE id = ?", (amount, portfolio_id))
+        await conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Aktualisieren des Cash-Bestands für Portfolio {portfolio_id}: {e}")
+        return False
+    finally:
+        await conn.close()
+
+async def backup_database_json() -> dict:
+    """Erstellt ein vollständiges JSON-Backup aller Datenbank-Tabellen."""
+    conn = await get_db_connection()
+    try:
+        tables = ["assets", "predictions", "portfolios_list", "portfolio", "settings", "transactions", "alerts"]
+        backup = {}
+        for table in tables:
+            async with conn.execute(f"SELECT * FROM {table}") as cursor:
+                rows = await cursor.fetchall()
+                backup[table] = [dict(r) for r in rows]
+        return backup
+    finally:
+        await conn.close()
+
+async def restore_database_json(backup_data: dict) -> bool:
+    """Stellt Datenbanktabellen aus einem JSON-Backup wieder her."""
+    conn = await get_db_connection()
+    try:
+        allowed_tables = ["assets", "predictions", "portfolios_list", "portfolio", "settings", "transactions", "alerts"]
+        for table, rows in backup_data.items():
+            if table not in allowed_tables or not rows:
+                continue
+            cols = list(rows[0].keys())
+            placeholders = ", ".join(["?"] * len(cols))
+            col_names = ", ".join(cols)
+            for row in rows:
+                vals = [row[c] for c in cols]
+                await conn.execute(f"INSERT OR REPLACE INTO {table} ({col_names}) VALUES ({placeholders})", vals)
+        await conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Wiederherstellen des Backups: {e}")
+        return False
+    finally:
+        await conn.close()
+
 
 
 

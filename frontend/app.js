@@ -3163,6 +3163,447 @@ async function analyzeRebalancing() {
     }
 }
 
+/* ==========================================================================
+   ENHANCED PHASE 1-3 FEATURES: HEATMAP, COMPARISON, CASH, CSV, BACKUP, CMD PALETTE
+   ========================================================================== */
+
+// --- 1. Heatmap View ---
+function renderHeatmap() {
+    const grid = document.getElementById("heatmap-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+    
+    const list = Object.values(appData.predictions || {});
+    if (!list || list.length === 0) {
+        grid.innerHTML = `<p class="text-center text-muted" style="padding: 20px;">Keine Daten für Heatmap vorhanden.</p>`;
+        return;
+    }
+    
+    list.forEach(asset => {
+        const change = asset.price_change_1d || 0;
+        const tile = document.createElement("div");
+        tile.className = "heatmap-tile";
+        
+        let bgStyle = "rgba(255, 255, 255, 0.05)";
+        if (change > 3) bgStyle = "rgba(16, 185, 129, 0.4)";
+        else if (change > 0) bgStyle = "rgba(16, 185, 129, 0.2)";
+        else if (change < -3) bgStyle = "rgba(239, 68, 68, 0.4)";
+        else if (change < 0) bgStyle = "rgba(239, 68, 68, 0.2)";
+        
+        tile.style.background = bgStyle;
+        tile.innerHTML = `
+            <div class="heatmap-symbol">${asset.symbol}</div>
+            <div class="heatmap-name">${asset.name}</div>
+            <div class="heatmap-price">${formatCurrency(asset.price, asset.type)}</div>
+            <div class="heatmap-change ${change >= 0 ? 'text-green' : 'text-red'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
+        `;
+        
+        tile.addEventListener("click", () => {
+            selectAsset(asset.symbol);
+            document.getElementById("view-mode-list-btn")?.click();
+        });
+        
+        grid.appendChild(tile);
+    });
+}
+
+function setupViewModeToggles() {
+    const listBtn = document.getElementById("view-mode-list-btn");
+    const heatmapBtn = document.getElementById("view-mode-heatmap-btn");
+    const assetsList = document.getElementById("assets-list");
+    const heatmapGrid = document.getElementById("heatmap-grid");
+    
+    if (listBtn && heatmapBtn) {
+        listBtn.addEventListener("click", () => {
+            listBtn.classList.add("active");
+            heatmapBtn.classList.remove("active");
+            assetsList.classList.remove("hidden");
+            heatmapGrid.classList.add("hidden");
+        });
+        
+        heatmapBtn.addEventListener("click", () => {
+            heatmapBtn.classList.add("active");
+            listBtn.classList.remove("active");
+            assetsList.classList.add("hidden");
+            heatmapGrid.classList.remove("hidden");
+            renderHeatmap();
+        });
+    }
+}
+
+// --- 2. Side-by-Side Asset Comparison Modal ---
+function setupCompareModal() {
+    const openBtn = document.getElementById("open-compare-btn");
+    const modal = document.getElementById("compare-modal");
+    const closeBtn = document.getElementById("close-compare-modal");
+    const runBtn = document.getElementById("run-compare-btn");
+    const input = document.getElementById("compare-symbols-input");
+    
+    if (openBtn && modal) {
+        openBtn.addEventListener("click", () => {
+            modal.classList.remove("hidden");
+            if (input && !input.value) {
+                input.value = "AAPL, MSFT, BTC-USD";
+            }
+            runAssetComparison();
+        });
+    }
+    
+    if (closeBtn && modal) {
+        closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
+    }
+    
+    if (runBtn) {
+        runBtn.addEventListener("click", runAssetComparison);
+    }
+}
+
+async function runAssetComparison() {
+    const input = document.getElementById("compare-symbols-input");
+    const area = document.getElementById("compare-results-area");
+    if (!input || !area) return;
+    
+    const symbols = input.value.trim();
+    if (!symbols) {
+        showToast("Bitte geben Sie mindestens ein Ticker-Symbol ein.", "warning");
+        return;
+    }
+    
+    area.innerHTML = `<div class="loading-state" style="padding: 30px;"><div class="spinner"></div><p>Lade Vergleichsdaten...</p></div>`;
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/compare?symbols=${encodeURIComponent(symbols)}`);
+        if (!res.ok) throw new Error("Vergleichsdaten konnten nicht geladen werden.");
+        const data = await res.json();
+        
+        if (!data || data.length === 0) {
+            area.innerHTML = `<p class="text-center text-muted" style="padding: 20px;">Keine gültigen Assets für den Vergleich gefunden.</p>`;
+            return;
+        }
+        
+        let html = `<table class="compare-table"><thead><tr><th>Eigenschaft</th>`;
+        data.forEach(item => {
+            html += `<th><div class="compare-col-header"><strong>${item.symbol}</strong><br><small>${item.name}</small></div></th>`;
+        });
+        html += `</tr></thead><tbody>`;
+        
+        const rowsDef = [
+            { label: "Aktueller Preis", key: "price", fmt: (v, item) => formatCurrency(v, item.type) },
+            { label: "1D Veränderung", key: "price_change_1d", fmt: v => v != null ? `<span class="${v>=0?'text-green':'text-red'}">${v>=0?'+':''}${v.toFixed(2)}%</span>` : "--" },
+            { label: "7D Veränderung", key: "price_change_7d", fmt: v => v != null ? `<span class="${v>=0?'text-green':'text-red'}">${v>=0?'+':''}${v.toFixed(2)}%</span>` : "--" },
+            { label: "30D Veränderung", key: "price_change_30d", fmt: v => v != null ? `<span class="${v>=0?'text-green':'text-red'}">${v>=0?'+':''}${v.toFixed(2)}%</span>` : "--" },
+            { label: "RSI (14)", key: "rsi", fmt: v => v != null ? v.toFixed(1) : "--" },
+            { label: "SMA 20 / SMA 50", key: "sma_20", fmt: (v, item) => `${item.sma_20 ? '$'+item.sma_20.toFixed(2) : '--'} / ${item.sma_50 ? '$'+item.sma_50.toFixed(2) : '--'}` },
+            { label: "EMA 200", key: "ema_200", fmt: v => v != null ? `$${v.toFixed(2)}` : "--" },
+            { label: "KGV / P/E", key: "pe_ratio", fmt: v => v != null ? v.toFixed(2) : "--" },
+            { label: "Marktkapitalisierung", key: "market_cap", fmt: v => v ? `$ ${(v/1e9).toFixed(2)} Mrd.` : "--" },
+            { label: "52W Range", key: "fifty_two_high", fmt: (v, item) => (item.fifty_two_low && item.fifty_two_high) ? `$${item.fifty_two_low.toFixed(1)} - $${item.fifty_two_high.toFixed(1)}` : "--" },
+            { label: "KI Empfehlung", key: "recommendation", fmt: (v, item) => `<strong>${v || 'Halten'}</strong> (${item.confidence || 50}%)` },
+            { label: "Risiko Level", key: "risk_level", fmt: v => v || "Mittel" }
+        ];
+        
+        rowsDef.forEach(row => {
+            html += `<tr><td><strong>${row.label}</strong></td>`;
+            data.forEach(item => {
+                const val = item[row.key];
+                html += `<td>${row.fmt(val, item)}</td>`;
+            });
+            html += `</tr>`;
+        });
+        
+        html += `</tbody></table>`;
+        area.innerHTML = html;
+    } catch (e) {
+        area.innerHTML = `<p class="text-center text-red" style="padding: 20px;">Fehler: ${e.message}</p>`;
+    }
+}
+
+// --- 3. Cash Management & Performance Metrics ---
+function setupCashManagement() {
+    const cashCard = document.getElementById("cash-stat-card");
+    const modal = document.getElementById("cash-modal");
+    const closeBtn = document.getElementById("close-cash-modal");
+    const form = document.getElementById("cash-form");
+    
+    if (cashCard && modal) {
+        cashCard.addEventListener("click", () => {
+            modal.classList.remove("hidden");
+            fetchPortfolioCash();
+        });
+    }
+    
+    if (closeBtn && modal) {
+        closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
+    }
+    
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById("cash-input-amount").value);
+            if (isNaN(amount) || amount < 0) {
+                showToast("Bitte einen gültigen Betrag eingeben.", "warning");
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/cash`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ cash_balance: amount })
+                });
+                if (!res.ok) throw new Error("Fehler beim Speichern des Cash-Bestands.");
+                showToast("Cash-Bestand erfolgreich aktualisiert!", "success");
+                modal.classList.add("hidden");
+                loadPortfolioPerformanceMetrics();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        });
+    }
+}
+
+async function fetchPortfolioCash() {
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/cash`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const input = document.getElementById("cash-input-amount");
+        if (input) input.value = data.cash_balance;
+    } catch (e) {}
+}
+
+async function loadPortfolioPerformanceMetrics() {
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/performance-metrics`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        const cashVal = document.getElementById("port-cash-val");
+        if (cashVal) cashVal.innerText = formatCurrency(data.cash_balance, "stock");
+        
+        const sharpeDesc = document.getElementById("port-sharpe-desc");
+        if (sharpeDesc) sharpeDesc.innerText = `Sharpe: ${data.sharpe_ratio.toFixed(2)} | CAGR: ${data.cagr.toFixed(1)}%`;
+        
+        const totalVal = document.getElementById("port-total-value");
+        if (totalVal) totalVal.innerText = formatCurrency(data.total_portfolio_value, "stock");
+    } catch (e) {}
+}
+
+// --- 4. Broker CSV Import Modal ---
+function setupCsvImportModal() {
+    const openBtn = document.getElementById("btn-import-csv");
+    const modal = document.getElementById("csv-import-modal");
+    const closeBtn = document.getElementById("close-csv-modal");
+    const form = document.getElementById("csv-import-form");
+    
+    if (openBtn && modal) {
+        openBtn.addEventListener("click", () => modal.classList.remove("hidden"));
+    }
+    if (closeBtn && modal) {
+        closeBtn.addEventListener("click", () => modal.classList.add("hidden"));
+    }
+    
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const text = document.getElementById("csv-textarea").value.trim();
+            if (!text) {
+                showToast("Bitte fügen Sie CSV-Text ein.", "warning");
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/import-csv`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ csv_text: text })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Fehler beim CSV-Import.");
+                }
+                const data = await res.json();
+                showToast(data.message, "success");
+                modal.classList.add("hidden");
+                document.getElementById("csv-textarea").value = "";
+                await loadPortfolioData();
+                renderPortfolio();
+                loadTransactions();
+                fetchData();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        });
+    }
+}
+
+// --- 5. System Backup & Restore ---
+function setupBackupRestore() {
+    const backupBtn = document.getElementById("btn-backup-db");
+    const restoreBtn = document.getElementById("btn-restore-db");
+    
+    if (backupBtn) {
+        backupBtn.addEventListener("click", async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/system/backup`);
+                if (!res.ok) throw new Error("Backup fehlgeschlagen.");
+                const data = await res.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `alphapulse_backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast("Backup-Datei erfolgreich exportiert!", "success");
+            } catch (e) {
+                showToast(e.message, "error");
+            }
+        });
+    }
+    
+    if (restoreBtn) {
+        restoreBtn.addEventListener("click", () => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".json";
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (evt) => {
+                    try {
+                        const json = JSON.parse(evt.target.result);
+                        const res = await fetch(`${API_BASE}/api/system/restore`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(json)
+                        });
+                        if (!res.ok) throw new Error("Wiederherstellung fehlgeschlagen.");
+                        showToast("Datenbank erfolgreich wiederhergestellt!", "success");
+                        fetchData();
+                        await loadPortfolioData();
+                        renderPortfolio();
+                    } catch (err) {
+                        showToast("Ungültige Backup-Datei: " + err.message, "error");
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+    }
+}
+
+// --- 6. Command Palette (Ctrl + K) ---
+function setupCommandPalette() {
+    const modal = document.getElementById("command-palette-modal");
+    const input = document.getElementById("palette-input");
+    
+    if (!modal || !input) return;
+    
+    document.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+            e.preventDefault();
+            modal.classList.remove("hidden");
+            input.focus();
+            input.value = "";
+            renderPaletteResults("");
+        } else if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+            modal.classList.add("hidden");
+        }
+    });
+    
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.classList.add("hidden");
+    });
+    
+    input.addEventListener("input", (e) => {
+        renderPaletteResults(e.target.value.trim().toLowerCase());
+    });
+}
+
+function renderPaletteResults(query) {
+    const results = document.getElementById("palette-results");
+    if (!results) return;
+    
+    const actions = [
+        { label: "Marktanalyse öffnen", icon: "line-chart", act: () => switchView("markets-view") },
+        { label: "Portfolio Planer öffnen", icon: "wallet", act: () => switchView("portfolio-view") },
+        { label: "Asset-Direktvergleich", icon: "columns", act: () => document.getElementById("open-compare-btn")?.click() },
+        { label: "Broker CSV Import", icon: "upload", act: () => document.getElementById("btn-import-csv")?.click() },
+        { label: "Einstellungen öffnen", icon: "settings", act: () => switchView("settings-view") }
+    ];
+    
+    const list = Object.values(appData.predictions || {});
+    list.forEach(asset => {
+        actions.push({
+            label: `${asset.symbol} - ${asset.name}`,
+            icon: asset.type === 'crypto' ? 'coins' : 'bar-chart-2',
+            act: () => {
+                switchView("markets-view");
+                selectAsset(asset.symbol);
+            }
+        });
+    });
+    
+    const filtered = actions.filter(a => a.label.toLowerCase().includes(query));
+    
+    if (filtered.length === 0) {
+        results.innerHTML = `<p class="text-center text-muted" style="padding:15px;">Keine Befehle oder Assets gefunden.</p>`;
+        return;
+    }
+    
+    results.innerHTML = `<div class="palette-group-title">Ergebnisse</div>` + filtered.map((a, i) => `
+        <div class="palette-item ${i===0?'active':''}" data-index="${i}">
+            <i data-lucide="${a.icon}"></i> ${a.label}
+        </div>
+    `).join("");
+    
+    if (window.lucide) window.lucide.createIcons();
+    
+    results.querySelectorAll(".palette-item").forEach((el, idx) => {
+        el.addEventListener("click", () => {
+            document.getElementById("command-palette-modal")?.classList.add("hidden");
+            filtered[idx].act();
+        });
+    });
+}
+
+function switchView(viewId) {
+    document.querySelectorAll(".nav-item").forEach(n => {
+        if (n.dataset.view === viewId) n.click();
+    });
+}
+
+// Auto-Initialize Enhanced Features on DOM Load
+document.addEventListener("DOMContentLoaded", () => {
+    setupViewModeToggles();
+    setupCompareModal();
+    setupCashManagement();
+    setupCsvImportModal();
+    setupBackupRestore();
+    setupCommandPalette();
+    
+    ["toggle-ema200", "toggle-bollinger"].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener("click", () => {
+                const active = btn.getAttribute("data-active") === "true";
+                btn.setAttribute("data-active", !active);
+                btn.classList.toggle("active");
+                if (selectedAsset) renderChart(selectedAsset);
+            });
+        }
+    });
+
+    const tempInput = document.getElementById("setting-ai-temp");
+    const tempValDisp = document.getElementById("temp-val-display");
+    if (tempInput && tempValDisp) {
+        tempInput.addEventListener("input", (e) => {
+            tempValDisp.innerText = e.target.value;
+        });
+    }
+});
+
 
 
 

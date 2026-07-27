@@ -93,6 +93,18 @@ def get_mock_prediction(asset_info, market_data):
         "price_change_7d": market_data["price_change_7d"],
         "price_change_30d": market_data["price_change_30d"],
         "rsi": rsi,
+        "sma_20": market_data.get("sma_20"),
+        "sma_50": market_data.get("sma_50"),
+        "ema_200": market_data.get("ema_200"),
+        "bb_upper": market_data.get("bb_upper"),
+        "bb_lower": market_data.get("bb_lower"),
+        "stoch_k": market_data.get("stoch_k"),
+        "pe_ratio": market_data.get("pe_ratio"),
+        "market_cap": market_data.get("market_cap"),
+        "fifty_two_high": market_data.get("fifty_two_high"),
+        "fifty_two_low": market_data.get("fifty_two_low"),
+        "beta": market_data.get("beta"),
+        "eps": market_data.get("eps"),
         "technical_trend": market_data["technical_trend"],
         "recommendation": recommendation,
         "confidence": confidence,
@@ -101,13 +113,14 @@ def get_mock_prediction(asset_info, market_data):
         "ai_explanation": reason,
         "key_drivers": drivers,
         "key_risks": risks,
-        "last_updated": market_data.get("last_updated", "")
+        "last_updated": market_data.get("last_updated", ""),
+        "dividend_yield": market_data.get("dividend_yield", 0.0),
+        "dividend_rate": market_data.get("dividend_rate", 0.0)
     }
 
 async def analyze_asset_with_ai(asset_info, market_data, news_items):
     """
-    Analysiert Kurse, technische Indikatoren und Nachrichten mit Gemini 
-
+    Analysiert Kurse, technische Indikatoren, Fundamentaldaten und Nachrichten mit Gemini 
     und liefert eine fundierte Anlageempfehlung.
     """
     symbol = asset_info["symbol"]
@@ -123,6 +136,12 @@ async def analyze_asset_with_ai(asset_info, market_data, news_items):
     # Einstellungen aus der Datenbank laden
     custom_prompt = await get_setting('custom_prompt', '')
     ai_tone = await get_setting('ai_tone', 'professionell')
+    gemini_model = await get_setting('gemini_model', 'gemini-2.5-flash')
+    temp_setting = await get_setting('ai_temperature', '0.2')
+    try:
+        ai_temp = float(temp_setting)
+    except ValueError:
+        ai_temp = 0.2
     
     # News für den Prompt aufbereiten
     news_text = ""
@@ -132,9 +151,16 @@ async def analyze_asset_with_ai(asset_info, market_data, news_items):
     if not news_text:
         news_text = "Keine aktuellen Nachrichten verfügbar."
 
+    pe_str = f"{market_data.get('pe_ratio')}" if market_data.get('pe_ratio') is not None else "N/A"
+    mcap_str = f"{market_data.get('market_cap'):,}" if market_data.get('market_cap') is not None else "N/A"
+    high_str = f"{market_data.get('fifty_two_high')}" if market_data.get('fifty_two_high') is not None else "N/A"
+    low_str = f"{market_data.get('fifty_two_low')}" if market_data.get('fifty_two_low') is not None else "N/A"
+    beta_str = f"{market_data.get('beta')}" if market_data.get('beta') is not None else "1.0"
+    eps_str = f"{market_data.get('eps')}" if market_data.get('eps') is not None else "N/A"
+
     prompt = f"""
 Du bist ein professioneller Finanzanalyst und KI-Investment-Berater.
-Deine Aufgabe ist es, die Marktlage und die Nachrichten zu folgender Aktie bzw. Kryptowährung zu bewerten.
+Deine Aufgabe ist es, die Marktlage, Fundamentaldaten und die Nachrichten zu folgender Aktie bzw. Kryptowährung zu bewerten.
 
 NUTZER-EINSTELLUNGEN FÜR DEINEN STIL / DEINE TONALITÄT:
 - Tonalität: {ai_tone}
@@ -143,17 +169,25 @@ NUTZER-EINSTELLUNGEN FÜR DEINEN STIL / DEINE TONALITÄT:
 Name: {name} ({symbol})
 Kategorie: {asset_info['type']}
 
-AKTUELLE MARKTDATEN:
+AKTUELLE MARKTDATEN & FUNDAMENTALWERTE:
 - Aktueller Preis: {market_data['current_price']}
 - Kursänderung (1 Tag): {market_data['price_change_1d']}%
 - Kursänderung (7 Tage): {market_data['price_change_7d']}%
 - Kursänderung (30 Tage): {market_data['price_change_30d']}%
+- KGV (P/E Ratio): {pe_str}
+- Marktkapitalisierung: {mcap_str}
+- 52-Wochen-Spannweite: {low_str} - {high_str}
+- Beta-Faktor: {beta_str}
+- Gewinn pro Aktie (EPS): {eps_str}
 
 TECHNISCHE INDIKATOREN:
-- Gleitender Durchschnitt 20 Tage (SMA 20): {market_data['sma_20']}
-- Gleitender Durchschnitt 50 Tage (SMA 50): {market_data['sma_50']}
+- Gleitender Durchschnitt 20 Tage (SMA 20): {market_data.get('sma_20')}
+- Gleitender Durchschnitt 50 Tage (SMA 50): {market_data.get('sma_50')}
+- Exponentieller Durchschnitt 200 Tage (EMA 200): {market_data.get('ema_200')}
 - Relativer Stärke Index (RSI 14): {market_data['rsi']} (Wert unter 30 ist überverkauft, über 70 überkauft)
-- MACD Wert: {market_data['macd']} (Signal-Linie: {market_data['macd_signal']}, Historie: {market_data['macd_hist']})
+- MACD Wert: {market_data['macd']} (Signal: {market_data['macd_signal']}, Hist: {market_data['macd_hist']})
+- Bollinger Bands (20, 2): Oberes Band = {market_data.get('bb_upper')}, Unteres Band = {market_data.get('bb_lower')}
+- Stochastik (%K): {market_data.get('stoch_k')}
 - Technischer Trend-Typ: {market_data['technical_trend']}
 
 AKTUELLE NACHRICHTEN & THEMEN:
@@ -167,7 +201,7 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
   "confidence": <Zahl zwischen 0 und 100, wie sicher du dir bei der Prognose bist>,
   "sentiment_score": <Zahl zwischen -1.0 (extrem negativ) und 1.0 (extrem positiv) für die Nachrichtenstimmung>,
   "risk_level": "Gering" | "Mittel" | "Hoch" | "Sehr Hoch",
-  "ai_explanation": "<Eine detaillierte, verständliche Erklärung auf Deutsch, warum du diese Empfehlung gibst (mindestens 3-4 Sätze). Antworte in der gewünschten Tonalität und berücksichtige die spezifischen Anweisungen. Gehe auf die News und die technischen Indikatoren ein.>",
+  "ai_explanation": "<Eine detaillierte, verständliche Erklärung auf Deutsch, warum du diese Empfehlung gibst (mindestens 3-4 Sätze). Antworte in der gewünschten Tonalität und berücksichtige die spezifischen Anweisungen. Gehe auf Fundamentaldaten, News und die technischen Indikatoren ein.>",
   "key_drivers": ["Treiber 1", "Treiber 2", ...],
   "key_risks": ["Risiko 1", "Risiko 2", ...]
 }}
@@ -176,20 +210,21 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
     try:
         if HAS_NEW_GENAI and client:
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model=gemini_model if gemini_model else "gemini-2.5-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
-                    temperature=0.2,
+                    temperature=ai_temp,
                 )
             )
             response_text = response.text
         elif HAS_LEGACY_GENAI:
-            model = legacy_genai.GenerativeModel("gemini-1.5-flash")
+            model_name = "gemini-1.5-pro" if "pro" in gemini_model else "gemini-1.5-flash"
+            model = legacy_genai.GenerativeModel(model_name)
             
             generation_config = {
                 "response_mime_type": "application/json",
-                "temperature": 0.2
+                "temperature": ai_temp
             }
             
             response = model.generate_content(prompt, generation_config=generation_config)
@@ -199,7 +234,7 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
             
         result_json = json.loads(response_text.strip())
         
-        # Kombiniere KI-Antwort mit Marktdaten
+        # Kombiniere KI-Antwort mit Marktdaten & Fundamentaldaten
         prediction = {
             "symbol": symbol,
             "name": name,
@@ -209,6 +244,18 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
             "price_change_7d": market_data["price_change_7d"],
             "price_change_30d": market_data["price_change_30d"],
             "rsi": market_data["rsi"],
+            "sma_20": market_data.get("sma_20"),
+            "sma_50": market_data.get("sma_50"),
+            "ema_200": market_data.get("ema_200"),
+            "bb_upper": market_data.get("bb_upper"),
+            "bb_lower": market_data.get("bb_lower"),
+            "stoch_k": market_data.get("stoch_k"),
+            "pe_ratio": market_data.get("pe_ratio"),
+            "market_cap": market_data.get("market_cap"),
+            "fifty_two_high": market_data.get("fifty_two_high"),
+            "fifty_two_low": market_data.get("fifty_two_low"),
+            "beta": market_data.get("beta"),
+            "eps": market_data.get("eps"),
             "technical_trend": market_data["technical_trend"],
             "recommendation": result_json.get("recommendation", "Halten"),
             "confidence": result_json.get("confidence", 50),
@@ -217,7 +264,9 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
             "ai_explanation": result_json.get("ai_explanation", "Keine Erklärung verfügbar."),
             "key_drivers": result_json.get("key_drivers", []),
             "key_risks": result_json.get("key_risks", []),
-            "last_updated": market_data.get("last_updated", "")
+            "last_updated": market_data.get("last_updated", ""),
+            "dividend_yield": market_data.get("dividend_yield", 0.0),
+            "dividend_rate": market_data.get("dividend_rate", 0.0)
         }
         return prediction
         

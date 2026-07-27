@@ -113,6 +113,10 @@ async def _check_alerts_async():
                     trigger = True
                 elif alert_type == "rsi_below" and rsi and rsi < float(target_value):
                     trigger = True
+                elif alert_type == "change_above" and pred.get("price_change_1d") is not None and pred.get("price_change_1d") > float(target_value):
+                    trigger = True
+                elif alert_type == "change_below" and pred.get("price_change_1d") is not None and pred.get("price_change_1d") < float(target_value):
+                    trigger = True
                 elif alert_type == "rec_change" and rec and rec.strip().lower() == str(target_value).strip().lower():
                     trigger = True
             except Exception as e:
@@ -130,6 +134,8 @@ async def _check_alerts_async():
                         "price_below": "Preis fällt unter",
                         "rsi_above": "RSI übersteigt",
                         "rsi_below": "RSI fällt unter",
+                        "change_above": "Tagesveränderung übersteigt %",
+                        "change_below": "Tagesveränderung fällt unter %",
                         "rec_change": "KI-Empfehlung ändert sich auf"
                     }
                     label = type_labels.get(alert_type, alert_type)
@@ -141,6 +147,7 @@ async def _check_alerts_async():
                         f"Bedingung: {label} {target_value}\n\n"
                         f"Aktuelle Werte:\n"
                         f"- Preis: {current_price} $\n"
+                        f"- 1D Veränderung: {pred.get('price_change_1d')}%\n"
                         f"- RSI: {rsi:.1f if rsi else 0.0}\n"
                         f"- Empfehlung: {rec}"
                     )
@@ -150,6 +157,7 @@ async def _check_alerts_async():
                         f"Bedingung: {label} <b>{target_value}</b></p>"
                         f"<p><b>Aktuelle Werte:</b><br>"
                         f"• Preis: {current_price} $<br>"
+                        f"• 1D Veränderung: {pred.get('price_change_1d')}%<br>"
                         f"• RSI: {rsi:.1f if rsi else 0.0}<br>"
                         f"• Empfehlung: <b>{rec}</b></p>"
                     )
@@ -158,6 +166,38 @@ async def _check_alerts_async():
                     logger.error(f"Fehler beim Versenden der Alarm-Benachrichtigung: {e_notif}")
     except Exception as e:
         logger.error(f"Fehler in _check_alerts_async: {e}")
+
+async def send_daily_digest_async():
+    """Erzeugt und versendet den täglichen Markt- & Portfolio-Report."""
+    try:
+        from backend.db import get_portfolio_from_db, get_predictions_from_db, get_setting
+        from backend.ai_analyzer import generate_daily_summary
+        from backend.notifications import send_all_notifications
+        
+        enabled = await get_setting("daily_digest_enabled", "0")
+        if enabled != "1":
+            return
+            
+        portfolio = await get_portfolio_from_db(1)
+        db_data = await get_predictions_from_db()
+        predictions = db_data.get("predictions", {})
+        
+        digest = generate_daily_summary(portfolio, predictions, "Ausgewogen")
+        
+        subj = f"📈 AlphaPulse AI - Daily Digest ({datetime.now().strftime('%d.%m.%Y')})"
+        text_msg = f"📊 Daily Market & Portfolio Report\n\n{digest['headline']}\n\n{digest['summary']}\n\nEmpfehlungen:\n"
+        for rec in digest.get('recommendations', []):
+            text_msg += f"- {rec}\n"
+            
+        html_msg = f"<h2>📈 AlphaPulse AI - Daily Digest</h2><h4>{digest['headline']}</h4><p>{digest['summary']}</p><h5>Empfehlungen:</h5><ul>"
+        for rec in digest.get('recommendations', []):
+            html_msg += f"<li>{rec}</li>"
+        html_msg += "</ul>"
+        
+        await send_all_notifications(subj, html_msg, text_msg)
+        logger.info("Daily Digest erfolgreich versendet.")
+    except Exception as e:
+        logger.error(f"Fehler beim Versenden des Daily Digest: {e}")
 
 def check_alerts():
     """Wrapper für die synchrone Ausführung des Alarm-Checks."""

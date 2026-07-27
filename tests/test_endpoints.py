@@ -7,6 +7,9 @@ import httpx
 from backend.main import app
 
 async def run_tests():
+    from backend.db import init_db
+    await init_db()
+
     print("==================================================")
     print("        STARTE NEUE API-ENDPUNKTE TESTLAUF        ")
     print("==================================================")
@@ -131,6 +134,44 @@ async def run_tests():
         assert "headline" in summary_data
         assert "summary" in summary_data
         print("[OK] Tägliche Portfolio-Zusammenfassung erfolgreich!")
+
+        # 9. Test Cash Balance & Performance Metrics
+        print("\n[9/12] Teste Cash-Bestand & Finanzkennzahlen...")
+        res_cash_post = await client.post("/api/portfolio/1/cash", json={"cash_balance": 2500.0})
+        assert res_cash_post.status_code == 200
+        res_cash_get = await client.get("/api/portfolio/1/cash")
+        assert res_cash_get.status_code == 200
+        assert res_cash_get.json()["cash_balance"] == 2500.0
+
+        res_perf = await client.get("/api/portfolio/1/performance-metrics")
+        assert res_perf.status_code == 200
+        perf_data = res_perf.json()
+        assert "total_portfolio_value" in perf_data
+        assert "sharpe_ratio" in perf_data
+        print("[OK] Cash-Bestand & Performance-Kennzahlen erfolgreich!")
+
+        # 10. Test System Backup
+        print("\n[10/12] Teste System-Backup...")
+        res_backup = await client.get("/api/system/backup")
+        assert res_backup.status_code == 200
+        assert "assets" in res_backup.json()
+        print("[OK] System-Backup erfolgreich!")
+
+        # 11. Test CSV Import
+        print("\n[11/12] Teste Broker-CSV-Import...")
+        csv_sample = "Symbol,Anzahl,Kaufpreis,Aktion\nAAPL,5,150.0,BUY\nMSFT,2,300.0,BUY"
+        res_csv = await client.post("/api/portfolio/1/import-csv", json={"csv_text": csv_sample})
+        assert res_csv.status_code == 200
+        assert res_csv.json()["imported_count"] == 2
+        print("[OK] Broker-CSV-Import erfolgreich!")
+
+        # 12. Test Asset Comparison
+        print("\n[12/12] Teste Asset-Vergleich...")
+        res_compare = await client.get("/api/compare?symbols=AAPL,MSFT")
+        assert res_compare.status_code == 200
+        compare_data = res_compare.json()
+        assert len(compare_data) == 2
+        print("[OK] Asset-Vergleich erfolgreich!")
 
     print("\n==================================================")
     print("             ALLE ENDPUNKT-TESTS ERFOLGREICH!      ")

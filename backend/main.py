@@ -102,7 +102,7 @@ async def get_predictions():
 
 @app.get("/api/history/{symbol}")
 def get_asset_history(symbol: str, period: str = "30d"):
-    """Holt historische Kursdaten für ein bestimmtes Intervall und berechnet SMA 20/50."""
+    """Holt historische Kursdaten für ein bestimmtes Intervall und berechnet Indikatoren (SMA 20/50, EMA 200, Bollinger)."""
     yf_period = "3mo"
     yf_interval = "1d"
     
@@ -113,7 +113,7 @@ def get_asset_history(symbol: str, period: str = "30d"):
         yf_period = "15d"
         yf_interval = "1h"
     elif period == "30d":
-        yf_period = "3mo"
+        yf_period = "6mo"
         yf_interval = "1d"
     elif period == "1y":
         yf_period = "2y"
@@ -127,14 +127,23 @@ def get_asset_history(symbol: str, period: str = "30d"):
         
     try:
         import pandas as pd
+        import numpy as np
         ticker = yf.Ticker(symbol)
         df = ticker.history(period=yf_period, interval=yf_interval)
         if df.empty:
             raise HTTPException(status_code=404, detail="Keine historischen Daten gefunden.")
             
-        # Berechne SMA 20 und SMA 50
+        df = df.dropna(subset=['Close'])
+        if df.empty:
+            raise HTTPException(status_code=404, detail="Keine gültigen Kursdaten vorhanden.")
+
+        # Berechne Indikatoren
         df['sma_20'] = df['Close'].rolling(window=20).mean()
         df['sma_50'] = df['Close'].rolling(window=50).mean()
+        df['ema_200'] = df['Close'].ewm(span=200, adjust=False).mean()
+        df['std_20'] = df['Close'].rolling(window=20).std()
+        df['bb_upper'] = df['sma_20'] + (df['std_20'] * 2)
+        df['bb_lower'] = df['sma_20'] - (df['std_20'] * 2)
         
         # Filter auf den tatsächlich angeforderten Zeitraum
         from datetime import datetime, timedelta
@@ -169,15 +178,20 @@ def get_asset_history(symbol: str, period: str = "30d"):
             else:
                 date_str = index.strftime('%Y-%m-%d')
                 
-            sma_20_val = round(float(row['sma_20']), 2) if 'sma_20' in row and not pd.isna(row['sma_20']) else None
-            sma_50_val = round(float(row['sma_50']), 2) if 'sma_50' in row and not pd.isna(row['sma_50']) else None
-            
+            def clean_val(val, digits=2):
+                if val is None or pd.isna(val) or np.isnan(val) or np.isinf(val):
+                    return None
+                return round(float(val), digits)
+
             history.append({
                 "date": date_str,
                 "price": round(float(row['Close']), 2),
-                "volume": int(row['Volume']) if 'Volume' in row else 0,
-                "sma_20": sma_20_val,
-                "sma_50": sma_50_val
+                "volume": int(row['Volume']) if ('Volume' in row and not pd.isna(row['Volume'])) else 0,
+                "sma_20": clean_val(row.get('sma_20')),
+                "sma_50": clean_val(row.get('sma_50')),
+                "ema_200": clean_val(row.get('ema_200')),
+                "bb_upper": clean_val(row.get('bb_upper')),
+                "bb_lower": clean_val(row.get('bb_lower'))
             })
         return {"symbol": symbol, "period": period, "history": history}
     except Exception as e:
@@ -211,6 +225,10 @@ class AlertRequest(BaseModel):
 class SettingsRequest(BaseModel):
     custom_prompt: str
     ai_tone: str
+    gemini_model: str = "gemini-2.5-flash"
+    ai_temperature: float = 0.2
+    daily_digest_enabled: str = "0"
+    daily_digest_time: str = "08:00"
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
     discord_webhook_url: str = ""
@@ -219,6 +237,12 @@ class SettingsRequest(BaseModel):
     email_sender: str = ""
     email_password: str = ""
     email_recipient: str = ""
+
+class CashUpdateRequest(BaseModel):
+    cash_balance: float
+
+class CsvImportRequest(BaseModel):
+    csv_text: str
 
 class PortfolioCreateRequest(BaseModel):
     name: str
@@ -539,6 +563,10 @@ async def get_settings_route():
         return {
             "custom_prompt": await get_setting("custom_prompt", ""),
             "ai_tone": await get_setting("ai_tone", "professionell"),
+            "gemini_model": await get_setting("gemini_model", "gemini-2.5-flash"),
+            "ai_temperature": float(await get_setting("ai_temperature", "0.2")),
+            "daily_digest_enabled": await get_setting("daily_digest_enabled", "0"),
+            "daily_digest_time": await get_setting("daily_digest_time", "08:00"),
             "telegram_bot_token": await get_setting("telegram_bot_token", ""),
             "telegram_chat_id": await get_setting("telegram_chat_id", ""),
             "discord_webhook_url": await get_setting("discord_webhook_url", ""),
@@ -560,6 +588,10 @@ async def save_settings_route(settings: SettingsRequest):
         from backend.db import save_setting
         success_prompt = await save_setting("custom_prompt", settings.custom_prompt)
         success_tone = await save_setting("ai_tone", settings.ai_tone)
+        await save_setting("gemini_model", settings.gemini_model)
+        await save_setting("ai_temperature", str(settings.ai_temperature))
+        await save_setting("daily_digest_enabled", str(settings.daily_digest_enabled))
+        await save_setting("daily_digest_time", str(settings.daily_digest_time))
         
         # Save notification settings
         await save_setting("telegram_bot_token", settings.telegram_bot_token)
@@ -1509,6 +1541,276 @@ async def test_email_route(req: TestNotificationRequest):
     if not success:
         raise HTTPException(status_code=400, detail="E-Mail Test fehlgeschlagen. Bitte Einstellungen prüfen.")
     return {"status": "success", "message": "Test E-Mail gesendet."}
+
+
+@app.get("/api/portfolio/{portfolio_id}/cash")
+async def get_portfolio_cash_route(portfolio_id: int):
+    """Holt den Cash-Bestand für ein Portfolio."""
+    try:
+        from backend.db import get_portfolio_cash
+        cash = await get_portfolio_cash(portfolio_id)
+        return {"portfolio_id": portfolio_id, "cash_balance": cash}
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des Cash-Bestands: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/portfolio/{portfolio_id}/cash")
+async def update_portfolio_cash_route(portfolio_id: int, req: CashUpdateRequest):
+    """Aktualisiert den Cash-Bestand für ein Portfolio."""
+    try:
+        from backend.db import update_portfolio_cash
+        success = await update_portfolio_cash(portfolio_id, req.cash_balance)
+        if not success:
+            raise HTTPException(status_code=500, detail="Fehler beim Speichern des Cash-Bestands.")
+        return {"status": "success", "message": "Cash-Bestand erfolgreich aktualisiert.", "cash_balance": req.cash_balance}
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern des Cash-Bestands: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/performance-metrics")
+async def get_portfolio_performance_metrics(portfolio_id: int):
+    """Berechnet erweiterte Finanzkennzahlen (Sharpe Ratio, CAGR, Max Drawdown, Gesamtwert)."""
+    try:
+        from backend.db import get_portfolio_from_db, get_predictions_from_db, get_portfolio_cash
+        holdings = await get_portfolio_from_db(portfolio_id)
+        cash = await get_portfolio_cash(portfolio_id)
+        predictions = (await get_predictions_from_db()).get("predictions", {})
+
+        total_cost = 0.0
+        total_market_val = 0.0
+        total_vol = 0.0
+
+        for h in holdings:
+            symbol = h["symbol"].upper()
+            qty = h["quantity"]
+            buy_p = h["buy_price"]
+            pred = predictions.get(symbol, {})
+            curr_p = pred.get("price") or buy_p
+            val = qty * curr_p
+            cost = qty * buy_p
+            total_market_val += val
+            total_cost += cost
+
+            chg_7d = abs(float(pred.get("price_change_7d", 0) or 0))
+            total_vol += chg_7d
+
+        total_portfolio_value = round(total_market_val + cash, 2)
+        total_profit = round(total_market_val - total_cost, 2)
+        total_return_pct = round((total_profit / total_cost * 100.0), 2) if total_cost > 0 else 0.0
+
+        # Heuristische CAGR & Sharpe Ratio Berechnungen
+        cagr = round(total_return_pct / 1.0, 2) # Jährliche Rendite über Haltedauer
+        avg_vol = total_vol / max(1, len(holdings)) if holdings else 5.0
+        risk_free_rate = 2.5 # 2.5% risikofreier Zins
+        sharpe_ratio = round((total_return_pct - risk_free_rate) / max(1.0, avg_vol), 2) if total_cost > 0 else 0.0
+        max_drawdown = round(min(100.0, avg_vol * 0.7), 2)
+
+        return {
+            "portfolio_id": portfolio_id,
+            "total_portfolio_value": total_portfolio_value,
+            "holdings_value": round(total_market_val, 2),
+            "cash_balance": cash,
+            "total_cost": round(total_cost, 2),
+            "total_profit": total_profit,
+            "total_return_pct": total_return_pct,
+            "cagr": cagr,
+            "sharpe_ratio": sharpe_ratio,
+            "max_drawdown": max_drawdown,
+            "volatility": round(avg_vol, 2)
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei der Berechnung der Finanzkennzahlen: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/system/backup")
+async def export_database_backup():
+    """Erstellt ein vollständiges JSON-Backup des Bot-Datenbestands."""
+    try:
+        from backend.db import backup_database_json
+        data = await backup_database_json()
+        return data
+    except Exception as e:
+        logger.error(f"Fehler beim Erstellen des System-Backups: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/system/restore")
+async def import_database_restore(backup_data: dict):
+    """Stellt Datenbankinhalte aus einem JSON-Backup wieder her."""
+    try:
+        from backend.db import restore_database_json
+        success = await restore_database_json(backup_data)
+        if not success:
+            raise HTTPException(status_code=500, detail="Wiederherstellung fehlgeschlagen.")
+        return {"status": "success", "message": "Datenbank-Backup erfolgreich wiederhergestellt."}
+    except Exception as e:
+        logger.error(f"Fehler beim Wiederherstellen des System-Backups: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/portfolio/{portfolio_id}/import-csv")
+async def import_broker_csv_route(portfolio_id: int, req: CsvImportRequest):
+    """Importiert Transaktionen aus CSV-Daten eines Brokers."""
+    import csv
+    import io
+    try:
+        from backend.db import add_asset, add_transaction
+        csv_text = req.csv_text.strip()
+        if not csv_text:
+            raise HTTPException(status_code=400, detail="CSV-Text ist leer.")
+
+        # Lese CSV
+        reader = csv.reader(io.StringIO(csv_text))
+        rows = list(reader)
+        if not rows:
+            raise HTTPException(status_code=400, detail="Keine Daten in CSV gefunden.")
+
+        header = [c.strip().lower() for c in rows[0]]
+        
+        # Finde Spalten-Indizes
+        def find_idx(keywords):
+            for kw in keywords:
+                for idx, col in enumerate(header):
+                    if kw in col:
+                        return idx
+            return -1
+
+        sym_idx = find_idx(["symbol", "ticker", "isin", "asset"])
+        qty_idx = find_idx(["quantity", "anzahl", "stueck", "qty", "shares", "menge"])
+        price_idx = find_idx(["price", "kurs", "kaufpreis", "preis", "cost"])
+        type_idx = find_idx(["type", "typ", "aktion", "action"])
+        date_idx = find_idx(["date", "datum", "time"])
+
+        if sym_idx == -1 or qty_idx == -1 or price_idx == -1:
+            raise HTTPException(
+                status_code=400,
+                detail="CSV-Header muss mindestens Symbol, Menge und Preis enthalten."
+            )
+
+        imported_count = 0
+        from datetime import date
+        default_date = date.today().strftime('%Y-%m-%d')
+
+        for row in rows[1:]:
+            if not row or len(row) <= max(sym_idx, qty_idx, price_idx):
+                continue
+            symbol = str(row[sym_idx]).strip().upper()
+            if not symbol:
+                continue
+
+            try:
+                qty = float(str(row[qty_idx]).replace(',', '.'))
+                price = float(str(row[price_idx]).replace(',', '.'))
+            except ValueError:
+                continue
+
+            tx_type = "BUY"
+            if type_idx != -1 and len(row) > type_idx:
+                raw_t = str(row[type_idx]).strip().upper()
+                if "SELL" in raw_t or "VERKAUF" in raw_t:
+                    tx_type = "SELL"
+
+            tx_date = default_date
+            if date_idx != -1 and len(row) > date_idx and str(row[date_idx]).strip():
+                tx_date = str(row[date_idx]).strip()
+
+            # Füge Watchlist-Eintrag hinzu falls nötig
+            try:
+                t_info = search_ticker(symbol)
+                await add_asset(symbol, t_info["name"], t_info["type"])
+            except Exception:
+                await add_asset(symbol, symbol, "stock")
+
+            await add_transaction(portfolio_id, symbol, tx_type, qty, price, tx_date)
+            imported_count += 1
+
+        return {
+            "status": "success",
+            "imported_count": imported_count,
+            "message": f"{imported_count} Transaktion(en) erfolgreich aus CSV importiert."
+        }
+    except Exception as e:
+        logger.error(f"Fehler beim CSV-Import: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/compare")
+async def compare_assets_route(symbols: str):
+    """Liefert eine Gegenüberstellung mehrerer Assets zum Vergleich."""
+    try:
+        from backend.db import get_predictions_from_db
+        from backend.data_fetcher import fetch_market_data
+        from backend.ai_analyzer import get_mock_prediction
+        symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+        if not symbol_list:
+            raise HTTPException(status_code=400, detail="Keine Ticker-Symbole angegeben.")
+
+        predictions = (await get_predictions_from_db()).get("predictions", {})
+        result = []
+
+        import math
+        def clean_val(v):
+            if v is None or (isinstance(v, float) and (math.isnan(v) or math.isinf(v))):
+                return None
+            return v
+
+        for sym in symbol_list[:4]: # Max 4 Assets gleichzeitig vergleichen
+            pred = predictions.get(sym)
+            if not pred:
+                mdata = fetch_market_data(sym)
+                if mdata:
+                    pred = get_mock_prediction({"symbol": sym, "name": sym, "type": "stock"}, mdata)
+                else:
+                    continue
+
+            raw_hist = pred.get("history", [])
+            clean_hist = []
+            for h in raw_hist:
+                clean_hist.append({
+                    "date": h.get("date"),
+                    "price": clean_val(h.get("price")),
+                    "volume": clean_val(h.get("volume")),
+                    "sma_20": clean_val(h.get("sma_20")),
+                    "sma_50": clean_val(h.get("sma_50")),
+                    "ema_200": clean_val(h.get("ema_200")),
+                    "bb_upper": clean_val(h.get("bb_upper")),
+                    "bb_lower": clean_val(h.get("bb_lower"))
+                })
+
+            result.append({
+                "symbol": pred["symbol"],
+                "name": pred.get("name", sym),
+                "type": pred.get("type", "stock"),
+                "price": clean_val(pred.get("price")),
+                "price_change_1d": clean_val(pred.get("price_change_1d")),
+                "price_change_7d": clean_val(pred.get("price_change_7d")),
+                "price_change_30d": clean_val(pred.get("price_change_30d")),
+                "rsi": clean_val(pred.get("rsi")),
+                "sma_20": clean_val(pred.get("sma_20")),
+                "sma_50": clean_val(pred.get("sma_50")),
+                "ema_200": clean_val(pred.get("ema_200")),
+                "bb_upper": clean_val(pred.get("bb_upper")),
+                "bb_lower": clean_val(pred.get("bb_lower")),
+                "pe_ratio": clean_val(pred.get("pe_ratio")),
+                "market_cap": clean_val(pred.get("market_cap")),
+                "fifty_two_high": clean_val(pred.get("fifty_two_high")),
+                "fifty_two_low": clean_val(pred.get("fifty_two_low")),
+                "beta": clean_val(pred.get("beta")),
+                "recommendation": pred.get("recommendation"),
+                "confidence": pred.get("confidence"),
+                "risk_level": pred.get("risk_level"),
+                "sentiment_score": clean_val(pred.get("sentiment_score")),
+                "technical_trend": pred.get("technical_trend"),
+                "history": clean_hist
+            })
+
+        return result
+    except Exception as e:
+        logger.error(f"Fehler bei Asset-Vergleich: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Finde den Pfad zum Frontend-Ordner
