@@ -1227,11 +1227,11 @@ async def handle_chat_query(req: ChatRequest, background_tasks: BackgroundTasks)
                 }
         
         # Reguläre AI Chat-Antwort
-        predictions_data = await get_predictions_from_db().get("predictions", {})
+        predictions_data = (await get_predictions_from_db()).get("predictions", {})
         portfolio_data = await get_portfolio_from_db(portfolio_id)
         ai_response = await generate_chat_response(msg, portfolio_data, predictions_data, portfolio_id=portfolio_id)
         
-        add_chat_message(portfolio_id, "bot", ai_response)
+        await add_chat_message(portfolio_id, "bot", ai_response)
         return {"response": ai_response, "trigger_refresh": False}
     except Exception as e:
         logger.error(f"Fehler bei Chat-Anfrage: {e}")

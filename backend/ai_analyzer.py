@@ -223,7 +223,7 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
             )
         )
         response_text = response.text
-        result_json = json.loads(response_text.strip())
+        result_json = json.loads(response_text.strip(), strict=False)
         
         curr_p = market_data["current_price"]
         # Fallbacks falls KI-Werte fehlen
@@ -338,7 +338,7 @@ def generate_daily_summary(portfolio_data, predictions_data, strategy="Ausgewoge
 async def generate_chat_response(query, portfolio_data, predictions_data, portfolio_id=1):
     """Generiert eine Antwort auf eine Nutzerfrage basierend auf Portfolio, Prognosen und Chatverlauf."""
     
-    if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
+    if not GEMINI_API_KEY or not HAS_NEW_GENAI or not client:
         # Fallback Mock responses for Demo-Modus
         q_lower = query.lower()
         if "portfol" in q_lower or "bestand" in q_lower or "invest" in q_lower:
@@ -423,10 +423,6 @@ Antwort:"""
                 model="gemini-2.5-flash",
                 contents=prompt,
             )
-            return response.text.strip()
-        elif HAS_LEGACY_GENAI:
-            model = legacy_genai.GenerativeModel("gemini-1.5-flash")
-            response = model.generate_content(prompt)
             return response.text.strip()
         else:
             return "Demo-Modus: Ich kann dir im Demo-Modus leider keine echten KI-Antworten geben. Bitte trage einen GEMINI_API_KEY in deiner .env Datei ein!"
@@ -539,7 +535,7 @@ def get_mock_rebalancing_advice(total_value, allocations, holdings_detail):
 async def generate_rebalancing_advice(portfolio_id, total_value, allocations, holdings_detail):
     """Generiert KI-gestützte Rebalancing-Vorschläge basierend auf Abweichungen und Prognosen."""
     # Falls kein API-Key oder genai SDK, nutze Mock-Fallback
-    if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
+    if not GEMINI_API_KEY or not HAS_NEW_GENAI or not client:
         return get_mock_rebalancing_advice(total_value, allocations, holdings_detail)
         
     # Baue Kontext für den Prompt
@@ -611,18 +607,10 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
                 )
             )
             response_text = response.text
-        elif HAS_LEGACY_GENAI:
-            model = legacy_genai.GenerativeModel("gemini-1.5-flash")
-            generation_config = {
-                "response_mime_type": "application/json",
-                "temperature": 0.2
-            }
-            response = model.generate_content(prompt, generation_config=generation_config)
-            response_text = response.text
         else:
             raise RuntimeError("Kein Gemini SDK vorhanden.")
             
-        return json.loads(response_text.strip())
+        return json.loads(response_text.strip(), strict=False)
     except Exception as e:
         logger.error(f"Fehler bei der Generierung der KI-Rebalancing-Empfehlung: {e}")
         return get_mock_rebalancing_advice(total_value, allocations, holdings_detail)

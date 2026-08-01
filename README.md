@@ -117,3 +117,4 @@ finance-ai-bot/
     *   ✅ PWA-Unterstützung mit `manifest.json` und Service Worker `sw.js`.
     *   ✅ Dynamische VAPID-Schlüssel Generierung für WebPush-Benachrichtigungen.
     *   ✅ Vollständiges Testset (`tests/test_endpoints.py`) mit 100% Erfolgsquote.
+    *   ✅ Behebung aller statischen Code-Analyse-, Type-Check- und Linter-Probleme in Backend und Frontend.

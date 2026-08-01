@@ -13,8 +13,9 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/style.css">
-    <!-- PWA Manifest -->
+    <!-- PWA Manifest & Icons -->
     <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://lucide.dev/logo.svg">
     <meta name="theme-color" content="#6366f1">
 </head>
 <body>
@@ -254,10 +255,10 @@
                                         <span class="separator">•</span>
                                         <span>Sentiment: <strong id="detail-sentiment">Positiv</strong></span>
                                     </div>
-                                    <div class="target-levels-meta" style="margin-top: 8px; font-size: 0.85rem; opacity: 0.9; display: flex; gap: 12px; flex-wrap: wrap;">
-                                        <span><i data-lucide="crosshair" style="width:13px; height:13px; color:#3b82f6;"></i> Ziel: <strong id="detail-target-price">-</strong></span>
-                                        <span><i data-lucide="shield-alert" style="width:13px; height:13px; color:#ef4444;"></i> Stop-Loss: <strong id="detail-stop-loss" class="text-red">-</strong></span>
-                                        <span><i data-lucide="check-circle-2" style="width:13px; height:13px; color:#10b981;"></i> Take-Profit: <strong id="detail-take-profit" class="text-green">-</strong></span>
+                                    <div class="target-levels-meta">
+                                        <span><i data-lucide="crosshair" class="icon-target-blue"></i> Ziel: <strong id="detail-target-price">-</strong></span>
+                                        <span><i data-lucide="shield-alert" class="icon-stop-red"></i> Stop-Loss: <strong id="detail-stop-loss" class="text-red">-</strong></span>
+                                        <span><i data-lucide="check-circle-2" class="icon-take-green"></i> Take-Profit: <strong id="detail-take-profit" class="text-green">-</strong></span>
                                     </div>
                                 </div>
                             </div>
@@ -426,7 +427,7 @@
                     </div>
 
                     <div class="stat-card glass-panel stat-card-clickable" id="cash-stat-card" title="Klicken zum Bearbeiten des Cash-Bestands">
-                        <div class="stat-icon accuracy" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                        <div class="stat-icon accuracy stat-icon-cash">
                             <i data-lucide="wallet"></i>
                         </div>
                         <div class="stat-info">
@@ -667,8 +668,8 @@
                                                     <span id="alloc-stock-diff">+0.0%</span>
                                                 </div>
                                                 <div class="allocation-progress-wrapper">
-                                                    <div class="progress-bar-current" id="bar-stock-current" style="width: 0%" title="Aktuell"></div>
-                                                    <div class="progress-bar-target" id="bar-stock-target" style="left: 0%" title="Ziel"></div>
+                                                    <div class="progress-bar-current" id="bar-stock-current" title="Aktuell"></div>
+                                                    <div class="progress-bar-target" id="bar-stock-target" title="Ziel"></div>
                                                 </div>
                                                 <div class="allocation-bar-footer">
                                                     <span>Ist: <strong id="alloc-stock-current-val">0.0%</strong></span>
@@ -682,8 +683,8 @@
                                                     <span id="alloc-crypto-diff">+0.0%</span>
                                                 </div>
                                                 <div class="allocation-progress-wrapper">
-                                                    <div class="progress-bar-current" id="bar-crypto-current" style="width: 0%" title="Aktuell"></div>
-                                                    <div class="progress-bar-target" id="bar-crypto-target" style="left: 0%" title="Ziel"></div>
+                                                    <div class="progress-bar-current" id="bar-crypto-current" title="Aktuell"></div>
+                                                    <div class="progress-bar-target" id="bar-crypto-target" title="Ziel"></div>
                                                 </div>
                                                 <div class="allocation-bar-footer">
                                                     <span>Ist: <strong id="alloc-crypto-current-val">0.0%</strong></span>
@@ -697,8 +698,8 @@
                                                     <span id="alloc-commodity-diff">+0.0%</span>
                                                 </div>
                                                 <div class="allocation-progress-wrapper">
-                                                    <div class="progress-bar-current" id="bar-commodity-current" style="width: 0%" title="Aktuell"></div>
-                                                    <div class="progress-bar-target" id="bar-commodity-target" style="left: 0%" title="Ziel"></div>
+                                                    <div class="progress-bar-current" id="bar-commodity-current" title="Aktuell"></div>
+                                                    <div class="progress-bar-target" id="bar-commodity-target" title="Ziel"></div>
                                                 </div>
                                                 <div class="allocation-bar-footer">
                                                     <span>Ist: <strong id="alloc-commodity-current-val">0.0%</strong></span>
@@ -716,7 +717,7 @@
                                         </button>
 
                                         <div id="rebalance-ai-report" class="ai-report-panel hidden">
-                                            <div class="ai-portfolio-summary-text" id="rebalance-ai-summary" style="margin-bottom: 15px;">
+                                            <div class="ai-portfolio-summary-text rebalance-summary-spacing" id="rebalance-ai-summary">
                                                 Lade Rebalancing-Bericht...
                                             </div>
                                             <div class="ai-details-panel">
@@ -805,7 +806,7 @@
                                 <button id="daily-summary-btn" class="btn btn-secondary btn-sm" type="button">
                                     <i data-lucide="refresh-cw"></i> Zusammenfassung erzeugen
                                 </button>
-                                <div id="daily-summary-card" class="ai-text-explanation" style="margin-top: 10px;">Noch keine Zusammenfassung verfügbar.</div>
+                                <div id="daily-summary-card" class="ai-text-explanation daily-summary-spacing">Noch keine Zusammenfassung verfügbar.</div>
                             </div>
 
                             <div class="ai-report-section">
@@ -1298,7 +1299,7 @@
                 <button id="run-compare-btn" class="btn btn-primary"><i data-lucide="search"></i> Vergleichen</button>
             </div>
             <div class="compare-table-wrapper" id="compare-results-area">
-                <p class="text-center text-muted" style="padding: 20px;">Geben Sie oben Komma-getrennte Ticker ein und klicken Sie auf Vergleichen.</p>
+                <p class="text-center text-muted compare-empty-padding">Geben Sie oben Komma-getrennte Ticker ein und klicken Sie auf Vergleichen.</p>
             </div>
         </div>
     </div>

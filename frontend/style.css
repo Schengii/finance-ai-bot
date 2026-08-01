@@ -2935,3 +2935,63 @@ h1, h2, h3, h4, h5, h6 {
 .modal-sm {
     max-width: 420px;
 }
+
+/* Helper Utility Classes */
+.target-levels-meta {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    opacity: 0.9;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.icon-target-blue {
+    width: 13px;
+    height: 13px;
+    color: #3b82f6;
+}
+
+.icon-stop-red {
+    width: 13px;
+    height: 13px;
+    color: #ef4444;
+}
+
+.icon-take-green {
+    width: 13px;
+    height: 13px;
+    color: #10b981;
+}
+
+.stat-icon-cash {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.rebalance-summary-spacing {
+    margin-bottom: 15px;
+}
+
+.daily-summary-spacing {
+    margin-top: 10px;
+}
+
+.compare-empty-padding {
+    padding: 20px;
+}
+
+.w-100-mt-10 {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.mt-15-fs-85 {
+    margin-top: 15px;
+    font-size: 0.85rem;
+}
+
+.color-accent {
+    color: var(--accent-color);
+}
+
