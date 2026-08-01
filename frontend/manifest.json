@@ -1,0 +1,16 @@
+{
+  "name": "AlphaPulse AI - Intelligent Finance Bot",
+  "short_name": "AlphaPulse",
+  "description": "Automatisierte KI-Marktanalyse, Portfolio-Planer und Investment-Berater",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "https://lucide.dev/logo.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

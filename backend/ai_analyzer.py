@@ -7,7 +7,7 @@ from backend.db import get_setting
 logger = logging.getLogger(__name__)
 
 
-# Try importing the new google-genai SDK first
+# Try importing the modern google-genai SDK
 try:
     # pyrefly: ignore [missing-import]
     from google import genai
@@ -17,31 +17,17 @@ try:
 except ImportError:
     HAS_NEW_GENAI = False
 
-# Fallback to the legacy google-generativeai SDK
-try:
-    # pyrefly: ignore [missing-import]
-    import google.generativeai as legacy_genai
-    HAS_LEGACY_GENAI = True
-except ImportError:
-    HAS_LEGACY_GENAI = False
-
 # Initialize Client
 client = None
-if GEMINI_API_KEY:
-    if HAS_NEW_GENAI:
-        try:
-            client = genai.Client(api_key=GEMINI_API_KEY)
-            logger.info("Gemini SDK (google-genai) erfolgreich mit API-Key initialisiert.")
-        except Exception as e:
-            logger.error(f"Fehler beim Initialisieren des neuen Gemini SDKs: {e}")
-    elif HAS_LEGACY_GENAI:
-        try:
-            legacy_genai.configure(api_key=GEMINI_API_KEY)
-            logger.info("Gemini SDK (google-generativeai, veraltet) mit API-Key konfiguriert.")
-        except Exception as e:
-            logger.error(f"Fehler beim Konfigurieren des veralteten Gemini SDKs: {e}")
-else:
+if GEMINI_API_KEY and HAS_NEW_GENAI:
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        logger.info("Gemini SDK (google-genai) erfolgreich mit API-Key initialisiert.")
+    except Exception as e:
+        logger.error(f"Fehler beim Initialisieren des Gemini SDKs: {e}")
+elif not GEMINI_API_KEY:
     logger.warning("Kein GEMINI_API_KEY in der Konfiguration gefunden. Der Bot läuft im Demo-Modus mit simulierten KI-Prognosen.")
+
 
 
 def get_mock_prediction(asset_info, market_data):
@@ -84,11 +70,25 @@ def get_mock_prediction(asset_info, market_data):
         drivers = ["Seitwärtsbewegung stabilisiert Kurs"]
         risks = ["Mangel an kurzfristigen Katalysatoren"]
 
+    curr_price = market_data["current_price"]
+    if recommendation in ["Starker Kauf", "Kauf"]:
+        target_price = round(curr_price * 1.15, 2)
+        stop_loss = round(curr_price * 0.92, 2)
+        take_profit = round(curr_price * 1.18, 2)
+    elif recommendation in ["Verkauf", "Starker Verkauf"]:
+        target_price = round(curr_price * 0.88, 2)
+        stop_loss = round(curr_price * 1.05, 2)
+        take_profit = round(curr_price * 0.85, 2)
+    else:
+        target_price = round(curr_price * 1.05, 2)
+        stop_loss = round(curr_price * 0.95, 2)
+        take_profit = round(curr_price * 1.10, 2)
+
     return {
         "symbol": symbol,
         "name": asset_info["name"],
         "type": asset_info["type"],
-        "price": market_data["current_price"],
+        "price": curr_price,
         "price_change_1d": market_data["price_change_1d"],
         "price_change_7d": market_data["price_change_7d"],
         "price_change_30d": market_data["price_change_30d"],
@@ -110,6 +110,9 @@ def get_mock_prediction(asset_info, market_data):
         "confidence": confidence,
         "sentiment_score": sentiment,
         "risk_level": risk,
+        "target_price": target_price,
+        "stop_loss": stop_loss,
+        "take_profit": take_profit,
         "ai_explanation": reason,
         "key_drivers": drivers,
         "key_risks": risks,
@@ -121,13 +124,13 @@ def get_mock_prediction(asset_info, market_data):
 async def analyze_asset_with_ai(asset_info, market_data, news_items):
     """
     Analysiert Kurse, technische Indikatoren, Fundamentaldaten und Nachrichten mit Gemini 
-    und liefert eine fundierte Anlageempfehlung.
+    und liefert eine fundierte Anlageempfehlung inklusive Stop-Loss & Take-Profit Zielen.
     """
     symbol = asset_info["symbol"]
     name = asset_info["name"]
     
     # Falls kein API-Key hinterlegt oder kein SDK installiert ist, nutze Mock-Daten
-    if not GEMINI_API_KEY or (not HAS_NEW_GENAI and not HAS_LEGACY_GENAI):
+    if not GEMINI_API_KEY or not HAS_NEW_GENAI or not client:
         prediction = get_mock_prediction(asset_info, market_data)
         return prediction
 
@@ -201,40 +204,33 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
   "confidence": <Zahl zwischen 0 und 100, wie sicher du dir bei der Prognose bist>,
   "sentiment_score": <Zahl zwischen -1.0 (extrem negativ) und 1.0 (extrem positiv) für die Nachrichtenstimmung>,
   "risk_level": "Gering" | "Mittel" | "Hoch" | "Sehr Hoch",
-  "ai_explanation": "<Eine detaillierte, verständliche Erklärung auf Deutsch, warum du diese Empfehlung gibst (mindestens 3-4 Sätze). Antworte in der gewünschten Tonalität und berücksichtige die spezifischen Anweisungen. Gehe auf Fundamentaldaten, News und die technischen Indikatoren ein.>",
-  "key_drivers": ["Treiber 1", "Treiber 2", ...],
-  "key_risks": ["Risiko 1", "Risiko 2", ...]
+  "target_price": <Zahl, geschätztes Kursziel in Währungseinheiten>,
+  "stop_loss": <Zahl, empfohlenes Stop-Loss Niveau>,
+  "take_profit": <Zahl, empfohlenes Take-Profit Niveau>,
+  "ai_explanation": "<Eine detaillierte, verständliche Erklärung auf Deutsch, warum du diese Empfehlung gibst (mindestens 3-4 Sätze).>",
+  "key_drivers": ["Treiber 1", "Treiber 2"],
+  "key_risks": ["Risiko 1", "Risiko 2"]
 }}
 """
 
     try:
-        if HAS_NEW_GENAI and client:
-            response = client.models.generate_content(
-                model=gemini_model if gemini_model else "gemini-2.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=ai_temp,
-                )
+        response = client.models.generate_content(
+            model=gemini_model if gemini_model else "gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=ai_temp,
             )
-            response_text = response.text
-        elif HAS_LEGACY_GENAI:
-            model_name = "gemini-1.5-pro" if "pro" in gemini_model else "gemini-1.5-flash"
-            model = legacy_genai.GenerativeModel(model_name)
-            
-            generation_config = {
-                "response_mime_type": "application/json",
-                "temperature": ai_temp
-            }
-            
-            response = model.generate_content(prompt, generation_config=generation_config)
-            response_text = response.text
-        else:
-            raise RuntimeError("Keine Gemini-Bibliothek installiert.")
-            
+        )
+        response_text = response.text
         result_json = json.loads(response_text.strip())
         
-        # Kombiniere KI-Antwort mit Marktdaten & Fundamentaldaten
+        curr_p = market_data["current_price"]
+        # Fallbacks falls KI-Werte fehlen
+        t_price = result_json.get("target_price") or round(curr_p * 1.10, 2)
+        s_loss = result_json.get("stop_loss") or round(curr_p * 0.90, 2)
+        t_profit = result_json.get("take_profit") or round(curr_p * 1.15, 2)
+
         prediction = {
             "symbol": symbol,
             "name": name,
@@ -261,6 +257,9 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
             "confidence": result_json.get("confidence", 50),
             "sentiment_score": result_json.get("sentiment_score", 0.0),
             "risk_level": result_json.get("risk_level", "Mittel"),
+            "target_price": float(t_price),
+            "stop_loss": float(s_loss),
+            "take_profit": float(t_profit),
             "ai_explanation": result_json.get("ai_explanation", "Keine Erklärung verfügbar."),
             "key_drivers": result_json.get("key_drivers", []),
             "key_risks": result_json.get("key_risks", []),
@@ -272,7 +271,6 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
         
     except Exception as e:
         logger.error(f"Fehler bei der Gemini-Analyse für {symbol}: {e}")
-        # Nutze Fallback-Mockdaten, damit die App nicht abstürzt
         return get_mock_prediction(asset_info, market_data)
 
 
@@ -628,3 +626,150 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
     except Exception as e:
         logger.error(f"Fehler bei der Generierung der KI-Rebalancing-Empfehlung: {e}")
         return get_mock_rebalancing_advice(total_value, allocations, holdings_detail)
+
+
+def run_monte_carlo_simulation(holdings, predictions, cash=0.0, days=30, num_simulations=1000):
+    """Führt eine Monte-Carlo-Simulation (1.000 Pfade) und Stresstests durch."""
+    import numpy as np
+
+    total_value = cash
+    portfolio_vol = 0.0
+    weighted_return = 0.0
+
+    if holdings:
+        holdings_values = []
+        for h in holdings:
+            sym = h["symbol"].upper()
+            pred = predictions.get(sym, {})
+            curr_p = pred.get("price") or h["buy_price"]
+            val = h["quantity"] * curr_p
+            total_value += val
+
+            # Estimate daily return and daily volatility
+            chg_30d = float(pred.get("price_change_30d", 0) or 0) / 100.0
+            daily_ret = chg_30d / 30.0
+            chg_7d = abs(float(pred.get("price_change_7d", 0) or 0)) / 100.0
+            daily_vol = max(0.01, chg_7d / np.sqrt(7))
+
+            holdings_values.append((val, daily_ret, daily_vol))
+
+        for val, d_ret, d_vol in holdings_values:
+            weight = val / max(1.0, total_value - cash)
+            weighted_return += weight * d_ret
+            portfolio_vol += weight * d_vol
+
+    if portfolio_vol <= 0:
+        portfolio_vol = 0.015
+
+    # Simulate 1,000 paths over specified days
+    dt = 1.0
+    simulation_paths = np.zeros((num_simulations, days + 1))
+    simulation_paths[:, 0] = total_value
+
+    for t in range(1, days + 1):
+        z = np.random.normal(0, 1, num_simulations)
+        drift = (weighted_return - 0.5 * (portfolio_vol ** 2)) * dt
+        shock = portfolio_vol * np.sqrt(dt) * z
+        simulation_paths[:, t] = simulation_paths[:, t - 1] * np.exp(drift + shock)
+
+    # Calculate percentiles (5%, 50%, 95%)
+    p5 = np.percentile(simulation_paths, 5, axis=0).tolist()
+    p50 = np.percentile(simulation_paths, 50, axis=0).tolist()
+    p95 = np.percentile(simulation_paths, 95, axis=0).tolist()
+
+    final_values = simulation_paths[:, -1]
+    var_95_val = round(total_value - np.percentile(final_values, 5), 2)
+    var_95_pct = round((var_95_val / max(1.0, total_value)) * 100.0, 2)
+
+    # Stress Test Scenarios
+    stress_scenarios = [
+        {
+            "name": "2008 Finanzkrise (-45%)",
+            "impact_pct": -45.0,
+            "projected_value": round(total_value * 0.55, 2),
+            "loss_eur": round(total_value * 0.45, 2)
+        },
+        {
+            "name": "2020 Corona Flash Crash (-33%)",
+            "impact_pct": -33.0,
+            "projected_value": round(total_value * 0.67, 2),
+            "loss_eur": round(total_value * 0.33, 2)
+        },
+        {
+            "name": "Tech Sector Sell-Off (-25%)",
+            "impact_pct": -25.0,
+            "projected_value": round(total_value * 0.75, 2),
+            "loss_eur": round(total_value * 0.25, 2)
+        }
+    ]
+
+    return {
+        "days": days,
+        "num_simulations": num_simulations,
+        "start_value": round(total_value, 2),
+        "expected_median_value": round(p50[-1], 2),
+        "worst_case_5pct": round(p5[-1], 2),
+        "best_case_95pct": round(p95[-1], 2),
+        "var_95_eur": var_95_val,
+        "var_95_pct": var_95_pct,
+        "p5_series": [round(x, 2) for x in p5],
+        "p50_series": [round(x, 2) for x in p50],
+        "p95_series": [round(x, 2) for x in p95],
+        "stress_scenarios": stress_scenarios
+    }
+
+
+def calculate_benchmark_comparison(holdings, predictions, cash=0.0):
+    """Berechnet die Outperformance (Alpha) & Beta des Portfolios im Vergleich zu S&P 500 & MSCI World."""
+    from backend.data_fetcher import fetch_market_data
+
+    total_cost = 0.0
+    total_val = cash
+    portfolio_30d_return = 0.0
+    portfolio_beta = 0.0
+
+    if holdings:
+        for h in holdings:
+            sym = h["symbol"].upper()
+            pred = predictions.get(sym, {})
+            curr_p = pred.get("price") or h["buy_price"]
+            val = h["quantity"] * curr_p
+            cost = h["quantity"] * h["buy_price"]
+            total_val += val
+            total_cost += cost
+
+            chg_30d = float(pred.get("price_change_30d", 0) or 0)
+            beta_val = float(pred.get("beta", 1.0) or 1.0)
+            portfolio_30d_return += (val / max(1.0, total_val)) * chg_30d
+            portfolio_beta += (val / max(1.0, total_val)) * beta_val
+
+    # Holen der Benchmark-Daten
+    sp500_data = fetch_market_data("^GSPC")
+    sp500_30d = sp500_data.get("price_change_30d", 2.1) if sp500_data else 2.1
+
+    msci_data = fetch_market_data("URTH")
+    msci_30d = msci_data.get("price_change_30d", 1.8) if msci_data else 1.8
+
+    alpha_sp500 = round(portfolio_30d_return - sp500_30d, 2)
+    alpha_msci = round(portfolio_30d_return - msci_30d, 2)
+    treynor = round((portfolio_30d_return - 0.2) / max(0.1, portfolio_beta), 2)
+
+    return {
+        "portfolio_30d_return_pct": round(portfolio_30d_return, 2),
+        "portfolio_beta": round(portfolio_beta, 2),
+        "treynor_ratio": treynor,
+        "benchmarks": [
+            {
+                "name": "S&P 500 Index (^GSPC)",
+                "return_30d_pct": round(sp500_30d, 2),
+                "alpha_pct": alpha_sp500,
+                "outperforming": alpha_sp500 >= 0
+            },
+            {
+                "name": "MSCI World ETF (URTH)",
+                "return_30d_pct": round(msci_30d, 2),
+                "alpha_pct": alpha_msci,
+                "outperforming": alpha_msci >= 0
+            }
+        ]
+    }

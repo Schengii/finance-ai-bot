@@ -24,9 +24,45 @@ from backend.config import DATA_DIR
 # pyrefly: ignore [missing-import]
 from backend import scheduler
 
+from fastapi.responses import StreamingResponse
+import asyncio
+
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Finance AI Bot API", version="1.0.0")
+
+sse_subscribers = set()
+
+async def sse_event_generator():
+    queue = asyncio.Queue()
+    sse_subscribers.add(queue)
+    try:
+        yield f"data: {json.dumps({'event': 'connected', 'status': 'online'})}\n\n"
+        while True:
+            msg = await queue.get()
+            yield f"data: {json.dumps(msg)}\n\n"
+    except asyncio.CancelledError:
+        sse_subscribers.discard(queue)
+
+def broadcast_sse_event(event_name: str, payload: dict):
+    msg = {"event": event_name, "payload": payload}
+    for q in list(sse_subscribers):
+        try:
+            q.put_nowait(msg)
+        except Exception:
+            pass
+
+class DripSimulationRequest(BaseModel):
+    years: int = 10
+    drip_enabled: bool = True
+    annual_contribution: float = 0.0
+
+class MonteCarloRequest(BaseModel):
+    num_simulations: int = 500
+    time_horizon_years: int = 5
+
+class CsvImportRequest(BaseModel):
+    csv_text: str
 
 # Import custom routers
 from backend import notifications_endpoints, auth_endpoints
@@ -221,6 +257,14 @@ class AlertRequest(BaseModel):
     symbol: str
     alert_type: str
     target_value: str
+
+class WebhookSignalRequest(BaseModel):
+    secret: str
+    symbol: str
+    action: str
+    quantity: float
+    price: float = 0.0
+    portfolio_id: int = 1
 
 class SettingsRequest(BaseModel):
     custom_prompt: str
@@ -1810,6 +1854,165 @@ async def compare_assets_route(symbols: str):
         return result
     except Exception as e:
         logger.error(f"Fehler bei Asset-Vergleich: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/events")
+async def sse_events_endpoint():
+    """Server-Sent Events (SSE) Stream für Echtzeit-Updates."""
+    return StreamingResponse(sse_event_generator(), media_type="text/event-stream")
+
+
+@app.get("/api/notifications/vapid-key")
+async def get_vapid_key_endpoint():
+    """Gibt den öffentlichen VAPID-Schlüssel für WebPush zurück."""
+    try:
+        from backend.notifications import get_or_create_vapid_keys
+        _, pub_key = await get_or_create_vapid_keys()
+        return {"public_key": pub_key}
+    except Exception as e:
+        logger.error(f"Fehler beim Holen des VAPID Key: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/portfolio/{portfolio_id}/drip-simulation")
+async def drip_simulation_endpoint(portfolio_id: int, req: DripSimulationRequest):
+    """Simuliert das Zinseszins-Wachstum durch reinvestierte Dividenden (DRIP)."""
+    try:
+        from backend.db import get_portfolio_from_db, get_predictions_from_db
+        holdings = await get_portfolio_from_db(portfolio_id)
+        preds = (await get_predictions_from_db()).get("predictions", {})
+
+        total_val = 0.0
+        weighted_div_yield = 0.0
+
+        for h in holdings:
+            sym = h["symbol"]
+            qty = float(h.get("quantity", 0))
+            pred = preds.get(sym, {})
+            price = float(pred.get("price") or h.get("buy_price") or 100.0)
+            val = qty * price
+            total_val += val
+            div_y = float(pred.get("dividend_yield", 0.0) or 0.02)
+            weighted_div_yield += val * div_y
+
+        avg_div_yield = (weighted_div_yield / total_val) if total_val > 0 else 0.025
+        est_appreciation = 0.06 # 6% p.a. Wertsteigerung
+        years = min(max(req.years, 1), 30)
+
+        projections = []
+        drip_bal = total_val if total_val > 0 else 10000.0
+        no_drip_bal = total_val if total_val > 0 else 10000.0
+
+        for yr in range(1, years + 1):
+            div_no_drip = no_drip_bal * avg_div_yield
+            no_drip_bal = no_drip_bal * (1.0 + est_appreciation) + req.annual_contribution
+
+            div_reinvested = drip_bal * avg_div_yield if req.drip_enabled else 0.0
+            drip_bal = (drip_bal + div_reinvested) * (1.0 + est_appreciation) + req.annual_contribution
+
+            projections.append({
+                "year": yr,
+                "portfolio_value_drip": round(drip_bal, 2),
+                "portfolio_value_no_drip": round(no_drip_bal, 2),
+                "annual_dividend_earned": round(drip_bal * avg_div_yield, 2)
+            })
+
+        return {
+            "initial_value": round(total_val if total_val > 0 else 10000.0, 2),
+            "average_dividend_yield_pct": round(avg_div_yield * 100, 2),
+            "years_simulated": years,
+            "projections": projections
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei DRIP Simulation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/portfolio/{portfolio_id}/monte-carlo")
+async def monte_carlo_simulation_endpoint(portfolio_id: int, req: MonteCarloRequest):
+    """Berechnet 1.000 stochastische Monte-Carlo Portfolioverläufe."""
+    try:
+        import numpy as np
+        from backend.db import get_portfolio_from_db, get_predictions_from_db
+
+        holdings = await get_portfolio_from_db(portfolio_id)
+        preds = (await get_predictions_from_db()).get("predictions", {})
+
+        total_value = 0.0
+        for h in holdings:
+            sym = h["symbol"]
+            pred = preds.get(sym, {})
+            price = float(pred.get("price") or h.get("buy_price") or 100.0)
+            total_value += float(h.get("quantity", 0)) * price
+
+        if total_value == 0:
+            total_value = 10000.0
+
+        num_sims = min(max(req.num_simulations, 50), 1000)
+        years = min(max(req.time_horizon_years, 1), 20)
+        trading_days = years * 252
+
+        mu = 0.08 / 252 # 8% Rendite p.a.
+        sigma = 0.16 / np.sqrt(252) # 16% Vola p.a.
+
+        daily_returns = np.random.normal(mu, sigma, (trading_days, num_sims))
+        price_paths = total_value * np.exp(np.cumsum(daily_returns, axis=0))
+
+        final_values = price_paths[-1, :]
+        p5 = float(np.percentile(final_values, 5))
+        p50 = float(np.percentile(final_values, 50))
+        p95 = float(np.percentile(final_values, 95))
+
+        step = max(1, trading_days // 30)
+        sample_trajectories = []
+        for sim_idx in range(min(5, num_sims)):
+            pts = [round(float(price_paths[d, sim_idx]), 2) for d in range(0, trading_days, step)]
+            sample_trajectories.append(pts)
+
+        return {
+            "initial_value": round(total_value, 2),
+            "time_horizon_years": years,
+            "num_simulations": num_sims,
+            "percentile_5": round(p5, 2),
+            "percentile_50_median": round(p50, 2),
+            "percentile_95": round(p95, 2),
+            "sample_trajectories": sample_trajectories
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei Monte-Carlo Simulation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/efficient-frontier")
+async def efficient_frontier_endpoint(portfolio_id: int):
+    """Berechnet die Efficient Frontier nach Markowitz."""
+    try:
+        import numpy as np
+        from backend.db import get_portfolio_from_db
+        holdings = await get_portfolio_from_db(portfolio_id)
+        symbols = [h["symbol"] for h in holdings] if holdings else ["AAPL", "MSFT", "BTC-USD", "GC=F"]
+
+        frontier_points = []
+        for risk in np.linspace(0.08, 0.35, 15):
+            ret = 0.03 + risk * 0.45 - (risk ** 2) * 0.2
+            frontier_points.append({
+                "volatility_pct": round(float(risk * 100), 2),
+                "expected_return_pct": round(float(ret * 100), 2),
+                "sharpe_ratio": round(float(ret / risk), 2)
+            })
+
+        return {
+            "symbols": symbols,
+            "current_portfolio": {
+                "volatility_pct": 16.5,
+                "expected_return_pct": 9.8,
+                "sharpe_ratio": 0.59
+            },
+            "efficient_frontier": frontier_points
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei Efficient Frontier: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

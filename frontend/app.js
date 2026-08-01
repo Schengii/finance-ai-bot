@@ -726,6 +726,14 @@ function selectAsset(symbol) {
     else if (sentimentScore < -0.05) sentimentLabel = "Negativ";
     elements.sentimentText.innerText = `${sentimentLabel} (${sentimentScore.toFixed(2)})`;
     
+    // Target Levels (Zielkurs, Stop Loss, Take Profit)
+    const targetEl = document.getElementById("detail-target-price");
+    const stopEl = document.getElementById("detail-stop-loss");
+    const takeEl = document.getElementById("detail-take-profit");
+    if (targetEl) targetEl.innerText = asset.target_price ? formatCurrency(asset.target_price, asset.type) : "-";
+    if (stopEl) stopEl.innerText = asset.stop_loss ? formatCurrency(asset.stop_loss, asset.type) : "-";
+    if (takeEl) takeEl.innerText = asset.take_profit ? formatCurrency(asset.take_profit, asset.type) : "-";
+    
     // Technical Indicators
     const rsiVal = (asset.rsi !== undefined && asset.rsi !== null) ? asset.rsi : 50.0;
     elements.indRsi.innerText = rsiVal.toFixed(1);
@@ -3602,7 +3610,183 @@ document.addEventListener("DOMContentLoaded", () => {
             tempValDisp.innerText = e.target.value;
         });
     }
+
+    setupModalTabListeners();
+    initSSEListener();
 });
+
+
+// Global Chart Instances for Monte-Carlo and DRIP
+let mcChartInstance = null;
+let dripChartInstance = null;
+
+// PWA & Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('PWA Service Worker registriert:', reg);
+        }).catch((err) => {
+            console.warn('PWA Service Worker Fehler:', err);
+        });
+    });
+}
+
+// SSE Real-Time Updates Listener
+function initSSEListener() {
+    try {
+        const evtSource = new EventSource(`${API_BASE}/api/events`);
+        evtSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.event === 'update_completed') {
+                    showToast("Marktdaten wurden im Hintergrund aktualisiert!", "info");
+                    fetchData();
+                    fetchAccuracy();
+                }
+            } catch (e) {
+                console.error("SSE parse error", e);
+            }
+        };
+    } catch (e) {
+        console.warn("SSE event source error", e);
+    }
+}
+
+// Monte-Carlo Simulation Runner
+async function runMonteCarloSimulation() {
+    const years = parseInt(document.getElementById("mc-years")?.value || "5");
+    const numSims = parseInt(document.getElementById("mc-sims")?.value || "500");
+    const resultsArea = document.getElementById("mc-results-area");
+
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/1/monte-carlo`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ num_simulations: numSims, time_horizon_years: years })
+        });
+        if (!res.ok) throw new Error("Monte-Carlo Berechnung fehlgeschlagen");
+        const data = await res.json();
+
+        if (resultsArea) resultsArea.classList.remove("hidden");
+        document.getElementById("mc-p5-val").innerText = formatCurrency(data.percentile_5);
+        document.getElementById("mc-p50-val").innerText = formatCurrency(data.percentile_50_median);
+        document.getElementById("mc-p95-val").innerText = formatCurrency(data.percentile_95);
+
+        // Chart render
+        const ctx = document.getElementById("monteCarloChart")?.getContext("2d");
+        if (ctx) {
+            if (mcChartInstance) mcChartInstance.destroy();
+            const labels = data.sample_trajectories[0].map((_, i) => `T${i+1}`);
+            const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
+            const datasets = data.sample_trajectories.map((traj, idx) => ({
+                label: `Pfad ${idx+1}`,
+                data: traj,
+                borderColor: colors[idx % colors.length],
+                borderWidth: 2,
+                fill: false,
+                tension: 0.2
+            }));
+
+            mcChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' } },
+                        y: { ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+        showToast("Monte-Carlo Simulation erfolgreich berechnet!", "success");
+    } catch (e) {
+        showToast("Fehler bei Monte-Carlo: " + e.message, "error");
+    }
+}
+
+// DRIP Simulation Runner
+async function runDripSimulation() {
+    const years = parseInt(document.getElementById("drip-years")?.value || "10");
+    const contrib = parseFloat(document.getElementById("drip-contrib")?.value || "1200");
+    const resultsArea = document.getElementById("drip-results-area");
+
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/1/drip-simulation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ years: years, annual_contribution: contrib, drip_enabled: true })
+        });
+        if (!res.ok) throw new Error("DRIP Simulation fehlgeschlagen");
+        const data = await res.json();
+
+        if (resultsArea) resultsArea.classList.remove("hidden");
+        document.getElementById("drip-init-val").innerText = formatCurrency(data.initial_value);
+        document.getElementById("drip-yield-val").innerText = `${data.average_dividend_yield_pct}%`;
+
+        // Chart render
+        const ctx = document.getElementById("dripChart")?.getContext("2d");
+        if (ctx) {
+            if (dripChartInstance) dripChartInstance.destroy();
+            const labels = data.projections.map(p => `Jahr ${p.year}`);
+            const dripData = data.projections.map(p => p.portfolio_value_drip);
+            const noDripData = data.projections.map(p => p.portfolio_value_no_drip);
+
+            dripChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Mit DRIP Reinvestition', data: dripData, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true },
+                        { label: 'Ohne DRIP', data: noDripData, borderColor: '#f59e0b', fill: false, borderDash: [5, 5] }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' } },
+                        y: { ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+        showToast("DRIP-Reinvestition erfolgreich simuliert!", "success");
+    } catch (e) {
+        showToast("Fehler bei DRIP Simulation: " + e.message, "error");
+    }
+}
+
+// Modal tab listeners setup
+function setupModalTabListeners() {
+    const mcTab = document.getElementById("modal-tab-montecarlo");
+    const dripTab = document.getElementById("modal-tab-drip");
+    const runMcBtn = document.getElementById("run-mc-btn");
+    const runDripBtn = document.getElementById("run-drip-btn");
+
+    if (mcTab) {
+        mcTab.addEventListener("click", () => {
+            document.querySelectorAll("#backtest-modal .modal-tabactive").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll("#backtest-modal .modal-tab-content").forEach(c => c.classList.add("hidden"));
+            mcTab.classList.add("active");
+            document.getElementById("tab-content-montecarlo")?.classList.remove("hidden");
+        });
+    }
+
+    if (dripTab) {
+        dripTab.addEventListener("click", () => {
+            document.querySelectorAll("#backtest-modal .modal-tabactive").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll("#backtest-modal .modal-tab-content").forEach(c => c.classList.add("hidden"));
+            dripTab.classList.add("active");
+            document.getElementById("tab-content-drip")?.classList.remove("hidden");
+        });
+    }
+
+    if (runMcBtn) runMcBtn.addEventListener("click", runMonteCarloSimulation);
+    if (runDripBtn) runDripBtn.addEventListener("click", runDripSimulation);
+}
 
 
 

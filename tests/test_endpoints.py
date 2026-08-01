@@ -166,12 +166,47 @@ async def run_tests():
         print("[OK] Broker-CSV-Import erfolgreich!")
 
         # 12. Test Asset Comparison
-        print("\n[12/12] Teste Asset-Vergleich...")
+        print("\n[12/16] Teste Asset-Vergleich...")
         res_compare = await client.get("/api/compare?symbols=AAPL,MSFT")
         assert res_compare.status_code == 200
         compare_data = res_compare.json()
         assert len(compare_data) == 2
         print("[OK] Asset-Vergleich erfolgreich!")
+
+        # 13. Test VAPID Key Endpoint
+        print("\n[13/16] Teste VAPID Key Endpunkt...")
+        res_vapid = await client.get("/api/notifications/vapid-key")
+        assert res_vapid.status_code == 200
+        assert "public_key" in res_vapid.json()
+        print("[OK] VAPID Key Endpunkt erfolgreich!")
+
+        # 14. Test DRIP Simulation
+        print("\n[14/16] Teste DRIP Dividenden-Simulation...")
+        res_drip = await client.post("/api/portfolio/1/drip-simulation", json={"years": 5, "annual_contribution": 1000, "drip_enabled": True})
+        assert res_drip.status_code == 200
+        drip_data = res_drip.json()
+        assert "projections" in drip_data
+        assert len(drip_data["projections"]) == 5
+        print("[OK] DRIP Dividenden-Simulation erfolgreich!")
+
+        # 15. Test Monte-Carlo Simulation
+        print("\n[15/16] Teste Monte-Carlo Simulation...")
+        res_mc = await client.post("/api/portfolio/1/monte-carlo", json={"num_simulations": 100, "time_horizon_years": 3})
+        assert res_mc.status_code == 200
+        mc_data = res_mc.json()
+        assert "percentile_5" in mc_data
+        assert "percentile_50_median" in mc_data
+        assert "percentile_95" in mc_data
+        print("[OK] Monte-Carlo Simulation erfolgreich!")
+
+        # 16. Test Markowitz Efficient Frontier
+        print("\n[16/16] Teste Efficient Frontier...")
+        res_ef = await client.get("/api/portfolio/1/efficient-frontier")
+        assert res_ef.status_code == 200
+        ef_data = res_ef.json()
+        assert "efficient_frontier" in ef_data
+        assert len(ef_data["efficient_frontier"]) > 0
+        print("[OK] Efficient Frontier erfolgreich!")
 
     print("\n==================================================")
     print("             ALLE ENDPUNKT-TESTS ERFOLGREICH!      ")

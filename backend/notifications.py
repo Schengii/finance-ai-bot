@@ -24,6 +24,25 @@ async def get_subscription(user_id: int) -> Dict[str, Any] | None:
         logger.error(f"Error retrieving subscription for user {user_id}: {e}")
     return None
 
+async def get_or_create_vapid_keys():
+    """Holt die VAPID Schlüssel aus der DB oder generiert neue, falls nicht vorhanden."""
+    from backend.db import get_setting, save_setting
+    priv = await get_setting("vapid_private_key", "")
+    pub = await get_setting("vapid_public_key", "")
+    if not priv or not pub:
+        try:
+            from py_vapid import Vapid
+            v = Vapid()
+            v.generate_keys()
+            priv = v.private_pem().decode("utf-8")
+            pub = v.public_pem().decode("utf-8")
+            await save_setting("vapid_private_key", priv)
+            await save_setting("vapid_public_key", pub)
+            logger.info("Neue VAPID-Schlüssel erfolgreich generiert und gespeichert.")
+        except Exception as e:
+            logger.error(f"Fehler beim Erzeugen der VAPID-Schlüssel: {e}")
+    return priv, pub
+
 async def send_push_notification(user_id: int, title: str, body: str, url: str = ""):
     """Sendet eine Web Push Benachrichtigung an einen Benutzer."""
     subscription = await get_subscription(user_id)
@@ -31,7 +50,11 @@ async def send_push_notification(user_id: int, title: str, body: str, url: str =
         logger.warning(f"No subscription found for user {user_id}")
         return False
 
-    vapid_private_key = "YOUR_VAPID_PRIVATE_KEY"
+    vapid_private_key, _ = await get_or_create_vapid_keys()
+    if not vapid_private_key:
+        logger.warning("VAPID Key ist nicht verfügbar.")
+        return False
+
     vapid_claims = {
         "sub": "mailto:admin@example.com"
     }

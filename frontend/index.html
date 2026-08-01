@@ -13,6 +13,9 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/style.css">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
 </head>
 <body>
     <div class="app-container">
@@ -250,6 +253,11 @@
                                         <span>Risiko: <strong id="detail-risk">Mittel</strong></span>
                                         <span class="separator">•</span>
                                         <span>Sentiment: <strong id="detail-sentiment">Positiv</strong></span>
+                                    </div>
+                                    <div class="target-levels-meta" style="margin-top: 8px; font-size: 0.85rem; opacity: 0.9; display: flex; gap: 12px; flex-wrap: wrap;">
+                                        <span><i data-lucide="crosshair" style="width:13px; height:13px; color:#3b82f6;"></i> Ziel: <strong id="detail-target-price">-</strong></span>
+                                        <span><i data-lucide="shield-alert" style="width:13px; height:13px; color:#ef4444;"></i> Stop-Loss: <strong id="detail-stop-loss" class="text-red">-</strong></span>
+                                        <span><i data-lucide="check-circle-2" style="width:13px; height:13px; color:#10b981;"></i> Take-Profit: <strong id="detail-take-profit" class="text-green">-</strong></span>
                                     </div>
                                 </div>
                             </div>
@@ -1120,6 +1128,8 @@
             <div class="backtest-modal-tabs">
                 <button class="modal-tabactive active" id="modal-tab-accuracy">KI-Genauigkeit</button>
                 <button class="modal-tabactive" id="modal-tab-simulator">Strategie-Simulator</button>
+                <button class="modal-tabactive" id="modal-tab-montecarlo">Monte-Carlo</button>
+                <button class="modal-tabactive" id="modal-tab-drip">DRIP-Reinvestition</button>
             </div>
             
             <!-- Tab 1: KI Accuracy History -->
@@ -1156,7 +1166,7 @@
                     <div class="form-group">
                         <label for="sim-strategy">Handelsstrategie</label>
                         <select id="sim-strategy" class="glass-input">
-                            <option value="rsi">RSI Überkauft (<30) / Überverkauft (>70)</option>
+                            <option value="rsi">RSI Überkauft (&lt;30) / Überverkauft (&gt;70)</option>
                             <option value="sma">SMA Golden/Death Cross (20/50)</option>
                             <option value="macd">MACD Signal-Linien-Kreuzung</option>
                         </select>
@@ -1182,7 +1192,7 @@
                         <span class="sim-stat-value" id="sim-strat-return">-</span>
                     </div>
                     <div class="sim-stat-box">
-                        <span class="sim-stat-label">Buy & Hold Rendite</span>
+                        <span class="sim-stat-label">Buy &amp; Hold Rendite</span>
                         <span class="sim-stat-value" id="sim-bh-return">-</span>
                     </div>
                     <div class="sim-stat-box">
@@ -1193,6 +1203,78 @@
                 
                 <div class="chart-container simulator-chart-container">
                     <canvas id="simulatorChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tab 3: Monte-Carlo Simulation -->
+            <div class="modal-tab-content hidden" id="tab-content-montecarlo">
+                <div class="simulator-controls-row">
+                    <div class="form-group">
+                        <label for="mc-years">Horizont (Jahre)</label>
+                        <select id="mc-years" class="glass-input">
+                            <option value="3">3 Jahre</option>
+                            <option value="5" selected>5 Jahre</option>
+                            <option value="10">10 Jahre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mc-sims">Anzahl Pfade</label>
+                        <select id="mc-sims" class="glass-input">
+                            <option value="250">250 Pfade</option>
+                            <option value="500" selected>500 Pfade</option>
+                            <option value="1000">1000 Pfade</option>
+                        </select>
+                    </div>
+                    <button id="run-mc-btn" class="btn btn-primary"><i data-lucide="zap"></i> Monte-Carlo Berechnen</button>
+                </div>
+
+                <div class="sim-results-grid hidden" id="mc-results-area">
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">5% Worst-Case (P5)</span>
+                        <span class="sim-stat-value text-red" id="mc-p5-val">-</span>
+                    </div>
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">50% Median (P50)</span>
+                        <span class="sim-stat-value text-green" id="mc-p50-val">-</span>
+                    </div>
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">95% Best-Case (P95)</span>
+                        <span class="sim-stat-value text-blue" id="mc-p95-val">-</span>
+                    </div>
+                </div>
+
+                <div class="chart-container simulator-chart-container">
+                    <canvas id="monteCarloChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tab 4: DRIP Simulation -->
+            <div class="modal-tab-content hidden" id="tab-content-drip">
+                <div class="simulator-controls-row">
+                    <div class="form-group">
+                        <label for="drip-years">Zeitraum (Jahre)</label>
+                        <input type="number" id="drip-years" class="glass-input" value="10" min="1" max="30">
+                    </div>
+                    <div class="form-group">
+                        <label for="drip-contrib">Jährliche Zuzahlung (€)</label>
+                        <input type="number" id="drip-contrib" class="glass-input" value="1200" step="100" min="0">
+                    </div>
+                    <button id="run-drip-btn" class="btn btn-primary"><i data-lucide="refresh-cw"></i> DRIP Berechnen</button>
+                </div>
+
+                <div class="sim-results-grid hidden" id="drip-results-area">
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">Startkapital</span>
+                        <span class="sim-stat-value" id="drip-init-val">-</span>
+                    </div>
+                    <div class="sim-stat-box">
+                        <span class="sim-stat-label">Ø Dividendenrendite</span>
+                        <span class="sim-stat-value text-green" id="drip-yield-val">-</span>
+                    </div>
+                </div>
+
+                <div class="chart-container simulator-chart-container">
+                    <canvas id="dripChart"></canvas>
                 </div>
             </div>
         </div>

@@ -214,6 +214,23 @@ async def init_db():
                 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
             )
         """)
+
+        # 12. Webhook Logs Table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS webhook_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                action TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                price REAL,
+                status TEXT NOT NULL,
+                message TEXT,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        await cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('webhook_secret', 'alpha_sec_9988776655')")
         
         # Migrations: Add dividend, indicator & fundamental columns to predictions table if they do not exist
         for col, col_type in [
@@ -222,7 +239,8 @@ async def init_db():
             ("bb_upper", "REAL"), ("bb_lower", "REAL"), ("stoch_k", "REAL"),
             ("pe_ratio", "REAL"), ("market_cap", "INTEGER"),
             ("fifty_two_high", "REAL"), ("fifty_two_low", "REAL"),
-            ("beta", "REAL"), ("eps", "REAL")
+            ("beta", "REAL"), ("eps", "REAL"),
+            ("target_price", "REAL"), ("stop_loss", "REAL"), ("take_profit", "REAL")
         ]:
             try:
                 await cursor.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
@@ -311,8 +329,9 @@ async def save_prediction(pred):
                 rsi, technical_trend, recommendation, confidence, sentiment_score, risk_level,
                 ai_explanation, key_drivers, key_risks, news, history, last_updated,
                 dividend_yield, dividend_rate, sma_20, sma_50, ema_200, bb_upper, bb_lower,
-                stoch_k, pe_ratio, market_cap, fifty_two_high, fifty_two_low, beta, eps
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                stoch_k, pe_ratio, market_cap, fifty_two_high, fifty_two_low, beta, eps,
+                target_price, stop_loss, take_profit
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             pred["symbol"], pred["name"], pred["type"], pred["price"],
             pred["price_change_1d"], pred["price_change_7d"], pred["price_change_30d"],
@@ -336,7 +355,10 @@ async def save_prediction(pred):
             pred.get("fifty_two_high"),
             pred.get("fifty_two_low"),
             pred.get("beta"),
-            pred.get("eps")
+            pred.get("eps"),
+            pred.get("target_price"),
+            pred.get("stop_loss"),
+            pred.get("take_profit")
         ))
         
         # In History-Tabelle archivieren (für Backtesting)
@@ -395,6 +417,9 @@ async def get_predictions_from_db():
                     "fifty_two_low": get_row_val(row, "fifty_two_low"),
                     "beta": get_row_val(row, "beta"),
                     "eps": get_row_val(row, "eps"),
+                    "target_price": get_row_val(row, "target_price"),
+                    "stop_loss": get_row_val(row, "stop_loss"),
+                    "take_profit": get_row_val(row, "take_profit"),
                     "technical_trend": row["technical_trend"],
                     "recommendation": row["recommendation"],
                     "confidence": row["confidence"],
@@ -1037,9 +1062,38 @@ async def restore_database_json(backup_data: dict) -> bool:
         return True
     except Exception as e:
         logger.error(f"Fehler beim Wiederherstellen des Backups: {e}")
+async def log_webhook_event(source: str, symbol: str, action: str, quantity: float, price: float, status: str, message: str) -> bool:
+    """Protokolliert eingehende Webhook-Signale in der Datenbank."""
+    conn = await get_db_connection()
+    try:
+        await conn.execute(
+            "INSERT INTO webhook_logs (source, symbol, action, quantity, price, status, message) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (source, symbol.upper(), action.upper(), quantity, price, status, message)
+        )
+        await conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Protokollieren des Webhook-Events: {e}")
         return False
     finally:
         await conn.close()
+
+async def get_webhook_logs(limit: int = 50) -> list:
+    """Holt die neuesten Webhook-Protokolle."""
+    conn = await get_db_connection()
+    try:
+        async with conn.execute(
+            "SELECT id, source, symbol, action, quantity, price, status, message, timestamp FROM webhook_logs ORDER BY id DESC LIMIT ?",
+            (limit,)
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Webhook-Logs: {e}")
+        return []
+    finally:
+        await conn.close()
+
 
 
 
