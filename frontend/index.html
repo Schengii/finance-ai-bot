@@ -63,6 +63,22 @@
                         <span id="currency-toggle-label">USD ($)</span>
                     </button>
                 </div>
+                <!-- Notification Bell & Center -->
+                <div class="notification-center-wrapper" style="position: relative;">
+                    <button id="notif-bell-btn" class="btn btn-secondary btn-sm" title="Benachrichtigungen">
+                        <i data-lucide="bell"></i>
+                        <span id="notif-badge" class="badge-count hidden">0</span>
+                    </button>
+                    <div id="notif-dropdown" class="notif-dropdown glass-panel hidden">
+                        <div class="notif-header">
+                            <h4>Benachrichtigungen</h4>
+                            <button id="clear-notifs-btn" class="btn-text-sm">Leeren</button>
+                        </div>
+                        <div id="notif-list" class="notif-list">
+                            <p class="text-center text-muted" style="padding: 15px;">Keine neuen Benachrichtigungen.</p>
+                        </div>
+                    </div>
+                </div>
                 <button id="refresh-btn" class="btn btn-primary">
                     <i data-lucide="refresh-cw" class="icon-spin-hover"></i>
                     <span>Analysieren</span>
@@ -270,6 +286,12 @@
                                 </button>
                                 <button class="detail-tabactive" data-tab="ai-tab">
                                     <i data-lucide="cpu"></i> KI-Prognose
+                                </button>
+                                <button class="detail-tabactive" data-tab="committee-tab">
+                                    <i data-lucide="users"></i> KI-Komitee
+                                </button>
+                                <button class="detail-tabactive" data-tab="fundamentals-tab">
+                                    <i data-lucide="shield-check"></i> Bilanz-Check
                                 </button>
                                 <button class="detail-tabactive" data-tab="news-tab">
                                     <i data-lucide="newspaper"></i> Nachrichten

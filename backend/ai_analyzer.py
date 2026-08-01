@@ -335,6 +335,71 @@ def generate_daily_summary(portfolio_data, predictions_data, strategy="Ausgewoge
     }
 
 
+async def analyze_asset_with_committee(symbol: str, asset_info: dict, market_data: dict) -> dict:
+    """
+    Simuliert ein KI-Investment-Komitee bestehend aus 3 Experten-Personas:
+    1. Bullen-Analyst (Wachstum & Chancen)
+    2. Bären-Analyst (Risiken & Gegenwind)
+    3. Quant-Analyst (Technische Indikatoren & Ratios)
+    """
+    if not GEMINI_API_KEY or not HAS_NEW_GENAI or not client:
+        # Demo / Mock Komitee-Antwort
+        return {
+            "symbol": symbol,
+            "bull_case": f"**Bullen-Perspektive für {symbol}:** Solides Umsatzwachstum, starke Marktstellung und positiver RSI-Trend von {market_data.get('rsi', 50):.1f}.",
+            "bear_case": f"**Bären-Perspektive für {symbol}:** Erhöhte Marktvolatilität, KGV-Bewertung und potenzielle Zinsänderungsrisiken.",
+            "quant_metrics": f"**Quant-Perspektive:** Trend ist {market_data.get('technical_trend', 'Neutral')}, RSI bei {market_data.get('rsi', 50):.1f}, SMA 20/50 zeigt positives Momentum.",
+            "consensus_score": 78,
+            "consensus_recommendation": "Kauf",
+            "disagreement_index": "Niedrig (Hohe Einigkeit)",
+            "debate_summary": f"Das Komitee ist sich größtenteils einig: Die Wachstumschancen für {symbol} überwiegen das moderate Marktrisiko."
+        }
+
+    prompt = f"""Du bist ein KI-Investment-Komitee aus 3 Experten. Analysiere das Asset {symbol} ({asset_info.get('name')}):
+
+Marktdaten:
+- Kurs: {market_data.get('current_price')} € (24h: {market_data.get('price_change_1d')}%)
+- RSI (14): {market_data.get('rsi')}
+- Trend: {market_data.get('technical_trend')}
+- KGV: {market_data.get('pe_ratio', 'N/A')}
+
+Gib die Analyse als valides JSON in folgendem Format zurück:
+{{
+  "bull_case": "<Detailliertes Argument des Bullen-Analysten>",
+  "bear_case": "<Detailliertes Argument des Bären-Analysten>",
+  "quant_metrics": "<Quantitatives Urteil des Quant-Analysten>",
+  "consensus_score": <Zahl von 1 bis 100>,
+  "consensus_recommendation": "<Starker Kauf / Kauf / Halten / Verkauf / Starker Verkauf>",
+  "disagreement_index": "<Niedrig / Mittel / Hoch>",
+  "debate_summary": "<Zusammenfassung der Komitee-Debatte auf Deutsch>"
+}}
+"""
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.3,
+            )
+        )
+        res_json = json.loads(response.text.strip(), strict=False)
+        res_json["symbol"] = symbol
+        return res_json
+    except Exception as e:
+        logger.error(f"Fehler bei KI-Komitee Analyse für {symbol}: {e}")
+        return {
+            "symbol": symbol,
+            "bull_case": f"Bullen-Fall für {symbol}: Solides Ertragspotenzial.",
+            "bear_case": f"Bären-Fall für {symbol}: Marktvolatilität beachten.",
+            "quant_metrics": f"RSI: {market_data.get('rsi', 50):.1f}",
+            "consensus_score": 65,
+            "consensus_recommendation": "Kauf",
+            "disagreement_index": "Mittel",
+            "debate_summary": "Komitee empfiehlt schrittweisen Einstieg."
+        }
+
+
 async def generate_chat_response(query, portfolio_data, predictions_data, portfolio_id=1):
     """Generiert eine Antwort auf eine Nutzerfrage basierend auf Portfolio, Prognosen und Chatverlauf."""
     

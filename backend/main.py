@@ -23,6 +23,8 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import DATA_DIR
 # pyrefly: ignore [missing-import]
 from backend import scheduler
+# pyrefly: ignore [missing-import]
+from backend.db import get_db_connection
 
 from fastapi.responses import StreamingResponse
 import asyncio
@@ -2013,6 +2015,180 @@ async def efficient_frontier_endpoint(portfolio_id: int):
         }
     except Exception as e:
         logger.error(f"Fehler bei Efficient Frontier: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================
+# ENTERPRISE EXTENSION ENDPOINTS
+# ==========================================
+
+# Pydantic Model für Auto-Trader Regeln
+class AutoTraderRuleRequest(BaseModel):
+    symbol: str
+    min_confidence: int = 80
+    max_rsi: float = 40.0
+    buy_amount_eur: float = 500.0
+
+
+@app.get("/api/committee/{symbol}")
+async def committee_analysis_endpoint(symbol: str):
+    """Führt eine Ensemble KI-Komitee-Analyse (Bull, Bear, Quant) für ein Symbol durch."""
+    try:
+        from backend.data_fetcher import get_asset_market_data
+        from backend.ai_analyzer import analyze_asset_with_committee
+        from backend.config import DEFAULT_ASSETS
+
+        asset_info = next((a for a in DEFAULT_ASSETS if a["symbol"].upper() == symbol.upper()), {"symbol": symbol, "name": symbol, "type": "stock"})
+        market_data = await get_asset_market_data(symbol, asset_info["type"])
+        result = await analyze_asset_with_committee(symbol, asset_info, market_data)
+        return result
+    except Exception as e:
+        logger.error(f"Fehler bei KI-Komitee Endpunkt für {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/fundamentals/{symbol}")
+async def fundamentals_analysis_endpoint(symbol: str):
+    """Berechnet den Piotroski F-Score (0-9) und Altman Z-Score für ein Symbol."""
+    try:
+        import yfinance as yf
+        from backend.fundamental_analyzer import calculate_piotroski_f_score, calculate_altman_z_score
+
+        ticker = yf.Ticker(symbol)
+        info = ticker.info or {}
+
+        f_score = calculate_piotroski_f_score(info)
+        z_score = calculate_altman_z_score(info)
+
+        return {
+            "symbol": symbol,
+            "company_name": info.get("longName", symbol),
+            "piotroski_f_score": f_score,
+            "altman_z_score": z_score,
+            "key_ratios": {
+                "pe_ratio": info.get("trailingPE"),
+                "forward_pe": info.get("forwardPE"),
+                "pb_ratio": info.get("priceToBook"),
+                "dividend_yield_pct": round((info.get("dividendYield") or 0) * 100, 2),
+                "profit_margins_pct": round((info.get("profitMargins") or 0) * 100, 2)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei Fundamentalanalyse für {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/portfolio/{portfolio_id}/hedging-strategy")
+async def hedging_strategy_endpoint(portfolio_id: int):
+    """Berechnet Black-Scholes Options-Greeks und Hedging-Strategien (Protective Put, Collar)."""
+    try:
+        from backend.db import get_portfolio_from_db
+        from backend.options_hedging import generate_hedging_recommendations
+
+        holdings = await get_portfolio_from_db(portfolio_id)
+        total_val = sum(h["quantity"] * (h.get("current_price") or h.get("price") or 0.0) for h in holdings) if holdings else 10000.0
+        return generate_hedging_recommendations(total_val, holdings)
+    except Exception as e:
+        logger.error(f"Fehler bei Hedging-Strategie: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/reports/pdf")
+async def pdf_report_endpoint(portfolio_id: int = 1):
+    """Erstellt strukturierte Report-Daten für FIFO Steuer- & Performance-Analysen."""
+    try:
+        from backend.db import get_portfolio_from_db, get_db_connection
+        from backend.report_generator import generate_portfolio_report_data
+
+        holdings = await get_portfolio_from_db(portfolio_id)
+        
+        db = await get_db_connection()
+        try:
+            cursor = await db.execute("SELECT symbol, quantity, buy_price as price FROM portfolio WHERE portfolio_id = ?", (portfolio_id,))
+            txs = [dict(r) for r in await cursor.fetchall()]
+        finally:
+            await db.close()
+
+        report = generate_portfolio_report_data(portfolio_id, holdings, txs)
+        return report
+    except Exception as e:
+        logger.error(f"Fehler bei PDF-Report Generierung: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/auto-trader/rules")
+async def get_auto_trader_rules(portfolio_id: int = 1):
+    """Liefert alle gespeicherten Auto-Trader Handelsregeln."""
+    try:
+        db = await get_db_connection()
+        try:
+            cursor = await db.execute("SELECT id, symbol, min_confidence, max_rsi, buy_amount_eur, is_active FROM auto_trader_rules WHERE portfolio_id = ?", (portfolio_id,))
+            rules = [dict(r) for r in await cursor.fetchall()]
+        finally:
+            await db.close()
+        return {"rules": rules}
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Auto-Trader Regeln: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/auto-trader/rules")
+async def add_auto_trader_rule(rule: AutoTraderRuleRequest, portfolio_id: int = 1):
+    """Erstellt eine neue Auto-Trader Handelsregel."""
+    try:
+        db = await get_db_connection()
+        try:
+            await db.execute(
+                "INSERT INTO auto_trader_rules (portfolio_id, symbol, min_confidence, max_rsi, buy_amount_eur) VALUES (?, ?, ?, ?, ?)",
+                (portfolio_id, rule.symbol.upper(), rule.min_confidence, rule.max_rsi, rule.buy_amount_eur)
+            )
+            await db.commit()
+        finally:
+            await db.close()
+        return {"status": "success", "message": f"Auto-Trader Regel für {rule.symbol} hinzugefügt."}
+    except Exception as e:
+        logger.error(f"Fehler beim Hinzufügen der Auto-Trader Regel: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/auto-trader/rules/{rule_id}")
+async def delete_auto_trader_rule(rule_id: int):
+    """Löscht eine Auto-Trader Handelsregel."""
+    try:
+        db = await get_db_connection()
+        try:
+            await db.execute("DELETE FROM auto_trader_rules WHERE id = ?", (rule_id,))
+            await db.commit()
+        finally:
+            await db.close()
+        return {"status": "success", "message": f"Regel {rule_id} gelöscht."}
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen der Auto-Trader Regel: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/auto-trader/evaluate")
+async def evaluate_auto_trader(portfolio_id: int = 1):
+    """Triggert die manuelle Auswertung der Auto-Trader & Trailing-Stop Regeln."""
+    try:
+        from backend.auto_trader import evaluate_auto_trader_rules
+        predictions_data = (await get_predictions_from_db()).get("predictions", {})
+        await evaluate_auto_trader_rules(portfolio_id, predictions_data)
+        return {"status": "success", "message": "Auto-Trader Regeln erfolgreich ausgewertet."}
+    except Exception as e:
+        logger.error(f"Fehler bei Auto-Trader Evaluierung: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/notifications/history")
+async def get_notifications_history_endpoint():
+    """Holt die Historie aller Benachrichtigungen aus der SQLite-Datenbank."""
+    try:
+        from backend.db import get_notifications
+        notifs = await get_notifications(limit=50)
+        return {"notifications": notifs}
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Notification-Historie: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -251,6 +251,43 @@ async def init_db():
             await cursor.execute("ALTER TABLE portfolios_list ADD COLUMN cash_balance REAL DEFAULT 0.0")
         except aiosqlite.OperationalError:
             pass
+
+        # Auto-Trader Tabellen
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS auto_trader_rules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                portfolio_id INTEGER DEFAULT 1,
+                symbol TEXT NOT NULL,
+                min_confidence INTEGER DEFAULT 80,
+                max_rsi REAL DEFAULT 40.0,
+                buy_amount_eur REAL DEFAULT 500.0,
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trailing_stops (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                portfolio_id INTEGER DEFAULT 1,
+                symbol TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                highest_price REAL NOT NULL,
+                trail_percent REAL DEFAULT 5.0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                type TEXT DEFAULT 'info',
+                symbol TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
             
         # Standard-Assets einfügen, falls die assets-Tabelle leer ist
         await cursor.execute("SELECT COUNT(*) FROM assets")

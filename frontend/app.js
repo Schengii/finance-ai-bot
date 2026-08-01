@@ -800,6 +800,10 @@ function selectAsset(symbol) {
         `;
     }
     
+    // Prefetch Komitee & Fundamentalanalyse
+    fetchCommitteeAnalysis(symbol);
+    fetchFundamentalsAnalysis(symbol);
+
     // Render Chart based on selected timeframe
     if (selectedPeriod === "30d" && asset.history) {
         renderChart(asset.history, asset.symbol, colorHex);
@@ -3613,7 +3617,141 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setupModalTabListeners();
     initSSEListener();
+    setupNotificationCenter();
+    setupPdfReportExport();
 });
+
+
+// Committee Analysis Fetcher
+async function fetchCommitteeAnalysis(symbol) {
+    if (!symbol) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/committee/${symbol}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const bCase = document.getElementById("committee-bull-case");
+        const bearCase = document.getElementById("committee-bear-case");
+        const qMetrics = document.getElementById("committee-quant-metrics");
+        const dSummary = document.getElementById("committee-debate-summary");
+
+        if (bCase) bCase.innerText = data.bull_case || "-";
+        if (bearCase) bearCase.innerText = data.bear_case || "-";
+        if (qMetrics) qMetrics.innerText = data.quant_metrics || "-";
+        if (dSummary) dSummary.innerText = data.debate_summary || "-";
+        
+        const badge = document.getElementById("committee-consensus-badge");
+        if (badge) {
+            badge.innerText = `Konsens: ${data.consensus_recommendation} (${data.consensus_score}%)`;
+        }
+    } catch (e) {
+        console.warn("Fehler beim Laden des KI-Komitees", e);
+    }
+}
+
+// Fundamentals (Piotroski & Altman) Fetcher
+async function fetchFundamentalsAnalysis(symbol) {
+    if (!symbol) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/fundamentals/${symbol}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const pNum = document.getElementById("piotroski-score-num");
+        const pBadge = document.getElementById("piotroski-rating-badge");
+        const aNum = document.getElementById("altman-score-num");
+        const aBadge = document.getElementById("altman-zone-badge");
+
+        if (pNum) pNum.innerText = `${data.piotroski_f_score.score} / 9`;
+        if (pBadge) pBadge.innerText = data.piotroski_f_score.rating;
+
+        if (aNum) aNum.innerText = data.altman_z_score.z_score;
+        if (aBadge) {
+            aBadge.innerText = data.altman_z_score.zone;
+            aBadge.style.color = data.altman_z_score.color;
+        }
+    } catch (e) {
+        console.warn("Fehler beim Laden der Fundamentalanalyse", e);
+    }
+}
+
+// Notification Center Setup
+function setupNotificationCenter() {
+    const bellBtn = document.getElementById("notif-bell-btn");
+    const dropdown = document.getElementById("notif-dropdown");
+    const clearBtn = document.getElementById("clear-notifs-btn");
+
+    if (bellBtn && dropdown) {
+        bellBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle("hidden");
+            fetchNotificationHistory();
+        });
+
+        document.addEventListener("click", () => {
+            dropdown.classList.add("hidden");
+        });
+
+        dropdown.addEventListener("click", (e) => e.stopPropagation());
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            document.getElementById("notif-list").innerHTML = '<p class="text-center text-muted" style="padding: 15px;">Keine Benachrichtigungen.</p>';
+            const badge = document.getElementById("notif-badge");
+            if (badge) {
+                badge.innerText = "0";
+                badge.classList.add("hidden");
+            }
+        });
+    }
+}
+
+async function fetchNotificationHistory() {
+    try {
+        const res = await fetch(`${API_BASE}/api/notifications/history`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = document.getElementById("notif-list");
+        const badge = document.getElementById("notif-badge");
+
+        if (data.notifications && data.notifications.length > 0) {
+            if (badge) {
+                badge.innerText = data.notifications.length;
+                badge.classList.remove("hidden");
+            }
+            if (list) {
+                list.innerHTML = data.notifications.map(n => `
+                    <div class="notif-item">
+                        <strong>${n.title}</strong>
+                        <div>${n.message}</div>
+                        <small class="text-muted">${n.timestamp || ''}</small>
+                    </div>
+                `).join("");
+            }
+        }
+    } catch (e) {
+        console.warn("Fehler beim Laden der Benachrichtigungshistorie", e);
+    }
+}
+
+// PDF Report Trigger
+function setupPdfReportExport() {
+    const btn = document.getElementById("btn-export-print");
+    if (btn) {
+        btn.addEventListener("click", async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/reports/pdf?portfolio_id=1`);
+                if (!res.ok) throw new Error("Fehler beim Erstellen des Reports");
+                const report = await res.json();
+                showToast(`PDF-Report erstellt! Gesamtwert: ${report.total_value} € (Steuer: ${report.fifo_tax.estimated_tax_kest} €)`, "success");
+                window.print();
+            } catch (e) {
+                showToast("Fehler beim Report-Export: " + e.message, "error");
+            }
+        });
+    }
+}
 
 
 // Global Chart Instances for Monte-Carlo and DRIP

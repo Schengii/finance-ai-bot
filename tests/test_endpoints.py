@@ -200,13 +200,63 @@ async def run_tests():
         print("[OK] Monte-Carlo Simulation erfolgreich!")
 
         # 16. Test Markowitz Efficient Frontier
-        print("\n[16/16] Teste Efficient Frontier...")
+        print("\n[16/22] Teste Efficient Frontier...")
         res_ef = await client.get("/api/portfolio/1/efficient-frontier")
         assert res_ef.status_code == 200
         ef_data = res_ef.json()
         assert "efficient_frontier" in ef_data
         assert len(ef_data["efficient_frontier"]) > 0
         print("[OK] Efficient Frontier erfolgreich!")
+
+        # 17. Test KI-Komitee Analysis
+        print("\n[17/22] Teste Ensemble KI-Komitee...")
+        res_comm = await client.get("/api/committee/AAPL")
+        assert res_comm.status_code == 200
+        comm_data = res_comm.json()
+        assert "bull_case" in comm_data
+        assert "bear_case" in comm_data
+        assert "quant_metrics" in comm_data
+        print("[OK] Ensemble KI-Komitee erfolgreich!")
+
+        # 18. Test Fundamental Analysis (Piotroski & Altman)
+        print("\n[18/22] Teste Fundamentalanalyse (Piotroski & Altman)...")
+        res_fund = await client.get("/api/fundamentals/AAPL")
+        assert res_fund.status_code == 200
+        fund_data = res_fund.json()
+        assert "piotroski_f_score" in fund_data
+        assert "altman_z_score" in fund_data
+        print("[OK] Fundamentalanalyse (Piotroski & Altman) erfolgreich!")
+
+        # 19. Test Options & Hedging Strategy
+        print("\n[19/22] Teste Options & Hedging Strategie...")
+        res_hedge = await client.post("/api/portfolio/1/hedging-strategy")
+        assert res_hedge.status_code == 200
+        hedge_data = res_hedge.json()
+        assert "strategies" in hedge_data
+        print("[OK] Options & Hedging Strategie erfolgreich!")
+
+        # 20. Test PDF Report Data Generation
+        print("\n[20/22] Teste PDF Steuer- & Performance Report...")
+        res_report = await client.get("/api/reports/pdf?portfolio_id=1")
+        assert res_report.status_code == 200
+        report_data = res_report.json()
+        assert "fifo_tax" in report_data
+        print("[OK] PDF Steuer- & Performance Report erfolgreich!")
+
+        # 21. Test Auto-Trader Rules
+        print("\n[21/22] Teste Auto-Trader Regeln...")
+        res_add_rule = await client.post("/api/auto-trader/rules", json={"symbol": "AAPL", "min_confidence": 80, "max_rsi": 40.0, "buy_amount_eur": 500.0})
+        assert res_add_rule.status_code == 200
+        res_get_rules = await client.get("/api/auto-trader/rules")
+        assert res_get_rules.status_code == 200
+        assert len(res_get_rules.json()["rules"]) > 0
+        print("[OK] Auto-Trader Regeln erfolgreich!")
+
+        # 22. Test Notification History
+        print("\n[22/22] Teste Notification Historie...")
+        res_notifs = await client.get("/api/notifications/history")
+        assert res_notifs.status_code == 200
+        print("[OK] Notification Historie erfolgreich!")
 
     print("\n==================================================")
     print("             ALLE ENDPUNKT-TESTS ERFOLGREICH!      ")

@@ -378,3 +378,8 @@ def fetch_news(symbol, name):
         logger.error(f"Fehler beim Laden der Nachrichten für {symbol}: {e}")
         
     return formatted_news
+
+
+async def get_asset_market_data(symbol, asset_type="stock"):
+    """Async Wrapper für fetch_market_data."""
+    return fetch_market_data(symbol)
