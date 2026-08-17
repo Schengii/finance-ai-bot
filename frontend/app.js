@@ -199,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Premium Features
     initCurrencyToggle();
     initAlerts();
+    initChartTypeSelector();
     
     // Request notification permission (DSGVO compliant - user is asked, local only)
     if (Notification && Notification.permission === "default") {
@@ -224,6 +225,26 @@ function setupEventListeners() {
                 if (selectedAsset) {
                     loadAssetHistory(selectedAsset, selectedPeriod);
                 }
+            }
+        });
+    });
+
+    // Indicator Toggle Buttons (SMA 20, SMA 50, EMA 200, Bollinger)
+    document.querySelectorAll(".ind-toggle-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const current = e.currentTarget.getAttribute("data-active") === "true";
+            e.currentTarget.setAttribute("data-active", (!current).toString());
+            e.currentTarget.classList.toggle("active", !current);
+            if (currentHistoryData && currentHistoryData.length > 0 && selectedAsset) {
+                const asset = appData.predictions[selectedAsset];
+                let colorHex = "#f59e0b";
+                if (asset) {
+                    if (asset.recommendation === "Starker Kauf") colorHex = "#10b981";
+                    else if (asset.recommendation === "Kauf") colorHex = "#34d399";
+                    else if (asset.recommendation === "Verkauf") colorHex = "#f43f5e";
+                    else if (asset.recommendation === "Starker Verkauf") colorHex = "#e11d48";
+                }
+                renderChart(currentHistoryData, selectedAsset, colorHex);
             }
         });
     });
@@ -824,16 +845,132 @@ function updateConfidenceRing(percent, color) {
     circle.style.stroke = color;
 }
 
-// Render Chart
+let currentChartType = "line";
+let lightweightChartInstance = null;
+let candlestickSeriesInstance = null;
+let currentHistoryData = [];
+
+function initChartTypeSelector() {
+    const btnLine = document.getElementById("btn-chart-line");
+    const btnCandles = document.getElementById("btn-chart-candles");
+    
+    if (btnLine && btnCandles) {
+        btnLine.addEventListener("click", () => {
+            currentChartType = "line";
+            btnLine.classList.add("active");
+            btnCandles.classList.remove("active");
+            if (currentHistoryData && currentHistoryData.length > 0 && selectedAsset) {
+                const asset = appData.predictions[selectedAsset];
+                let colorHex = "#f59e0b";
+                if (asset) {
+                    if (asset.recommendation === "Starker Kauf") colorHex = "#10b981";
+                    else if (asset.recommendation === "Kauf") colorHex = "#34d399";
+                    else if (asset.recommendation === "Verkauf") colorHex = "#f43f5e";
+                    else if (asset.recommendation === "Starker Verkauf") colorHex = "#e11d48";
+                }
+                renderChart(currentHistoryData, selectedAsset, colorHex);
+            }
+        });
+        
+        btnCandles.addEventListener("click", () => {
+            currentChartType = "candles";
+            btnCandles.classList.add("active");
+            btnLine.classList.remove("active");
+            if (currentHistoryData && currentHistoryData.length > 0 && selectedAsset) {
+                const asset = appData.predictions[selectedAsset];
+                let colorHex = "#f59e0b";
+                if (asset) {
+                    if (asset.recommendation === "Starker Kauf") colorHex = "#10b981";
+                    else if (asset.recommendation === "Kauf") colorHex = "#34d399";
+                    else if (asset.recommendation === "Verkauf") colorHex = "#f43f5e";
+                    else if (asset.recommendation === "Starker Verkauf") colorHex = "#e11d48";
+                }
+                renderChart(currentHistoryData, selectedAsset, colorHex);
+            }
+        });
+    }
+}
+
+// Render Chart (Line or Candlestick)
 function renderChart(historyData, symbol, accentColor) {
     if (!historyData || historyData.length === 0) return;
+    currentHistoryData = historyData;
+    
+    const priceChartCanvas = document.getElementById('priceChart');
+    const candleContainer = document.getElementById('candleChartContainer');
+    
+    if (currentChartType === "candles" && typeof LightweightCharts !== "undefined" && candleContainer) {
+        if (priceChartCanvas) priceChartCanvas.classList.add('hidden');
+        candleContainer.classList.remove('hidden');
+        
+        if (lightweightChartInstance) {
+            lightweightChartInstance.remove();
+            lightweightChartInstance = null;
+        }
+        
+        candleContainer.innerHTML = "";
+        
+        lightweightChartInstance = LightweightCharts.createChart(candleContainer, {
+            width: candleContainer.clientWidth || 600,
+            height: 300,
+            layout: {
+                background: { color: 'transparent' },
+                textColor: '#9ca3af',
+                fontFamily: 'Inter'
+            },
+            grid: {
+                vertLines: { color: 'rgba(255, 255, 255, 0.04)' },
+                horzLines: { color: 'rgba(255, 255, 255, 0.04)' }
+            },
+            timeScale: {
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                timeVisible: true,
+                secondsVisible: false
+            }
+        });
+        
+        candlestickSeriesInstance = lightweightChartInstance.addCandlestickSeries({
+            upColor: '#10b981',
+            downColor: '#f43f5e',
+            borderUpColor: '#10b981',
+            borderDownColor: '#f43f5e',
+            wickUpColor: '#10b981',
+            wickDownColor: '#f43f5e'
+        });
+        
+        const candleData = [];
+        historyData.forEach(h => {
+            const timeVal = h.date.includes(" ") ? Math.floor(new Date(h.date).getTime() / 1000) : h.date;
+            const op = h.open || h.price;
+            const hi = h.high || Math.max(h.price, op);
+            const lo = h.low || Math.min(h.price, op);
+            const cl = h.close || h.price;
+            candleData.push({
+                time: timeVal,
+                open: op,
+                high: hi,
+                low: lo,
+                close: cl
+            });
+        });
+        
+        // Sort by time ascending
+        candleData.sort((a, b) => {
+            const ta = typeof a.time === 'number' ? a.time : new Date(a.time).getTime();
+            const tb = typeof b.time === 'number' ? b.time : new Date(b.time).getTime();
+            return ta - tb;
+        });
+        
+        candlestickSeriesInstance.setData(candleData);
+        lightweightChartInstance.timeScale().fitContent();
+        return;
+    }
+    
+    // Line Chart View
+    if (candleContainer) candleContainer.classList.add('hidden');
+    if (priceChartCanvas) priceChartCanvas.classList.remove('hidden');
     
     if (typeof Chart === 'undefined') {
-        console.error("Chart.js is not loaded.");
-        const chartContainer = document.querySelector('.chart-container');
-        if (chartContainer) {
-            chartContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);">Chart.js-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.</div>';
-        }
         return;
     }
     
@@ -853,16 +990,13 @@ function renderChart(historyData, symbol, accentColor) {
     });
     const prices = historyData.map(h => h.price);
     
-    const ctx = document.getElementById('priceChart').getContext('2d');
+    const ctx = priceChartCanvas.getContext('2d');
     
-    // Alten Chart zerstören falls vorhanden
     if (window.priceChartInstance) {
         window.priceChartInstance.destroy();
     }
     
-    // Gradient für Fill erstellen
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    // Transparentere Version der Akzentfarbe erstellen
     const rgbAccent = hexToRgb(accentColor);
     gradient.addColorStop(0, `rgba(${rgbAccent.r}, ${rgbAccent.g}, ${rgbAccent.b}, 0.25)`);
     gradient.addColorStop(1, `rgba(${rgbAccent.r}, ${rgbAccent.g}, ${rgbAccent.b}, 0)`);
@@ -883,12 +1017,13 @@ function renderChart(historyData, symbol, accentColor) {
     
     const showSma20 = document.getElementById('toggle-sma20')?.getAttribute('data-active') === 'true';
     const showSma50 = document.getElementById('toggle-sma50')?.getAttribute('data-active') === 'true';
+    const showEma200 = document.getElementById('toggle-ema200')?.getAttribute('data-active') === 'true';
+    const showBollinger = document.getElementById('toggle-bollinger')?.getAttribute('data-active') === 'true';
     
     if (showSma20) {
-        const sma20Data = historyData.map(h => h.sma_20);
         datasets.push({
             label: 'SMA 20',
-            data: sma20Data,
+            data: historyData.map(h => h.sma_20),
             borderColor: '#3b82f6',
             borderWidth: 1.5,
             pointRadius: 0,
@@ -896,12 +1031,10 @@ function renderChart(historyData, symbol, accentColor) {
             tension: 0.1
         });
     }
-    
     if (showSma50) {
-        const sma50Data = historyData.map(h => h.sma_50);
         datasets.push({
             label: 'SMA 50',
-            data: sma50Data,
+            data: historyData.map(h => h.sma_50),
             borderColor: '#f59e0b',
             borderWidth: 1.5,
             pointRadius: 0,
@@ -909,27 +1042,49 @@ function renderChart(historyData, symbol, accentColor) {
             tension: 0.1
         });
     }
+    if (showEma200) {
+        datasets.push({
+            label: 'EMA 200',
+            data: historyData.map(h => h.ema_200),
+            borderColor: '#8b5cf6',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.1
+        });
+    }
+    if (showBollinger) {
+        datasets.push({
+            label: 'Bollinger Oben',
+            data: historyData.map(h => h.bb_upper),
+            borderColor: 'rgba(255,255,255,0.3)',
+            borderWidth: 1,
+            pointRadius: 0,
+            borderDash: [4, 4],
+            fill: false
+        });
+        datasets.push({
+            label: 'Bollinger Unten',
+            data: historyData.map(h => h.bb_lower),
+            borderColor: 'rgba(255,255,255,0.3)',
+            borderWidth: 1,
+            pointRadius: 0,
+            borderDash: [4, 4],
+            fill: false
+        });
+    }
     
     window.priceChartInstance = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: labels,
-            datasets: datasets
-        },
+        data: { labels: labels, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: (showSma20 || showSma50),
+                    display: (showSma20 || showSma50 || showEma200 || showBollinger),
                     position: 'top',
-                    labels: {
-                        color: '#9ca3af',
-                        font: {
-                            family: 'Inter',
-                            size: 10
-                        }
-                    }
+                    labels: { color: '#9ca3af', font: { family: 'Inter', size: 10 } }
                 },
                 tooltip: {
                     mode: 'index',
@@ -942,38 +1097,22 @@ function renderChart(historyData, symbol, accentColor) {
                     displayColors: true,
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2})} $`;
+                            return `${context.dataset.label}: ${context.parsed.y ? context.parsed.y.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'} $`;
                         }
                     }
                 }
             },
             scales: {
                 x: {
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.02)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#9ca3af',
-                        font: {
-                            size: 10
-                        },
-                        maxTicksLimit: 8
-                    }
+                    grid: { color: 'rgba(255, 255, 255, 0.02)', drawBorder: false },
+                    ticks: { color: '#9ca3af', font: { size: 10 }, maxTicksLimit: 8 }
                 },
                 y: {
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.03)',
-                        drawBorder: false
-                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false },
                     ticks: {
                         color: '#9ca3af',
-                        font: {
-                            size: 10
-                        },
-                        callback: function(value) {
-                            return value.toLocaleString("de-DE") + ' $';
-                        }
+                        font: { size: 10 },
+                        callback: function(value) { return value.toLocaleString("de-DE") + ' $'; }
                     }
                 }
             }

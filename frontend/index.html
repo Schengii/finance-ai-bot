@@ -8,8 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
+    <!-- Chart.js & Lightweight Charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/style.css">
@@ -302,25 +303,30 @@
                             <div class="tab-panes">
                                 <!-- Chart Tab -->
                                 <div class="tab-pane active" id="chart-tab">
-                                    <div class="chart-header-actions">
-                                        <div class="indicator-toggles" id="indicator-toggles">
-                                            <button class="ind-toggle-btn" id="toggle-sma20" data-active="false">SMA 20</button>
-                                            <button class="ind-toggle-btn" id="toggle-sma50" data-active="false">SMA 50</button>
-                                            <button class="ind-toggle-btn" id="toggle-ema200" data-active="false">EMA 200</button>
-                                            <button class="ind-toggle-btn" id="toggle-bollinger" data-active="false">Bollinger Bands</button>
+                                        <div class="chart-header-actions">
+                                            <div class="chart-type-selector">
+                                                <button class="chart-type-btn active" id="btn-chart-line" title="Linien-Chart"><i data-lucide="activity"></i></button>
+                                                <button class="chart-type-btn" id="btn-chart-candles" title="Candlestick-Chart"><i data-lucide="candlestick-chart"></i></button>
+                                            </div>
+                                            <div class="indicator-toggles" id="indicator-toggles">
+                                                <button class="ind-toggle-btn" id="toggle-sma20" data-active="false">SMA 20</button>
+                                                <button class="ind-toggle-btn" id="toggle-sma50" data-active="false">SMA 50</button>
+                                                <button class="ind-toggle-btn" id="toggle-ema200" data-active="false">EMA 200</button>
+                                                <button class="ind-toggle-btn" id="toggle-bollinger" data-active="false">Bollinger</button>
+                                            </div>
+                                            <div class="timeframe-selector" id="timeframe-selector">
+                                                <button class="tf-btn" data-period="24h">24h</button>
+                                                <button class="tf-btn" data-period="7d">7d</button>
+                                                <button class="tf-btn active" data-period="30d">30d</button>
+                                                <button class="tf-btn" data-period="1y">1y</button>
+                                                <button class="tf-btn" data-period="5y">5y</button>
+                                                <button class="tf-btn" data-period="10y">10y</button>
+                                            </div>
                                         </div>
-                                        <div class="timeframe-selector" id="timeframe-selector">
-                                            <button class="tf-btn" data-period="24h">24h</button>
-                                            <button class="tf-btn" data-period="7d">7d</button>
-                                            <button class="tf-btn active" data-period="30d">30d</button>
-                                            <button class="tf-btn" data-period="1y">1y</button>
-                                            <button class="tf-btn" data-period="5y">5y</button>
-                                            <button class="tf-btn" data-period="10y">10y</button>
+                                        <div class="chart-container" id="price-chart-wrapper">
+                                            <canvas id="priceChart"></canvas>
+                                            <div id="candleChartContainer" class="candle-chart-container hidden"></div>
                                         </div>
-                                    </div>
-                                    <div class="chart-container">
-                                        <canvas id="priceChart"></canvas>
-                                    </div>
                                     <div class="tech-indicators-grid">
                                         <div class="indicator-card">
                                             <span class="ind-label">RSI (14)</span>

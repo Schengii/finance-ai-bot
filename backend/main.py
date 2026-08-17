@@ -234,6 +234,10 @@ def get_asset_history(symbol: str, period: str = "30d"):
             history.append({
                 "date": date_str,
                 "price": round(float(row['Close']), 2),
+                "open": round(float(row['Open']), 2) if ('Open' in row and not pd.isna(row['Open'])) else round(float(row['Close']), 2),
+                "high": round(float(row['High']), 2) if ('High' in row and not pd.isna(row['High'])) else round(float(row['Close']), 2),
+                "low": round(float(row['Low']), 2) if ('Low' in row and not pd.isna(row['Low'])) else round(float(row['Close']), 2),
+                "close": round(float(row['Close']), 2),
                 "volume": int(row['Volume']) if ('Volume' in row and not pd.isna(row['Volume'])) else 0,
                 "sma_20": clean_val(row.get('sma_20')),
                 "sma_50": clean_val(row.get('sma_50')),

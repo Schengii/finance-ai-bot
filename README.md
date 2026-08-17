@@ -107,11 +107,17 @@ finance-ai-bot/
 
 ## 📝 Logbuch der Änderungen (Changelog)
 
-*   **v1.6.0 (Aktuell)**:
+*   **v1.7.0 (Aktuell)**:
+    *   ✅ **Interaktive Candlestick-Charts**: Integration von TradingView Lightweight Charts mit dynamischem Umschalter zwischen Linien- und Kerzen-Chart (OHLC-Kurse).
+    *   ✅ **Indikator-Interaktion**: Vollständige Umschaltung und Anzeige von SMA 20, SMA 50, EMA 200 und Bollinger Bändern.
+    *   ✅ **Router-Modularisierung**: Backend-Endpunkte für Analyse und Portfolio unter `backend/routes/` aufgeteilt.
+    *   ✅ **Erweiterte Datenmodelle**: Historien-Endpunkte liefern nun standardmäßig `open`, `high`, `low`, `close` und `volume`.
+    *   ✅ **100% Testabdeckung**: Alle 22 automatisierten Endpunkt- & Workflow-Tests fehlerfrei bestanden.
+
+*   **v1.6.0**:
     *   ✅ Vollständige Behebung von Notification-DB-Imports (`get_notifications`, `add_notification`) mit 100% grünen Testläufen.
     *   ✅ Modernisierung des FastAPI Lifespan Handlers (Ersatz der veralteten `@app.on_event("startup")` API).
     *   ✅ Robustes JSON-Parsing in der Gemini KI-Rebalancing-Engine mit automatischer Markdown-Bereinigung.
-    *   ✅ Modularisierung der Backend-Routen unter `backend/routes/` für verbesserte Wartbarkeit und Skalierbarkeit.
     *   ✅ Interaktiver KI-Copilot ("AlphaChat") mit Portfolio-Direktabfragen und Quick-Actions.
     *   ✅ Performance-Benchmark-Berechnung (Alpha & Beta vs. S&P 500 & MSCI World).
     *   ✅ Multi-Kanal Alarmsystem (Browser Push, Webhooks, Telegram, Discord, E-Mail).
