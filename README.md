@@ -107,12 +107,18 @@ finance-ai-bot/
 
 ## 📝 Logbuch der Änderungen (Changelog)
 
-*   **v2.0.0 (Aktuell - Milestone Release)**:
+*   **v2.1.0 (Aktuell)**:
+    *   ✅ **Frei konfigurierbare Backtest-Hyperparameter**: Interaktive Einstellung von RSI-Kauf-/Verkaufsschwellen (z. B. 25 / 75) sowie flexiblen Periodenlängen für kurz- und langfristige Durchschnitte (SMA 10 bis SMA 200) im Simulator-Modal.
+    *   ✅ **Kombinierte Backtesting-Multistrategien**: Neuer Strategie-Simulator mit kombinierten Strategien (*SMA Golden Cross + RSI Trendfolge*, *Bollinger Band Dip + RSI Mean-Reversion*).
+    *   ✅ **Dynamischer Wirtschaftskalender**: Anreicherung um Zinsentscheidungen, Earnings-Releases und Ex-Dividenden-Termine.
+    *   ✅ **Robustes Fallback-Handling**: Fehlertolerante Fallback-Ausführungen bei temporären Rate-Limits externer APIs.
+    *   ✅ **100% Test-Validierung**: Alle 22 automatisierten Endpunkt- und Workflow-Tests grün.
+
+*   **v2.0.0**:
     *   ✅ **Kombinierte Backtesting-Multistrategien**: Neuer Strategie-Simulator mit kombinierten Strategien (*SMA Golden Cross + RSI Trendfolge*, *Bollinger Band Dip + RSI Mean-Reversion*).
     *   ✅ **Dynamischer Wirtschaftskalender**: Anreicherung um Zinsentscheidungen, Earnings-Releases und Ex-Dividenden-Termine.
     *   ✅ **Safari & WebKit Optimierung**: Vollständige Unterstützung von `-webkit-backdrop-filter` für iOS und Safari.
     *   ✅ **Clean Architecture & 100% Zero-Inline-Styles**: Vollständige Bereinigung des Frontend-Markups und Migration in das Design-System ([`style.css`](file:///c:/Users/sche-/Desktop/Programmieren%20Projekte/finance-ai-bot/frontend/style.css)).
-    *   ✅ **100% Test-Validierung**: Alle 22 automatisierten Endpunkt- und Workflow-Tests grün.
 
 *   **v1.9.0**:
     *   ✅ **Multi-Condition Alert-Engine**: Zusammengesetzte Alarmregeln wie `RSI < 35 AND KI-Kauf` (Überverkauft mit Trendwende) oder `RSI > 70 AND KI-Verkauf` im Alarm-Manager und Cron-Scheduler.

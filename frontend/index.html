@@ -1269,7 +1269,27 @@
                             <option value="5">5 Jahre</option>
                         </select>
                     </div>
-                    <button id="run-sim-btn" class="btn btn-primary">Simulation starten</button>
+                </div>
+                
+                <!-- Strategy Hyperparameters Panel -->
+                <div class="simulator-params-row" id="sim-params-row" style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+                    <div class="form-group" id="param-rsi-group" style="flex:1;min-width:140px;">
+                        <label for="sim-param-rsi-buy">RSI Kaufsignal (&lt;)</label>
+                        <input type="number" id="sim-param-rsi-buy" class="glass-input" value="30" min="10" max="50">
+                    </div>
+                    <div class="form-group" id="param-rsi-sell-group" style="flex:1;min-width:140px;">
+                        <label for="sim-param-rsi-sell">RSI Verkaufssignal (&gt;)</label>
+                        <input type="number" id="sim-param-rsi-sell" class="glass-input" value="70" min="50" max="90">
+                    </div>
+                    <div class="form-group" id="param-sma-s-group" style="flex:1;min-width:140px;">
+                        <label for="sim-param-sma-s">Kurzer SMA (Tage)</label>
+                        <input type="number" id="sim-param-sma-s" class="glass-input" value="20" min="5" max="100">
+                    </div>
+                    <div class="form-group" id="param-sma-l-group" style="flex:1;min-width:140px;">
+                        <label for="sim-param-sma-l">Langer SMA (Tage)</label>
+                        <input type="number" id="sim-param-sma-l" class="glass-input" value="50" min="10" max="200">
+                    </div>
+                    <button id="run-sim-btn" class="btn btn-primary" style="align-self:flex-end;">Simulation starten</button>
                 </div>
                 
                 <div class="sim-results-grid hidden" id="sim-results-area">

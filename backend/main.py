@@ -1376,8 +1376,16 @@ async def get_triggered_alerts_route():
 
 
 @app.get("/api/backtest/simulate")
-def simulate_strategy(symbol: str, strategy: str, years: int = 1):
-    """Simuliert eine Handelsstrategie (rsi, sma, macd) über einen Zeitraum."""
+def simulate_strategy(
+    symbol: str,
+    strategy: str,
+    years: int = 1,
+    rsi_oversold: float = 30.0,
+    rsi_overbought: float = 70.0,
+    sma_short: int = 20,
+    sma_long: int = 50
+):
+    """Simuliert eine Handelsstrategie (rsi, sma, macd, sma_rsi, bollinger_rsi) mit konfigurierbaren Parametern."""
     try:
         import pandas as pd
         import numpy as np
@@ -1402,6 +1410,8 @@ def simulate_strategy(symbol: str, strategy: str, years: int = 1):
         rsi = 100 - (100 / (1 + rs))
         
         # SMA & MACD
+        sma_short_series = close_prices.rolling(window=max(5, int(sma_short))).mean()
+        sma_long_series = close_prices.rolling(window=max(10, int(sma_long))).mean()
         sma_20 = close_prices.rolling(window=20).mean()
         sma_50 = close_prices.rolling(window=50).mean()
         
@@ -1423,7 +1433,7 @@ def simulate_strategy(symbol: str, strategy: str, years: int = 1):
         sim_history = []
         buy_hold_shares = 10000.0 / float(close_prices.iloc[0])
         
-        start_idx = 50 if len(close_prices) > 50 else 0
+        start_idx = max(int(sma_long), 50) if len(close_prices) > max(int(sma_long), 50) else 0
         
         for i in range(start_idx, len(df)):
             date_str = df.index[i].strftime('%Y-%m-%d')
@@ -1433,20 +1443,20 @@ def simulate_strategy(symbol: str, strategy: str, years: int = 1):
             sell_signal = False
             
             curr_rsi = rsi.iloc[i] if not pd.isna(rsi.iloc[i]) else 50
-            curr_sma20 = sma_20.iloc[i] if not pd.isna(sma_20.iloc[i]) else price
-            curr_sma50 = sma_50.iloc[i] if not pd.isna(sma_50.iloc[i]) else price
-            prev_sma20 = sma_20.iloc[i-1] if (i > 0 and not pd.isna(sma_20.iloc[i-1])) else curr_sma20
-            prev_sma50 = sma_50.iloc[i-1] if (i > 0 and not pd.isna(sma_50.iloc[i-1])) else curr_sma50
+            curr_sma_s = sma_short_series.iloc[i] if not pd.isna(sma_short_series.iloc[i]) else price
+            curr_sma_l = sma_long_series.iloc[i] if not pd.isna(sma_long_series.iloc[i]) else price
+            prev_sma_s = sma_short_series.iloc[i-1] if (i > 0 and not pd.isna(sma_short_series.iloc[i-1])) else curr_sma_s
+            prev_sma_l = sma_long_series.iloc[i-1] if (i > 0 and not pd.isna(sma_long_series.iloc[i-1])) else curr_sma_l
             
             if strategy == "rsi":
-                if curr_rsi < 30:
+                if curr_rsi < float(rsi_oversold):
                     buy_signal = True
-                elif curr_rsi > 70:
+                elif curr_rsi > float(rsi_overbought):
                     sell_signal = True
             elif strategy == "sma":
-                if prev_sma20 <= prev_sma50 and curr_sma20 > curr_sma50:
+                if prev_sma_s <= prev_sma_l and curr_sma_s > curr_sma_l:
                     buy_signal = True
-                elif prev_sma20 >= prev_sma50 and curr_sma20 < curr_sma50:
+                elif prev_sma_s >= prev_sma_l and curr_sma_s < curr_sma_l:
                     sell_signal = True
             elif strategy == "macd":
                 curr_macd = macd.iloc[i]

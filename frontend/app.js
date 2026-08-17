@@ -2428,6 +2428,11 @@ async function runSimulator() {
     const symbol = document.getElementById("sim-asset").value;
     const strategy = document.getElementById("sim-strategy").value;
     const years = document.getElementById("sim-years").value;
+    const rsiBuy = document.getElementById("sim-param-rsi-buy")?.value || 30;
+    const rsiSell = document.getElementById("sim-param-rsi-sell")?.value || 70;
+    const smaS = document.getElementById("sim-param-sma-s")?.value || 20;
+    const smaL = document.getElementById("sim-param-sma-l")?.value || 50;
+    
     const resultsArea = document.getElementById("sim-results-area");
     const runBtn = document.getElementById("run-sim-btn");
     
@@ -2437,7 +2442,7 @@ async function runSimulator() {
     runBtn.innerHTML = `<div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></div> Rechnet...`;
     
     try {
-        const res = await fetch(`${API_BASE}/api/backtest/simulate?symbol=${symbol}&strategy=${strategy}&years=${years}`);
+        const res = await fetch(`${API_BASE}/api/backtest/simulate?symbol=${symbol}&strategy=${strategy}&years=${years}&rsi_oversold=${rsiBuy}&rsi_overbought=${rsiSell}&sma_short=${smaS}&sma_long=${smaL}`);
         if (!res.ok) throw new Error("Fehler beim Simulieren.");
         const data = await res.json();
         
