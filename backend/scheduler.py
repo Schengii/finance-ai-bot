@@ -119,6 +119,10 @@ async def _check_alerts_async():
                     trigger = True
                 elif alert_type == "rec_change" and rec and rec.strip().lower() == str(target_value).strip().lower():
                     trigger = True
+                elif alert_type == "multi_rsi_buy" and rsi and rsi < (float(target_value) if str(target_value).replace('.','',1).isdigit() else 35.0) and rec and "kauf" in rec.lower():
+                    trigger = True
+                elif alert_type == "multi_rsi_sell" and rsi and rsi > (float(target_value) if str(target_value).replace('.','',1).isdigit() else 70.0) and rec and "verkauf" in rec.lower():
+                    trigger = True
             except Exception as e:
                 logger.error(f"Fehler bei Alarm-Auswertung für {symbol}: {e}")
                 
@@ -136,7 +140,9 @@ async def _check_alerts_async():
                         "rsi_below": "RSI fällt unter",
                         "change_above": "Tagesveränderung übersteigt %",
                         "change_below": "Tagesveränderung fällt unter %",
-                        "rec_change": "KI-Empfehlung ändert sich auf"
+                        "rec_change": "KI-Empfehlung ändert sich auf",
+                        "multi_rsi_buy": "Multi-Condition (RSI überverkauft + KI-Kauf)",
+                        "multi_rsi_sell": "Multi-Condition (RSI überkauft + KI-Verkauf)"
                     }
                     label = type_labels.get(alert_type, alert_type)
                     

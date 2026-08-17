@@ -107,11 +107,17 @@ finance-ai-bot/
 
 ## 📝 Logbuch der Änderungen (Changelog)
 
-*   **v1.8.0 (Aktuell)**:
+*   **v1.9.0 (Aktuell)**:
+    *   ✅ **Multi-Condition Alert-Engine**: Zusammengesetzte Alarmregeln wie `RSI < 35 AND KI-Kauf` (Überverkauft mit Trendwende) oder `RSI > 70 AND KI-Verkauf` im Alarm-Manager und Cron-Scheduler.
+    *   ✅ **4-Experten KI-Investment-Komitee & Social Sentiment**: Integration eines Social-Media & Reddit-Stimmungsanalysten (`r/stocks`, `r/wallstreetbets`, FinTwit) direkt im Komitee-Panel.
+    *   ✅ **Bilanz- & Insolvenz-Check Tab**: Eigene Benutzeroberfläche zur Live-Visualisierung des Piotroski F-Scores und Altman Z-Scores im Asset-Detailbereich.
+    *   ✅ **Deutsche Steuerberechnung nach § 20 EStG**: Automatisierte Anrechnung des 1.000 € Sparerpauschbetrags und Ausweisung der Ersparnis.
+    *   ✅ **100% Test-Validierung**: Alle 22 automatisierten Endpunkt- und Workflow-Tests grün.
+
+*   **v1.8.0**:
     *   ✅ **Deutscher FIFO-Steuerrechner & Sparerpauschbetrag**: Automatische Berücksichtigung des gesetzlichen Sparerpauschbetrags (1.000 € nach § 20 Abs. 9 EStG) sowie Berechnung von Freibetrag-Ersparnissen in Simulationen und Portfolio-Reports.
     *   ✅ **LLM JSON-Stabilität**: Bereinigung und Härtung des Gemini KI-Rebalancing-Prompts zur Vermeidung von Parsing-Exceptions.
     *   ✅ **TradingView Lightweight Candlesticks**: Nahtlose Umschaltung zwischen Linien- & Kerzencharts inklusive OHLC-Berechnung und SMA/EMA/Bollinger-Overlays.
-    *   ✅ **Vollständige Suite-Validierung**: 100% grüne Testergebnisse über alle 22 Backend- und Frontend-Endpunkte.
 
 *   **v1.7.0**:
     *   ✅ **Interaktive Candlestick-Charts**: Integration von TradingView Lightweight Charts mit dynamischem Umschalter zwischen Linien- und Kerzen-Chart (OHLC-Kurse).

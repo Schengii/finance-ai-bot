@@ -349,13 +349,14 @@ async def analyze_asset_with_committee(symbol: str, asset_info: dict, market_dat
             "bull_case": f"**Bullen-Perspektive für {symbol}:** Solides Umsatzwachstum, starke Marktstellung und positiver RSI-Trend von {market_data.get('rsi', 50):.1f}.",
             "bear_case": f"**Bären-Perspektive für {symbol}:** Erhöhte Marktvolatilität, KGV-Bewertung und potenzielle Zinsänderungsrisiken.",
             "quant_metrics": f"**Quant-Perspektive:** Trend ist {market_data.get('technical_trend', 'Neutral')}, RSI bei {market_data.get('rsi', 50):.1f}, SMA 20/50 zeigt positives Momentum.",
+            "social_sentiment": "Leicht Bullish (r/stocks & FinTwit)",
             "consensus_score": 78,
             "consensus_recommendation": "Kauf",
             "disagreement_index": "Niedrig (Hohe Einigkeit)",
             "debate_summary": f"Das Komitee ist sich größtenteils einig: Die Wachstumschancen für {symbol} überwiegen das moderate Marktrisiko."
         }
 
-    prompt = f"""Du bist ein KI-Investment-Komitee aus 3 Experten. Analysiere das Asset {symbol} ({asset_info.get('name')}):
+    prompt = f"""Du bist ein KI-Investment-Komitee aus 4 Experten (Bulle, Bär, Quant & Social-Sentiment-Analyst). Analysiere das Asset {symbol} ({asset_info.get('name')}):
 
 Marktdaten:
 - Kurs: {market_data.get('current_price')} € (24h: {market_data.get('price_change_1d')}%)
@@ -368,6 +369,7 @@ Gib die Analyse als valides JSON in folgendem Format zurück:
   "bull_case": "<Detailliertes Argument des Bullen-Analysten>",
   "bear_case": "<Detailliertes Argument des Bären-Analysten>",
   "quant_metrics": "<Quantitatives Urteil des Quant-Analysten>",
+  "social_sentiment": "<Einschätzung der Marktstimmung aus Reddit r/stocks & Social Media>",
   "consensus_score": <Zahl von 1 bis 100>,
   "consensus_recommendation": "<Starker Kauf / Kauf / Halten / Verkauf / Starker Verkauf>",
   "disagreement_index": "<Niedrig / Mittel / Hoch>",

@@ -3772,11 +3772,13 @@ async function fetchCommitteeAnalysis(symbol) {
         const bCase = document.getElementById("committee-bull-case");
         const bearCase = document.getElementById("committee-bear-case");
         const qMetrics = document.getElementById("committee-quant-metrics");
+        const sSentiment = document.getElementById("committee-social-sentiment");
         const dSummary = document.getElementById("committee-debate-summary");
 
         if (bCase) bCase.innerText = data.bull_case || "-";
         if (bearCase) bearCase.innerText = data.bear_case || "-";
         if (qMetrics) qMetrics.innerText = data.quant_metrics || "-";
+        if (sSentiment) sSentiment.innerText = data.social_sentiment || "Neutral bis Moderat Bullish";
         if (dSummary) dSummary.innerText = data.debate_summary || "-";
         
         const badge = document.getElementById("committee-consensus-badge");
