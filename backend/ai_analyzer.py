@@ -644,20 +644,19 @@ Deine Analyse soll konkrete Kauf- und Verkaufsvorschläge generieren, um die Zie
 - Kaufe vorzugsweise Anteile für unterbewertete Kategorien (Abweichung < 0) und insbesondere von Assets mit positiven Prognosen ("Kauf", "Starker Kauf").
 - Falls in einer unterbewerteten Kategorie noch kein Asset existiert, schlage ein passendes Asset (z. B. BTC für Krypto, AAPL für Aktien, Gold GC=F für Rohstoffe) vor.
 
-Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit diesem JSON-Objekt. Verwende genau folgendes Schema:
-
+Deine Antwort MUSS ein strikt gültiges JSON-Objekt sein ohne Kommentare oder Markdown.
+Schema:
 {{
   "proposals": [
     {{
-      "type": "BUY" | "SELL",
-      "symbol": "SYMBOL",
-      "value": <Betrag in EUR, z. B. 150.50>,
-      "quantity": <Menge des Assets als Kommazahl, z. B. 2.5>,
-      "reason": "<Grund für diesen Umschichtungsvorschlag auf Deutsch unter Berücksichtigung von Prognosen/RSI/Trends.>"
-    }},
-    ...
+      "type": "BUY",
+      "symbol": "AAPL",
+      "value": 150.50,
+      "quantity": 1.0,
+      "reason": "Erklärung für den Vorschlag"
+    }}
   ],
-  "ai_explanation": "<Detaillierter Rebalancing-Report auf Deutsch, der die Umschichtungen begründet, Marktchancen aufzeigt und dem Nutzer die nächsten Schritte erklärt. Verwende die gewünschte Tonalität ({ai_tone}) und beachte die spezifischen Anweisungen.>"
+  "ai_explanation": "Detaillierter Rebalancing-Report auf Deutsch."
 }}
 """
 

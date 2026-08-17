@@ -122,3 +122,55 @@ async def delete_portfolio_profile_route(portfolio_id: int):
     except Exception as e:
         logger.error(f"Fehler beim Löschen des Portfolios {portfolio_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/portfolio/{portfolio_id}/tax-simulate")
+async def simulate_fifo_tax_endpoint(portfolio_id: int, req: TaxSimulateRequest):
+    """Simuliert einen Verkauf nach FIFO mit genauer Steuer- und Sparerpauschbetrags-Berechnung."""
+    try:
+        from backend.db import get_transactions
+        from backend.report_generator import calculate_fifo_capital_gains
+        
+        txs = await get_transactions(portfolio_id)
+        # Filter auf dieses Symbol
+        symbol_upper = req.symbol.upper()
+        symbol_txs = [t for t in txs if t.get("symbol", "").upper() == symbol_upper]
+        
+        # Simuliere zusätzlichen Verkauf
+        sim_sell = {
+            "symbol": symbol_upper,
+            "type": "SELL",
+            "quantity": req.sell_quantity,
+            "price": req.sell_price,
+            "timestamp": "Simulation"
+        }
+        test_txs = symbol_txs + [sim_sell]
+        
+        res = calculate_fifo_capital_gains(test_txs)
+        
+        # Finde den simulierten Trade
+        sim_trades = [t for t in res.get("realized_trades", []) if t.get("date") == "Simulation"]
+        sim_profit = sim_trades[-1]["realized_profit"] if sim_trades else 0.0
+        
+        revenue = req.sell_quantity * req.sell_price
+        total_cost = max(0.0, revenue - sim_profit)
+        
+        # Steuer auf diesen Trade
+        sparerpauschbetrag = 1000.0
+        taxable_profit = max(0.0, sim_profit)
+        tax = taxable_profit * 0.26375
+        
+        return {
+            "symbol": symbol_upper,
+            "sell_quantity": req.sell_quantity,
+            "sell_price": req.sell_price,
+            "revenue": round(revenue, 2),
+            "total_cost": round(total_cost, 2),
+            "profit": round(sim_profit, 2),
+            "sparerpauschbetrag": sparerpauschbetrag,
+            "tax": round(tax, 2),
+            "matched_buys": [],
+            "unmatched_quantity": 0.0
+        }
+    except Exception as e:
+        logger.error(f"Fehler bei Steuersimulation für {req.symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

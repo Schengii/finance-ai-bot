@@ -52,14 +52,24 @@ def calculate_fifo_capital_gains(transactions: list) -> dict:
                 "date": date_str
             })
 
-    # Steuerberechnung (25% Kapitalertragsteuer + 5.5% Soli = 26.375%)
-    taxable_amount = max(0.0, total_realized_profit)
-    estimated_kest = taxable_amount * 0.26375
+    # Steuerberechnung nach deutschem Steuerrecht (§ 20 EStG)
+    # Sparerpauschbetrag: 1.000 € für Einzelpersonen
+    sparerpauschbetrag = 1000.0
+    taxable_profit_after_pauschbetrag = max(0.0, total_realized_profit - sparerpauschbetrag)
+    
+    # 25% Abgeltungsteuer + 5.5% Solidaritätszuschlag = 26.375%
+    kest_rate = 0.26375
+    estimated_kest = taxable_profit_after_pauschbetrag * kest_rate
+    used_pauschbetrag = min(sparerpauschbetrag, max(0.0, total_realized_profit))
 
     return {
         "total_realized_profit": round(total_realized_profit, 2),
-        "taxable_amount": round(taxable_amount, 2),
+        "sparerpauschbetrag": sparerpauschbetrag,
+        "used_pauschbetrag": round(used_pauschbetrag, 2),
+        "remaining_pauschbetrag": round(sparerpauschbetrag - used_pauschbetrag, 2),
+        "taxable_amount": round(taxable_profit_after_pauschbetrag, 2),
         "estimated_tax_kest": round(estimated_kest, 2),
+        "tax_exemption_savings": round(used_pauschbetrag * kest_rate, 2),
         "realized_trades": realized_trades
     }
 

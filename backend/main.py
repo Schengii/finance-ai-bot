@@ -96,10 +96,12 @@ class AutoTraderRuleRequest(BaseModel):
 
 # Import custom routers
 from backend import notifications_endpoints, auth_endpoints
+from backend.routes import portfolio_routes
 
 # Register routers
 app.include_router(notifications_endpoints.router)
 app.include_router(auth_endpoints.router)
+app.include_router(portfolio_routes.router)
 
 # CORS-Konfiguration für das Frontend
 app.add_middleware(
