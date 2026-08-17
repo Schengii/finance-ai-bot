@@ -898,10 +898,157 @@ body {
 }
 
 .driver-box ul, .risk-box ul {
-    list-style-type: none;
+    list-style: none;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+/* Committee & Fundamentals Grid */
+.committee-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.committee-consensus-badge {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.committee-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.committee-box-bull {
+    background: rgba(16, 185, 129, 0.05);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.committee-title-bull {
+    color: #10b981;
+    margin-bottom: 6px;
+}
+
+.committee-box-bear {
+    background: rgba(244, 63, 94, 0.05);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.committee-title-bear {
+    color: #f43f5e;
+    margin-bottom: 6px;
+}
+
+.committee-box-quant {
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.committee-title-quant {
+    color: #3b82f6;
+    margin-bottom: 6px;
+}
+
+.committee-box-social {
+    background: rgba(245, 158, 11, 0.05);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.committee-title-social {
+    color: #f59e0b;
+    margin-bottom: 6px;
+}
+
+.committee-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.committee-debate-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 0.75rem;
+}
+
+.committee-debate-title {
+    margin-bottom: 4px;
+    font-family: var(--font-heading);
+}
+
+.fundamentals-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.fundamental-score-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+}
+
+.fundamental-score-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.fundamental-score-val {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin: 8px 0;
+    font-family: var(--font-heading);
+}
+
+.piotroski-badge {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.altman-badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.notification-center-wrapper {
+    position: relative;
+}
+
+.notif-empty-state {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 15px;
 }
 
 .driver-box li, .risk-box li {
@@ -2827,6 +2974,7 @@ h1, h2, h3, h4, h5, h6 {
     padding: 16px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     cursor: pointer;
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
