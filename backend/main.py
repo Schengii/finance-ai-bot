@@ -508,22 +508,28 @@ def get_economic_calendar_route():
     """Gibt eine einfache Liste relevanter Wirtschaftstermine zurück."""
     events = [
         {
-            "date": "2026-06-25",
-            "title": "Fed-Zinsentscheidung",
+            "date": "2026-08-20",
+            "title": "Fed-Zinsentscheidung & FOMC Statement",
             "impact": "hoch",
-            "summary": "Der Markt reagiert oft sensibel auf Aussagen zur Geldpolitik."
+            "summary": "Märkte erwarten Zinsausblick und Statements zu Anleihekaufprogrammen."
         },
         {
-            "date": "2026-06-27",
-            "title": "US-BIP-Daten",
+            "date": "2026-08-24",
+            "title": "US-Inflationsdaten (CPI / VPI)",
+            "impact": "hoch",
+            "summary": "Inflationsberichte sind primäre Katalysatoren für Marktvolatilität."
+        },
+        {
+            "date": "2026-08-28",
+            "title": "Big Tech Earnings & Ex-Dividenden-Termine",
             "impact": "mittel",
-            "summary": "Wachstumsdaten können Aktien und Rohstoffe beeinflussen."
+            "summary": "Quartalsberichte und Ex-Dividenden-Stichtage für globale Leitaktien."
         },
         {
-            "date": "2026-07-01",
-            "title": "Inflationsdaten",
+            "date": "2026-09-02",
+            "title": "EZB-Ratssitzung & Euro-Zinsausblick",
             "impact": "hoch",
-            "summary": "Inflationsberichte sind oft Katalysatoren für Zinserwartungen."
+            "summary": "Europäische Zinspfade und EUR/USD-Wechselkurs-Impulse."
         }
     ]
     return {"events": events}
@@ -1395,15 +1401,19 @@ def simulate_strategy(symbol: str, strategy: str, years: int = 1):
         rs = gain / loss
         rsi = 100 - (100 / (1 + rs))
         
-        # SMA
+        # SMA & MACD
         sma_20 = close_prices.rolling(window=20).mean()
         sma_50 = close_prices.rolling(window=50).mean()
         
-        # MACD
         exp1 = close_prices.ewm(span=12, adjust=False).mean()
         exp2 = close_prices.ewm(span=26, adjust=False).mean()
         macd = exp1 - exp2
         macd_signal = macd.ewm(span=9, adjust=False).mean()
+        
+        # Bollinger Bands
+        std_20 = close_prices.rolling(window=20).std()
+        bb_upper = sma_20 + (std_20 * 2)
+        bb_lower = sma_20 - (std_20 * 2)
         
         # Simulation
         cash = 10000.0
@@ -1422,23 +1432,22 @@ def simulate_strategy(symbol: str, strategy: str, years: int = 1):
             buy_signal = False
             sell_signal = False
             
+            curr_rsi = rsi.iloc[i] if not pd.isna(rsi.iloc[i]) else 50
+            curr_sma20 = sma_20.iloc[i] if not pd.isna(sma_20.iloc[i]) else price
+            curr_sma50 = sma_50.iloc[i] if not pd.isna(sma_50.iloc[i]) else price
+            prev_sma20 = sma_20.iloc[i-1] if (i > 0 and not pd.isna(sma_20.iloc[i-1])) else curr_sma20
+            prev_sma50 = sma_50.iloc[i-1] if (i > 0 and not pd.isna(sma_50.iloc[i-1])) else curr_sma50
+            
             if strategy == "rsi":
-                curr_rsi = rsi.iloc[i]
-                if not pd.isna(curr_rsi):
-                    if curr_rsi < 30:
-                        buy_signal = True
-                    elif curr_rsi > 70:
-                        sell_signal = True
+                if curr_rsi < 30:
+                    buy_signal = True
+                elif curr_rsi > 70:
+                    sell_signal = True
             elif strategy == "sma":
-                curr_sma20 = sma_20.iloc[i]
-                curr_sma50 = sma_50.iloc[i]
-                prev_sma20 = sma_20.iloc[i-1] if i > 0 else curr_sma20
-                prev_sma50 = sma_50.iloc[i-1] if i > 0 else curr_sma50
-                if not pd.isna(curr_sma20) and not pd.isna(curr_sma50):
-                    if prev_sma20 <= prev_sma50 and curr_sma20 > curr_sma50:
-                        buy_signal = True
-                    elif prev_sma20 >= prev_sma50 and curr_sma20 < curr_sma50:
-                        sell_signal = True
+                if prev_sma20 <= prev_sma50 and curr_sma20 > curr_sma50:
+                    buy_signal = True
+                elif prev_sma20 >= prev_sma50 and curr_sma20 < curr_sma50:
+                    sell_signal = True
             elif strategy == "macd":
                 curr_macd = macd.iloc[i]
                 curr_sig = macd_signal.iloc[i]
@@ -1449,6 +1458,18 @@ def simulate_strategy(symbol: str, strategy: str, years: int = 1):
                         buy_signal = True
                     elif prev_macd >= prev_sig and curr_macd < curr_sig:
                         sell_signal = True
+            elif strategy == "sma_rsi": # Kombi: Golden Cross UND RSI nicht überkauft (< 60)
+                if curr_sma20 > curr_sma50 and curr_rsi < 45:
+                    buy_signal = True
+                elif curr_sma20 < curr_sma50 or curr_rsi > 72:
+                    sell_signal = True
+            elif strategy == "bollinger_rsi": # Mean-Reversion: Preis unter unterem Bollinger Band + RSI < 35
+                curr_bbl = bb_lower.iloc[i] if not pd.isna(bb_lower.iloc[i]) else price
+                curr_bbu = bb_upper.iloc[i] if not pd.isna(bb_upper.iloc[i]) else price
+                if price <= curr_bbl and curr_rsi < 35:
+                    buy_signal = True
+                elif price >= curr_bbu or curr_rsi > 68:
+                    sell_signal = True
                         
             if buy_signal and cash > 0:
                 shares = cash / price
