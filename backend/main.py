@@ -31,7 +31,29 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Finance AI Bot API", version="1.0.0")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan Event-Handler: Initialisiert Logging und Hintergrund-Scheduler beim Serverstart."""
+    log_file = DATA_DIR / "backend.log"
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+        
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    root_logger.addHandler(file_handler)
+    
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    root_logger.addHandler(stream_handler)
+    
+    logger.info("Logging-System in backend.log umgeleitet.")
+    scheduler.start_scheduler()
+    yield
+
+app = FastAPI(title="Finance AI Bot API", version="1.0.0", lifespan=lifespan)
 
 sse_subscribers = set()
 
@@ -66,6 +88,12 @@ class MonteCarloRequest(BaseModel):
 class CsvImportRequest(BaseModel):
     csv_text: str
 
+class AutoTraderRuleRequest(BaseModel):
+    symbol: str
+    min_confidence: int = 80
+    max_rsi: float = 40.0
+    buy_amount_eur: float = 500.0
+
 # Import custom routers
 from backend import notifications_endpoints, auth_endpoints
 
@@ -82,28 +110,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup_event():
-    """Wird beim Starten des Servers ausgeführt und initialisiert den Scheduler."""
-    # Logging-Konfiguration anpassen, nachdem uvicorn gestartet ist
-    log_file = DATA_DIR / "backend.log"
-    root_logger = logging.getLogger()
-    
-    # Entferne bestehende Handler, um Duplikate zu vermeiden
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-        
-    # Füge unsere Handler hinzu
-    file_handler = logging.FileHandler(log_file, encoding='utf-8')
-    file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
-    root_logger.addHandler(file_handler)
-    
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
-    root_logger.addHandler(stream_handler)
-    
-    logger.info("Logging-System in backend.log umgeleitet.")
-    scheduler.start_scheduler()
+@app.get("/api/events")
+async def sse_events():
+    """Server-Sent Events (SSE) Stream für Push-Updates an Frontend Clients."""
+    return StreamingResponse(sse_event_generator(), media_type="text/event-stream")
 
 @app.get("/api/status")
 async def get_status():

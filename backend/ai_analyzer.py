@@ -671,11 +671,20 @@ Deine Antwort MUSS ein gültiges JSON-Objekt sein. Antworte AUSSCHLIESSLICH mit 
                     temperature=0.2,
                 )
             )
-            response_text = response.text
+            response_text = response.text or ""
         else:
             raise RuntimeError("Kein Gemini SDK vorhanden.")
             
-        return json.loads(response_text.strip(), strict=False)
+        clean_text = response_text.strip()
+        if clean_text.startswith("```json"):
+            clean_text = clean_text[7:]
+        elif clean_text.startswith("```"):
+            clean_text = clean_text[3:]
+        if clean_text.endswith("```"):
+            clean_text = clean_text[:-3]
+        clean_text = clean_text.strip()
+
+        return json.loads(clean_text, strict=False)
     except Exception as e:
         logger.error(f"Fehler bei der Generierung der KI-Rebalancing-Empfehlung: {e}")
         return get_mock_rebalancing_advice(total_value, allocations, holdings_detail)

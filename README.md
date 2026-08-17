@@ -107,14 +107,11 @@ finance-ai-bot/
 
 ## 📝 Logbuch der Änderungen (Changelog)
 
-*   **v1.5.0 (Aktuell)**:
-    *   ✅ Migration des Gemini SDKs auf das offizielle `google-genai` SDK und Bereinigung von Deprecation-Warnungen.
-    *   ✅ Implementierung automatischer KI-Stop-Loss-, Take-Profit- und Zielkurs-Berechnungen.
-    *   ✅ Hinzufügen von Server-Sent Events (SSE) `/api/events` für Live-Updates im Browser.
-    *   ✅ Einbau des Monte-Carlo Zukunfts-Simulators & Markowitz Efficient Frontier.
-    *   ✅ Einbau des DRIP Dividenden-Reinvestitions-Planers im Dashboard.
-    *   ✅ Erweiterter Broker CSV-Import für Trade Republic, Scalable, Coinbase & Parqet.
-    *   ✅ PWA-Unterstützung mit `manifest.json` und Service Worker `sw.js`.
-    *   ✅ Dynamische VAPID-Schlüssel Generierung für WebPush-Benachrichtigungen.
-    *   ✅ Vollständiges Testset (`tests/test_endpoints.py`) mit 100% Erfolgsquote.
-    *   ✅ Behebung aller statischen Code-Analyse-, Type-Check- und Linter-Probleme in Backend und Frontend.
+*   **v1.6.0 (Aktuell)**:
+    *   ✅ Vollständige Behebung von Notification-DB-Imports (`get_notifications`, `add_notification`) mit 100% grünen Testläufen.
+    *   ✅ Modernisierung des FastAPI Lifespan Handlers (Ersatz der veralteten `@app.on_event("startup")` API).
+    *   ✅ Robustes JSON-Parsing in der Gemini KI-Rebalancing-Engine mit automatischer Markdown-Bereinigung.
+    *   ✅ Modularisierung der Backend-Routen unter `backend/routes/` für verbesserte Wartbarkeit und Skalierbarkeit.
+    *   ✅ Interaktiver KI-Copilot ("AlphaChat") mit Portfolio-Direktabfragen und Quick-Actions.
+    *   ✅ Performance-Benchmark-Berechnung (Alpha & Beta vs. S&P 500 & MSCI World).
+    *   ✅ Multi-Kanal Alarmsystem (Browser Push, Webhooks, Telegram, Discord, E-Mail).

@@ -1131,7 +1131,34 @@ async def get_webhook_logs(limit: int = 50) -> list:
     finally:
         await conn.close()
 
+async def get_notifications(limit: int = 50) -> list:
+    """Holt die neuesten Benachrichtigungen aus der Datenbank."""
+    conn = await get_db_connection()
+    try:
+        async with conn.execute(
+            "SELECT id, title, message, type, symbol, timestamp FROM notifications ORDER BY id DESC LIMIT ?",
+            (limit,)
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Benachrichtigungen: {e}")
+        return []
+    finally:
+        await conn.close()
 
-
-
-
+async def add_notification(title: str, message: str, notif_type: str = "info", symbol: str = None) -> bool:
+    """Fügt eine neue Benachrichtigung in die Datenbank ein."""
+    conn = await get_db_connection()
+    try:
+        await conn.execute(
+            "INSERT INTO notifications (title, message, type, symbol) VALUES (?, ?, ?, ?)",
+            (title, message, notif_type, symbol)
+        )
+        await conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Speichern der Benachrichtigung: {e}")
+        return False
+    finally:
+        await conn.close()
