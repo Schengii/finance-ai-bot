@@ -89,6 +89,55 @@ def calculate_stochastic(df, period=14):
         return 50.0
     return round(val, 2)
 
+def calculate_atr(df, period=14):
+    """Berechnet den Average True Range (ATR)."""
+    if len(df) < period + 1 or 'High' not in df or 'Low' not in df or 'Close' not in df:
+        return 1.0
+    high = df['High']
+    low = df['Low']
+    close_prev = df['Close'].shift(1)
+    
+    tr1 = high - low
+    tr2 = (high - close_prev).abs()
+    tr3 = (low - close_prev).abs()
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    atr = tr.rolling(window=period).mean()
+    val = float(atr.iloc[-1])
+    return round(val if not pd.isna(val) else 1.0, 2)
+
+def calculate_supertrend(df, period=10, multiplier=3):
+    """Berechnet den SuperTrend Indikator."""
+    if len(df) < period + 1:
+        return "Neutral", 0.0
+    atr = calculate_atr(df, period)
+    hl2 = (df['High'] + df['Low']) / 2.0
+    upper_band = hl2 + (multiplier * atr)
+    lower_band = hl2 - (multiplier * atr)
+    curr_close = float(df['Close'].iloc[-1])
+    direction = "Bullish (Kaufsignal)" if curr_close > float(upper_band.iloc[-1]) else "Bearish (Verkaufssignal)"
+    return direction, round(float(upper_band.iloc[-1]), 2)
+
+def calculate_ichimoku(df):
+    """Berechnet Ichimoku Cloud Niveaus (Tenkan-sen, Kijun-sen)."""
+    if len(df) < 26:
+        return {"tenkan": 0.0, "kijun": 0.0, "signal": "Neutral"}
+    high_9 = df['High'].rolling(window=9).max()
+    low_9 = df['Low'].rolling(window=9).min()
+    tenkan_sen = (high_9 + low_9) / 2.0
+    
+    high_26 = df['High'].rolling(window=26).max()
+    low_26 = df['Low'].rolling(window=26).min()
+    kijun_sen = (high_26 + low_26) / 2.0
+    
+    t_val = float(tenkan_sen.iloc[-1])
+    k_val = float(kijun_sen.iloc[-1])
+    signal = "Bullish Kumo Cross" if t_val > k_val else "Bearish Kumo Cross"
+    return {
+        "tenkan_sen": round(t_val, 2),
+        "kijun_sen": round(k_val, 2),
+        "cloud_signal": signal
+    }
+
 def fetch_market_data(symbol, days=90):
     """Holt historische Daten und berechnet technische Indikatoren & Fundamentaldaten."""
     logger.info(f"Hole Marktdaten für {symbol}...")

@@ -288,6 +288,28 @@ async def init_db():
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        # 14. Advanced Orders (Limit, OCO, Bracket, Trailing-Stop)
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS advanced_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                portfolio_id INTEGER DEFAULT 1,
+                symbol TEXT NOT NULL,
+                side TEXT NOT NULL, -- 'BUY' oder 'SELL'
+                order_type TEXT NOT NULL, -- 'LIMIT', 'STOP', 'OCO', 'BRACKET'
+                quantity REAL NOT NULL,
+                limit_price REAL,
+                stop_price REAL,
+                take_profit_price REAL,
+                stop_loss_price REAL,
+                trail_percent REAL,
+                status TEXT DEFAULT 'PENDING', -- 'PENDING', 'FILLED', 'CANCELLED'
+                execution_price REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                executed_at TIMESTAMP,
+                FOREIGN KEY (portfolio_id) REFERENCES portfolios_list (id) ON DELETE CASCADE
+            )
+        """)
             
         # Standard-Assets einfügen, falls die assets-Tabelle leer ist
         await cursor.execute("SELECT COUNT(*) FROM assets")

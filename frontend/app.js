@@ -821,8 +821,10 @@ function selectAsset(symbol) {
         `;
     }
     
-    // Prefetch Komitee & Fundamentalanalyse
+    // Prefetch Komitee, Multi-Agent Debatte, DCF & Fundamentalanalyse
     fetchCommitteeAnalysis(symbol);
+    fetchMultiAgentDebate(symbol);
+    fetchDcfValuation(symbol);
     fetchFundamentalsAnalysis(symbol);
 
     // Render Chart based on selected timeframe
@@ -2694,8 +2696,12 @@ function setupPortfolioSubTabs() {
             
             if (targetPane === "transactions-tab-content") {
                 loadTransactions();
+            } else if (targetPane === "orders-tab-content") {
+                loadAdvancedOrders();
             } else if (targetPane === "rebalance-tab-content") {
                 loadRebalanceData();
+            } else if (targetPane === "stress-tab-content") {
+                runMacroStressTest();
             }
         });
     });
@@ -3763,6 +3769,12 @@ document.addEventListener("DOMContentLoaded", () => {
     initSSEListener();
     setupNotificationCenter();
     setupPdfReportExport();
+    
+    // Enterprise Initializers
+    setupFearAndGreed();
+    setupAdvancedOrders();
+    setupMacroStressTesting();
+    setupQuantModels();
 });
 
 
@@ -4071,6 +4083,506 @@ function setupModalTabListeners() {
     if (runMcBtn) runMcBtn.addEventListener("click", runMonteCarloSimulation);
     if (runDripBtn) runDripBtn.addEventListener("click", runDripSimulation);
 }
+
+// =====================================================================
+// V3.0.0 ENTERPRISE CLIENT FUNCTIONS
+// =====================================================================
+
+// 1. Fear & Greed Index
+function setupFearAndGreed() {
+    fetchFearAndGreedIndex();
+    // Alle 5 Minuten aktualisieren
+    setInterval(fetchFearAndGreedIndex, 300000);
+}
+
+async function fetchFearAndGreedIndex() {
+    try {
+        const res = await fetch(`${API_BASE}/api/sentiment/fear-and-greed`);
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        const scoreEl = document.getElementById("fear-greed-score-val");
+        const labelEl = document.getElementById("fear-greed-label-val");
+        
+        if (scoreEl) {
+            scoreEl.innerText = data.score;
+            scoreEl.style.color = data.color;
+        }
+        if (labelEl) {
+            labelEl.innerText = data.classification.split(" ")[0];
+            labelEl.style.color = data.color;
+            labelEl.style.background = `${data.color}22`;
+        }
+    } catch (e) {
+        console.warn("Fehler beim Laden des Fear & Greed Index", e);
+    }
+}
+
+// 2. Multi-Agent Deliberation & Debate
+async function fetchMultiAgentDebate(symbol) {
+    if (!symbol) return;
+    const container = document.getElementById("multi-agent-debate-container");
+    const vBox = document.getElementById("cio-verdict-box");
+    if (!container) return;
+
+    container.innerHTML = '<div class="loading-state"><i data-lucide="loader-2" class="spin"></i><p>Multi-Agenten-Debatte wird simuliert...</p></div>';
+    if (window.lucide) lucide.createIcons();
+
+    try {
+        const res = await fetch(`${API_BASE}/api/committee/${symbol}/debate`);
+        if (!res.ok) throw new Error("Debatten-Endpunkt nicht erreichbar");
+        const data = await res.json();
+
+        // Render Rounds & Speakers
+        container.innerHTML = "";
+        if (data.rounds && data.rounds.length > 0) {
+            data.rounds.forEach(rnd => {
+                const roundCard = document.createElement("div");
+                roundCard.className = "debate-round-card";
+                
+                let speakersHtml = "";
+                rnd.speakers.forEach(spk => {
+                    let spkClass = "quant";
+                    if (spk.agent.includes("Bull")) spkClass = "bull";
+                    else if (spk.agent.includes("Bär")) spkClass = "bear";
+                    else if (spk.agent.includes("Makro")) spkClass = "macro";
+                    else if (spk.agent.includes("Risk") || spk.agent.includes("CRO")) spkClass = "cro";
+
+                    speakersHtml += `
+                        <div class="debate-speaker-row ${spkClass}">
+                            <div class="debate-speaker-meta">
+                                <div class="debate-speaker-name">${spk.agent}</div>
+                                <span class="debate-speaker-role">${spk.role_badge}</span>
+                            </div>
+                            <p class="debate-speaker-text">${spk.argument}</p>
+                        </div>
+                    `;
+                });
+
+                roundCard.innerHTML = `
+                    <div class="debate-round-header">
+                        <i data-lucide="message-square"></i> ${rnd.title}
+                    </div>
+                    <div class="debate-speakers-list">
+                        ${speakersHtml}
+                    </div>
+                `;
+                container.appendChild(roundCard);
+            });
+        }
+
+        // Render CIO Synthesis Verdict
+        if (data.cio_synthesis) {
+            const cs = data.cio_synthesis;
+            const titleEl = document.getElementById("cio-verdict-title");
+            const badgeEl = document.getElementById("cio-consensus-badge");
+            const summaryEl = document.getElementById("cio-summary-text");
+            const catalystsList = document.getElementById("cio-catalysts-list");
+
+            if (titleEl) titleEl.innerText = cs.verdict_title || "CIO Konsens-Urteil";
+            if (badgeEl) badgeEl.innerText = `${cs.consensus_recommendation} (${cs.confidence_score}%)`;
+            if (summaryEl) summaryEl.innerText = cs.summary || "";
+            
+            if (catalystsList) {
+                catalystsList.innerHTML = (cs.key_catalysts || []).map(c => `<li>${c}</li>`).join("");
+                if (cs.hedging_guideline) {
+                    catalystsList.innerHTML += `<li class="text-yellow"><strong>Absicherungsauflage:</strong> ${cs.hedging_guideline}</li>`;
+                }
+            }
+        }
+
+        const badge = document.getElementById("committee-consensus-badge");
+        if (badge && data.cio_synthesis) {
+            badge.innerText = `Konsens: ${data.cio_synthesis.consensus_recommendation} (${data.cio_synthesis.confidence_score}%)`;
+        }
+        if (window.lucide) lucide.createIcons();
+    } catch (e) {
+        console.warn("Fehler bei Multi-Agenten Debatte", e);
+        container.innerHTML = '<p class="text-muted">Multi-Agenten Debatte konnte nicht geladen werden.</p>';
+    }
+}
+
+// 3. DCF Fair Value Valuation
+async function fetchDcfValuation(symbol) {
+    if (!symbol) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/valuation/dcf/${symbol}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const curPriceEl = document.getElementById("dcf-current-price");
+        const fairValEl = document.getElementById("dcf-fair-value");
+        const marginEl = document.getElementById("dcf-margin-safety");
+        const waccEl = document.getElementById("dcf-wacc");
+        const statusBadge = document.getElementById("dcf-status-badge");
+        const sensTable = document.getElementById("dcf-sensitivity-table");
+
+        if (curPriceEl) curPriceEl.innerText = formatCurrency(data.current_price);
+        if (fairValEl) fairValEl.innerText = formatCurrency(data.fair_value);
+        if (marginEl) {
+            const sign = data.margin_of_safety_pct >= 0 ? "+" : "";
+            marginEl.innerText = `${sign}${data.margin_of_safety_pct}%`;
+            marginEl.className = `dcf-val ${data.margin_of_safety_pct >= 0 ? 'text-green' : 'text-red'}`;
+        }
+        if (waccEl) waccEl.innerText = `${data.parameters?.wacc_pct || 8.5}% (Beta: ${data.parameters?.beta || 1.0})`;
+        if (statusBadge) {
+            statusBadge.innerText = data.valuation_status;
+            statusBadge.style.color = data.margin_of_safety_pct >= 10 ? '#10b981' : (data.margin_of_safety_pct <= -10 ? '#ef4444' : '#f59e0b');
+        }
+
+        // Render 5x5 Sensitivity Table
+        if (sensTable && data.sensitivity_matrix && data.sensitivity_matrix.length > 0) {
+            const tgHeaders = data.sensitivity_matrix[0].map(c => `<th>g = ${c.terminal_growth}%</th>`).join("");
+            let tableHtml = `
+                <thead>
+                    <tr>
+                        <th>WACC \\ Growth</th>
+                        ${tgHeaders}
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            data.sensitivity_matrix.forEach(row => {
+                const waccLabel = row[0]?.wacc || "";
+                let rowCells = "";
+                row.forEach(cell => {
+                    const isGreen = cell.undervalued;
+                    rowCells += `<td class="${isGreen ? 'dcf-cell-green' : 'dcf-cell-red'}">${cell.fair_value} €</td>`;
+                });
+                tableHtml += `
+                    <tr>
+                        <th>WACC ${waccLabel}%</th>
+                        ${rowCells}
+                    </tr>
+                `;
+            });
+            tableHtml += "</tbody>";
+            sensTable.innerHTML = tableHtml;
+        }
+    } catch (e) {
+        console.warn("Fehler bei DCF-Bewertung", e);
+    }
+}
+
+// 4. Advanced Order Management System (OMS)
+function setupAdvancedOrders() {
+    const form = document.getElementById("add-order-form");
+    const assetSelect = document.getElementById("order-asset");
+    const evalBtn = document.getElementById("btn-evaluate-orders");
+    const typeSelect = document.getElementById("order-type");
+
+    // Order Typ Change Handler (Show/Hide relevant price fields)
+    if (typeSelect) {
+        typeSelect.addEventListener("change", () => {
+            const val = typeSelect.value;
+            const limitGroup = document.getElementById("group-order-limit");
+            const tpGroup = document.getElementById("group-order-tp");
+            const slGroup = document.getElementById("group-order-sl");
+
+            if (val === "LIMIT") {
+                if (limitGroup) limitGroup.classList.remove("hidden");
+                if (tpGroup) tpGroup.classList.add("hidden");
+                if (slGroup) slGroup.classList.add("hidden");
+            } else if (val === "STOP") {
+                if (limitGroup) limitGroup.classList.add("hidden");
+                if (tpGroup) tpGroup.classList.add("hidden");
+                if (slGroup) slGroup.classList.remove("hidden");
+            } else if (val === "OCO") {
+                if (limitGroup) limitGroup.classList.add("hidden");
+                if (tpGroup) tpGroup.classList.remove("hidden");
+                if (slGroup) slGroup.classList.remove("hidden");
+            } else if (val === "BRACKET") {
+                if (limitGroup) limitGroup.classList.remove("hidden");
+                if (tpGroup) tpGroup.classList.remove("hidden");
+                if (slGroup) slGroup.classList.remove("hidden");
+            }
+        });
+    }
+
+    // Populate Asset Select
+    function populateOrderAssets() {
+        if (!assetSelect) return;
+        const symbols = Object.keys(appData.predictions || {});
+        if (symbols.length > 0) {
+            assetSelect.innerHTML = symbols.map(s => `<option value="${s}">${s} (${appData.predictions[s]?.name || s})</option>`).join("");
+        }
+    }
+    populateOrderAssets();
+
+    // Order Submit Handler
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const symbol = document.getElementById("order-asset")?.value;
+            const side = document.getElementById("order-side")?.value;
+            const order_type = document.getElementById("order-type")?.value;
+            const quantity = parseFloat(document.getElementById("order-qty")?.value || "0");
+            const limit_price = parseFloat(document.getElementById("order-limit-price")?.value || "0") || null;
+            const take_profit_price = parseFloat(document.getElementById("order-tp-price")?.value || "0") || null;
+            const stop_loss_price = parseFloat(document.getElementById("order-sl-price")?.value || "0") || null;
+
+            if (!symbol || quantity <= 0) {
+                showToast("Bitte geben Sie ein gültiges Asset und eine Menge ein.", "error");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/orders`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        portfolio_id: currentPortfolioId,
+                        symbol, side, order_type, quantity,
+                        limit_price, take_profit_price, stop_loss_price
+                    })
+                });
+                if (!res.ok) throw new Error("Order konnte nicht platziert werden");
+                const resData = await res.json();
+                showToast(resData.message || "Order erfolgreich platziert!", "success");
+                form.reset();
+                loadAdvancedOrders();
+            } catch (err) {
+                showToast("Fehler: " + err.message, "error");
+            }
+        });
+    }
+
+    // Manual Evaluate Button
+    if (evalBtn) {
+        evalBtn.addEventListener("click", async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/orders/evaluate?portfolio_id=${currentPortfolioId}`, { method: "POST" });
+                if (!res.ok) throw new Error("Auswertung fehlgeschlagen");
+                const data = await res.json();
+                showToast(`Order-Auswertung abgeschlossen! (${data.count} Trades ausgeführt)`, "info");
+                loadAdvancedOrders();
+                loadPortfolioData();
+            } catch (err) {
+                showToast("Fehler bei Auswertung: " + err.message, "error");
+            }
+        });
+    }
+}
+
+async function loadAdvancedOrders() {
+    const listBody = document.getElementById("orders-list-body");
+    if (!listBody) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/orders?portfolio_id=${currentPortfolioId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const orders = data.orders || [];
+
+        if (orders.length === 0) {
+            listBody.innerHTML = `<tr><td colspan="9" class="text-center text-muted" style="padding: 15px;">Keine Orders vorhanden.</td></tr>`;
+            return;
+        }
+
+        listBody.innerHTML = orders.map(o => {
+            let statusBadge = `<span class="badge order-badge-pending">Offen (Pending)</span>`;
+            if (o.status === "FILLED") statusBadge = `<span class="badge order-badge-filled">Ausgeführt (${o.execution_price} €)</span>`;
+            else if (o.status === "CANCELLED") statusBadge = `<span class="badge order-badge-cancelled">Storniert</span>`;
+
+            let triggerInfo = "-";
+            if (o.order_type === "LIMIT") triggerInfo = `Limit: ${o.limit_price} €`;
+            else if (o.order_type === "STOP") triggerInfo = `Stop: ${o.stop_price} €`;
+            else if (o.order_type === "OCO") triggerInfo = `TP: ${o.take_profit_price} € | SL: ${o.stop_loss_price} €`;
+            else if (o.order_type === "BRACKET") triggerInfo = `Limit: ${o.limit_price || 'Market'} € | TP: ${o.take_profit_price} € | SL: ${o.stop_loss_price} €`;
+
+            return `
+                <tr>
+                    <td>#${o.id}</td>
+                    <td><strong>${o.symbol}</strong></td>
+                    <td>${o.order_type}</td>
+                    <td><span class="${o.side === 'BUY' ? 'text-green' : 'text-red'}">${o.side}</span></td>
+                    <td>${o.quantity}</td>
+                    <td>${triggerInfo}</td>
+                    <td>${statusBadge}</td>
+                    <td>${o.created_at ? o.created_at.substring(0, 16) : '-'}</td>
+                    <td>
+                        ${o.status === 'PENDING' ? `<button class="btn btn-secondary btn-sm" onclick="cancelOrder(${o.id})" title="Order stornieren"><i data-lucide="x"></i></button>` : '-'}
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        if (window.lucide) lucide.createIcons();
+    } catch (e) {
+        console.warn("Fehler beim Laden der Orders", e);
+    }
+}
+
+async function cancelOrder(orderId) {
+    try {
+        const res = await fetch(`${API_BASE}/api/orders/${orderId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Order konnte nicht storniert werden");
+        showToast(`Order #${orderId} storniert!`, "info");
+        loadAdvancedOrders();
+    } catch (e) {
+        showToast("Fehler beim Stornieren: " + e.message, "error");
+    }
+}
+
+// 5. Macro Stress-Testing & Historical Crises
+let selectedStressScenario = "covid_2020";
+
+function setupMacroStressTesting() {
+    const cards = document.querySelectorAll(".crisis-card");
+    const runBtn = document.getElementById("btn-run-stress-test");
+
+    cards.forEach(c => {
+        c.addEventListener("click", () => {
+            cards.forEach(card => card.classList.remove("active"));
+            c.classList.add("active");
+            selectedStressScenario = c.dataset.scenario || "covid_2020";
+        });
+    });
+
+    if (runBtn) {
+        runBtn.addEventListener("click", () => runMacroStressTest(selectedStressScenario));
+    }
+}
+
+async function runMacroStressTest(scenarioKey = "covid_2020") {
+    const resultsPanel = document.getElementById("stress-test-results");
+    if (!resultsPanel) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/stress-test`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ scenario_key: scenarioKey })
+        });
+        if (!res.ok) throw new Error("Stresstest-Endpunkt nicht erreichbar");
+        const data = await res.json();
+
+        resultsPanel.classList.remove("hidden");
+        const titleEl = document.getElementById("stress-res-title");
+        const badgeEl = document.getElementById("stress-resilience-badge");
+        const pnlEl = document.getElementById("stress-pnl-val");
+        const breakdownBody = document.getElementById("stress-breakdown-body");
+
+        if (titleEl) titleEl.innerText = `Ergebnis: ${data.scenario_name}`;
+        if (badgeEl) {
+            badgeEl.innerText = data.resilience_rating;
+            badgeEl.style.color = data.badge_color;
+            badgeEl.style.background = `${data.badge_color}22`;
+        }
+        if (pnlEl) {
+            const sign = data.projected_loss >= 0 ? "+" : "";
+            pnlEl.innerText = `${sign}${formatCurrency(data.projected_loss)} (${data.projected_drawdown_pct}%)`;
+            pnlEl.className = `stress-pnl-val ${data.projected_loss >= 0 ? 'text-green' : 'text-red'}`;
+        }
+
+        if (breakdownBody && data.asset_breakdown) {
+            breakdownBody.innerHTML = data.asset_breakdown.map(a => `
+                <tr>
+                    <td><strong>${a.symbol}</strong></td>
+                    <td>${formatCurrency(a.initial_value)}</td>
+                    <td class="${a.shock_pct >= 0 ? 'text-green' : 'text-red'}">${a.shock_pct >= 0 ? '+' : ''}${a.shock_pct}%</td>
+                    <td>${formatCurrency(a.simulated_value)}</td>
+                    <td class="${a.pnl >= 0 ? 'text-green' : 'text-red'}">${a.pnl >= 0 ? '+' : ''}${formatCurrency(a.pnl)}</td>
+                </tr>
+            `).join("");
+        }
+        showToast(`Stresstest '${data.scenario_name}' erfolgreich berechnet!`, "success");
+    } catch (e) {
+        showToast("Fehler bei Stresstest: " + e.message, "error");
+    }
+}
+
+// 6. Quantitative Portfolio Models (Black-Litterman & HRP)
+function setupQuantModels() {
+    const btnManual = document.getElementById("btn-model-manual");
+    const btnBL = document.getElementById("btn-model-black-litterman");
+    const btnHRP = document.getElementById("btn-model-hrp");
+
+    if (btnManual) {
+        btnManual.addEventListener("click", () => {
+            [btnManual, btnBL, btnHRP].forEach(b => b?.classList.remove("active"));
+            btnManual.classList.add("active");
+            showToast("Manuelle Zielallokation aktiv.", "info");
+        });
+    }
+
+    if (btnBL) {
+        btnBL.addEventListener("click", async () => {
+            [btnManual, btnBL, btnHRP].forEach(b => b?.classList.remove("active"));
+            btnBL.classList.add("active");
+            try {
+                const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/black-litterman`);
+                if (!res.ok) throw new Error("Black-Litterman Optimierung fehlgeschlagen");
+                const data = await res.json();
+                
+                // Aggregiere Gewichte auf Asset-Klassen für das Formular
+                let stockW = 50, cryptoW = 30, commW = 20;
+                if (data.allocations && data.allocations.length > 0) {
+                    let totalStock = 0, totalCrypto = 0, totalComm = 0;
+                    data.allocations.forEach(a => {
+                        const sym = a.symbol.toUpperCase();
+                        if (sym.includes("BTC") || sym.includes("ETH")) totalCrypto += a.optimal_weight_pct;
+                        else if (sym.includes("=F") || sym.includes("GOLD")) totalComm += a.optimal_weight_pct;
+                        else totalStock += a.optimal_weight_pct;
+                    });
+                    if (totalStock + totalCrypto + totalComm > 0) {
+                        stockW = Math.round(totalStock);
+                        cryptoW = Math.round(totalCrypto);
+                        commW = 100 - stockW - cryptoW;
+                    }
+                }
+
+                document.getElementById("target-stock").value = stockW;
+                document.getElementById("target-crypto").value = cryptoW;
+                document.getElementById("target-commodity").value = commW;
+
+                showToast(`Black-Litterman Modell angewendet (Erwartete Rendite: ${data.portfolio_expected_return_pct}% p.a.)`, "success");
+                loadRebalanceData();
+            } catch (e) {
+                showToast("Fehler bei Black-Litterman: " + e.message, "error");
+            }
+        });
+    }
+
+    if (btnHRP) {
+        btnHRP.addEventListener("click", async () => {
+            [btnManual, btnBL, btnHRP].forEach(b => b?.classList.remove("active"));
+            btnHRP.classList.add("active");
+            try {
+                const res = await fetch(`${API_BASE}/api/portfolio/${currentPortfolioId}/hrp`);
+                if (!res.ok) throw new Error("HRP Allokation fehlgeschlagen");
+                const data = await res.json();
+
+                let stockW = 60, cryptoW = 20, commW = 20;
+                if (data.allocations && data.allocations.length > 0) {
+                    let totalStock = 0, totalCrypto = 0, totalComm = 0;
+                    data.allocations.forEach(a => {
+                        const sym = a.symbol.toUpperCase();
+                        if (sym.includes("BTC") || sym.includes("ETH")) totalCrypto += a.weight_pct;
+                        else if (sym.includes("=F") || sym.includes("GOLD")) totalComm += a.weight_pct;
+                        else totalStock += a.weight_pct;
+                    });
+                    if (totalStock + totalCrypto + totalComm > 0) {
+                        stockW = Math.round(totalStock);
+                        cryptoW = Math.round(totalCrypto);
+                        commW = 100 - stockW - cryptoW;
+                    }
+                }
+
+                document.getElementById("target-stock").value = stockW;
+                document.getElementById("target-crypto").value = cryptoW;
+                document.getElementById("target-commodity").value = commW;
+
+                showToast("Hierarchical Risk Parity (HRP) Allokation berechnet!", "success");
+                loadRebalanceData();
+            } catch (e) {
+                showToast("Fehler bei HRP Allokation: " + e.message, "error");
+            }
+        });
+    }
+}
+
 
 
 

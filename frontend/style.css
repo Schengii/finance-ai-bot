@@ -3278,3 +3278,364 @@ h1, h2, h3, h4, h5, h6 {
     padding: 2px 6px;
 }
 
+/* =====================================================================
+   V3.0.0 ENTERPRISE DESIGN TOKENS & COMPONENTS
+   ===================================================================== */
+
+/* 1. Fear & Greed Header Badge */
+.fear-greed-badge-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.fear-greed-title {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.fear-greed-score {
+    font-weight: 700;
+    color: #10b981;
+    font-size: 0.9rem;
+}
+
+.fear-greed-label {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    font-weight: 600;
+}
+
+/* 2. Multi-Agent Debate Timeline */
+.debate-timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.debate-round-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.debate-round-header {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.debate-speaker-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.4);
+    border-left: 3px solid var(--accent-color);
+}
+
+.debate-speaker-row.bull {
+    border-left-color: #10b981;
+}
+
+.debate-speaker-row.bear {
+    border-left-color: #ef4444;
+}
+
+.debate-speaker-row.quant {
+    border-left-color: #3b82f6;
+}
+
+.debate-speaker-row.macro {
+    border-left-color: #f59e0b;
+}
+
+.debate-speaker-row.cro {
+    border-left-color: #8b5cf6;
+}
+
+.debate-speaker-meta {
+    min-width: 140px;
+}
+
+.debate-speaker-name {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.debate-speaker-role {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.debate-speaker-text {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* CIO Verdict Box */
+.cio-verdict-card {
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.15), rgba(15, 23, 42, 0.6));
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 14px;
+}
+
+.cio-verdict-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.cio-verdict-header h5 {
+    margin: 0;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #60a5fa;
+}
+
+.cio-catalysts-box {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cio-catalysts-box h6 {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.cio-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+/* 3. DCF Metrics Grid & Sensitivity Table */
+.dcf-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.dcf-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.dcf-stat-card {
+    padding: 12px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dcf-label {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.dcf-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.dcf-sensitivity-section {
+    margin-top: 15px;
+}
+
+.dcf-table-container {
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+.dcf-sensitivity-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+    text-align: center;
+}
+
+.dcf-sensitivity-table th,
+.dcf-sensitivity-table td {
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dcf-sensitivity-table th {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.dcf-cell-green {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    font-weight: 600;
+}
+
+.dcf-cell-red {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+/* 4. Quant Model Selector Bar */
+.quant-model-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.quant-model-label {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.quant-model-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* 5. Crisis Stresstest Grid & Results */
+.crisis-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.crisis-card {
+    padding: 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.crisis-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.crisis-card.active {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.crisis-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.crisis-card-header h5 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.crisis-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.stress-results-panel {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.stress-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stress-pnl-box {
+    text-align: right;
+}
+
+.stress-pnl-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.stress-pnl-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+/* 6. Advanced Orders Styling */
+.order-action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.order-badge-pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.order-badge-filled {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.order-badge-cancelled {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+

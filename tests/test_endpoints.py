@@ -253,13 +253,109 @@ async def run_tests():
         print("[OK] Auto-Trader Regeln erfolgreich!")
 
         # 22. Test Notification History
-        print("\n[22/22] Teste Notification Historie...")
+        print("\n[22/30] Teste Notification Historie...")
         res_notifs = await client.get("/api/notifications/history")
         assert res_notifs.status_code == 200
         print("[OK] Notification Historie erfolgreich!")
 
+        # 23. Test Multi-Agent Debate
+        print("\n[23/30] Teste Multi-Agenten Deliberation & Debatte...")
+        res_debate = await client.get("/api/committee/AAPL/debate")
+        assert res_debate.status_code == 200
+        debate_data = res_debate.json()
+        assert "rounds" in debate_data
+        assert "cio_synthesis" in debate_data
+        assert len(debate_data["rounds"]) > 0
+        print("[OK] Multi-Agenten Debatte erfolgreich!")
+
+        # 24. Test DCF Fair Value Valuation
+        print("\n[24/30] Teste DCF Fair Value Bewertung...")
+        res_dcf = await client.get("/api/valuation/dcf/AAPL")
+        assert res_dcf.status_code == 200
+        dcf_data = res_dcf.json()
+        assert "fair_value" in dcf_data
+        assert "margin_of_safety_pct" in dcf_data
+        assert "sensitivity_matrix" in dcf_data
+        assert len(dcf_data["sensitivity_matrix"]) > 0
+        print("[OK] DCF Fair Value Bewertung & Sensitivitätsmatrix erfolgreich!")
+
+        # 25. Test Macro Stress-Testing
+        print("\n[25/30] Teste Makro-Krisen-Stresstest...")
+        res_stress = await client.post("/api/portfolio/1/stress-test", json={"scenario_key": "covid_2020"})
+        assert res_stress.status_code == 200
+        stress_data = res_stress.json()
+        assert "projected_drawdown_pct" in stress_data
+        assert "resilience_rating" in stress_data
+        assert "asset_breakdown" in stress_data
+        print("[OK] Makro-Krisen-Stresstest erfolgreich!")
+
+        # 26. Test Black-Litterman Asset Allocation
+        print("\n[26/30] Teste Black-Litterman Portfolio-Optimierung...")
+        res_bl = await client.get("/api/portfolio/1/black-litterman")
+        assert res_bl.status_code == 200
+        bl_data = res_bl.json()
+        assert "allocations" in bl_data
+        assert "portfolio_expected_return_pct" in bl_data
+        print("[OK] Black-Litterman Portfolio-Optimierung erfolgreich!")
+
+        # 27. Test Hierarchical Risk Parity (HRP)
+        print("\n[27/30] Teste Hierarchical Risk Parity (HRP)...")
+        res_hrp = await client.get("/api/portfolio/1/hrp")
+        assert res_hrp.status_code == 200
+        hrp_data = res_hrp.json()
+        assert "allocations" in hrp_data
+        assert len(hrp_data["allocations"]) > 0
+        print("[OK] Hierarchical Risk Parity (HRP) erfolgreich!")
+
+        # 28. Test Advanced OMS Orders (Limit, Bracket, OCO)
+        print("\n[28/30] Teste Advanced Order Management (Bracket & OCO)...")
+        res_order = await client.post("/api/orders", json={
+            "portfolio_id": 1,
+            "symbol": "AAPL",
+            "side": "BUY",
+            "order_type": "BRACKET",
+            "quantity": 3.0,
+            "limit_price": 180.0,
+            "take_profit_price": 210.0,
+            "stop_loss_price": 165.0
+        })
+        assert res_order.status_code == 200
+        order_id = res_order.json()["order_id"]
+
+        res_get_orders = await client.get("/api/orders?portfolio_id=1")
+        assert res_get_orders.status_code == 200
+        assert len(res_get_orders.json()["orders"]) > 0
+
+        # Evaluate Orders
+        res_eval = await client.post("/api/orders/evaluate?portfolio_id=1")
+        assert res_eval.status_code == 200
+
+        # Cancel Order
+        res_cancel = await client.delete(f"/api/orders/{order_id}")
+        assert res_cancel.status_code == 200
+        print("[OK] Advanced Order Management (Bracket, OCO, Evaluate & Cancel) erfolgreich!")
+
+        # 29. Test Fear & Greed Index
+        print("\n[29/30] Teste Fear & Greed Index Aggregator...")
+        res_fg = await client.get("/api/sentiment/fear-and-greed")
+        assert res_fg.status_code == 200
+        fg_data = res_fg.json()
+        assert "score" in fg_data
+        assert "classification" in fg_data
+        assert "components" in fg_data
+        print("[OK] Fear & Greed Index Aggregator erfolgreich!")
+
+        # 30. Test Social Sentiment Radar
+        print("\n[30/30] Teste Social Sentiment Radar...")
+        res_social = await client.get("/api/sentiment/social/AAPL")
+        assert res_social.status_code == 200
+        social_data = res_social.json()
+        assert "social_sentiment_score" in social_data
+        assert "bullish_ratio_pct" in social_data
+        print("[OK] Social Sentiment Radar erfolgreich!")
+
     print("\n==================================================")
-    print("             ALLE ENDPUNKT-TESTS ERFOLGREICH!      ")
+    print("        ALLE 30/30 ENDPUNKT-TESTS ERFOLGREICH!     ")
     print("==================================================")
 
 if __name__ == "__main__":

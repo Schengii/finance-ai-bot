@@ -10,7 +10,7 @@ import uvicorn
 # Übergeordnetes Verzeichnis zum Python-Pfad hinzufügen
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from typing import List
+from typing import List, Optional, Dict, Any
 # pyrefly: ignore [missing-import]
 from pydantic import BaseModel
 # pyrefly: ignore [missing-import]
@@ -2236,6 +2236,219 @@ async def get_notifications_history_endpoint():
         return {"notifications": notifs}
     except Exception as e:
         logger.error(f"Fehler beim Laden der Notification-Historie: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =====================================================================
+# V3.0.0 INSTITUTIONAL & ENTERPRISE UPGRADE ENDPOINTS
+# =====================================================================
+
+class AdvancedOrderRequest(BaseModel):
+    portfolio_id: int = 1
+    symbol: str
+    side: str = "BUY"
+    order_type: str = "LIMIT"
+    quantity: float
+    limit_price: Optional[float] = None
+    stop_price: Optional[float] = None
+    take_profit_price: Optional[float] = None
+    stop_loss_price: Optional[float] = None
+    trail_percent: Optional[float] = None
+
+class StressTestRequest(BaseModel):
+    scenario_key: str = "covid_2020"
+    custom_params: Optional[Dict[str, Any]] = None
+
+AdvancedOrderRequest.model_rebuild()
+StressTestRequest.model_rebuild()
+
+
+@app.get("/api/committee/{symbol}/debate")
+async def multi_agent_debate_endpoint(symbol: str):
+    """Führt eine strukturierte 3-Runden-Debatte zwischen 5 spezialisierten Agenten durch."""
+    try:
+        from backend.data_fetcher import get_asset_market_data
+        from backend.sentiment_engine import run_multi_agent_debate
+        from backend.config import DEFAULT_ASSETS
+
+        asset_info = next((a for a in DEFAULT_ASSETS if a["symbol"].upper() == symbol.upper()), {"symbol": symbol, "name": symbol, "type": "stock"})
+        market_data = await get_asset_market_data(symbol, asset_info.get("type", "stock"))
+        debate_result = await run_multi_agent_debate(symbol, asset_info, market_data)
+        return debate_result
+    except Exception as e:
+        logger.error(f"Fehler bei Multi-Agenten Debatte für {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/valuation/dcf/{symbol}")
+async def dcf_valuation_endpoint(symbol: str):
+    """Berechnet den DCF Fair Value und die 5x5 Sensitivitätsmatrix für eine Aktie."""
+    try:
+        import yfinance as yf
+        from backend.quant_engine import calculate_dcf_valuation
+
+        ticker = yf.Ticker(symbol)
+        info = ticker.info or {}
+        info["symbol"] = symbol
+        
+        # Aktueller Preis
+        history = ticker.history(period="5d")
+        curr_price = float(history['Close'].iloc[-1]) if not history.empty else float(info.get("currentPrice") or 100.0)
+        
+        return calculate_dcf_valuation(info, curr_price)
+    except Exception as e:
+        logger.error(f"Fehler bei DCF-Bewertung für {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/portfolio/{portfolio_id}/stress-test")
+async def stress_test_endpoint(portfolio_id: int, req: StressTestRequest):
+    """Führt einen Makro-Krisen-Stresstest (2008, 2020 COVID, 2022 Fed Shock) für das Depot durch."""
+    try:
+        from backend.db import get_portfolio_from_db
+        from backend.quant_engine import run_macro_stress_test
+
+        holdings = await get_portfolio_from_db(portfolio_id)
+        return run_macro_stress_test(holdings, req.scenario_key, req.custom_params)
+    except Exception as e:
+        logger.error(f"Fehler bei Stresstest für Portfolio {portfolio_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/black-litterman")
+async def black_litterman_endpoint(portfolio_id: int):
+    """Berechnet die optimale Black-Litterman Asset Allocation unter Kombination von CAPM und KI-Views."""
+    try:
+        from backend.db import get_portfolio_from_db, get_predictions_from_db
+        from backend.quant_engine import calculate_black_litterman_allocation
+
+        holdings = await get_portfolio_from_db(portfolio_id)
+        symbols = [h["symbol"] for h in holdings] if holdings else ["AAPL", "MSFT", "BTC-USD", "GC=F"]
+        
+        preds = (await get_predictions_from_db()).get("predictions", {})
+        views = {}
+        confidences = {}
+        for s in symbols:
+            p = preds.get(s, {})
+            # Geschätzte Rendite basierend auf KI-Empfehlung
+            rec = p.get("recommendation", "Halten")
+            conf = p.get("confidence", 70)
+            if rec in ["Starker Kauf", "Kauf"]:
+                views[s] = 14.0
+            elif rec in ["Verkauf", "Starker Verkauf"]:
+                views[s] = -5.0
+            else:
+                views[s] = 6.0
+            confidences[s] = conf
+
+        return calculate_black_litterman_allocation(symbols, views_dict=views, confidences_dict=confidences)
+    except Exception as e:
+        logger.error(f"Fehler bei Black-Litterman Optimierung: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/portfolio/{portfolio_id}/hrp")
+async def hrp_allocation_endpoint(portfolio_id: int):
+    """Berechnet die Hierarchical Risk Parity (HRP) Allokation für das Portfolio."""
+    try:
+        from backend.db import get_portfolio_from_db
+        from backend.quant_engine import calculate_hrp_allocation
+
+        holdings = await get_portfolio_from_db(portfolio_id)
+        symbols = [h["symbol"] for h in holdings] if holdings else ["AAPL", "MSFT", "BTC-USD", "GC=F"]
+        return calculate_hrp_allocation(symbols)
+    except Exception as e:
+        logger.error(f"Fehler bei HRP Allokation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/orders")
+async def get_orders_endpoint(portfolio_id: int = 1, status: Optional[str] = None):
+    """Holt alle offenen oder historischen Advanced Orders."""
+    try:
+        from backend.order_management import get_advanced_orders
+        orders = await get_advanced_orders(portfolio_id, status)
+        return {"orders": orders}
+    except Exception as e:
+        logger.error(f"Fehler beim Laden der Orders: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/orders")
+async def create_order_endpoint(order: AdvancedOrderRequest):
+    """Erstellt eine neue Advanced Order (Limit, Stop, OCO, Bracket)."""
+    try:
+        from backend.order_management import create_advanced_order
+        res = await create_advanced_order(
+            portfolio_id=order.portfolio_id,
+            symbol=order.symbol,
+            side=order.side,
+            order_type=order.order_type,
+            quantity=order.quantity,
+            limit_price=order.limit_price,
+            stop_price=order.stop_price,
+            take_profit_price=order.take_profit_price,
+            stop_loss_price=order.stop_loss_price,
+            trail_percent=order.trail_percent
+        )
+        return res
+    except Exception as e:
+        logger.error(f"Fehler beim Erstellen der Order: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/orders/{order_id}")
+async def cancel_order_endpoint(order_id: int):
+    """Storniert eine offene Order."""
+    try:
+        from backend.order_management import cancel_advanced_order
+        success = await cancel_advanced_order(order_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Order nicht gefunden oder bereits ausgeführt.")
+        return {"status": "success", "message": f"Order #{order_id} storniert."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Fehler beim Stornieren der Order #{order_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/orders/evaluate")
+async def evaluate_orders_endpoint(portfolio_id: int = 1):
+    """Wertet offene Orders gegen aktuelle Marktpreise aus und führt Ausführungen durch."""
+    try:
+        from backend.order_management import evaluate_advanced_orders
+        from backend.db import get_predictions_from_db
+
+        preds = (await get_predictions_from_db()).get("predictions", {})
+        market_prices = {sym: p.get("price", 0.0) for sym, p in preds.items()}
+        
+        executed = await evaluate_advanced_orders(portfolio_id, market_prices)
+        return {"status": "success", "executed_trades": executed, "count": len(executed)}
+    except Exception as e:
+        logger.error(f"Fehler bei Order-Auswertung: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/sentiment/fear-and-greed")
+async def fear_and_greed_endpoint():
+    """Liefert den aktuellen Fear & Greed Index des Marktes."""
+    try:
+        from backend.sentiment_engine import fetch_fear_and_greed_index
+        return fetch_fear_and_greed_index()
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des Fear & Greed Index: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/sentiment/social/{symbol}")
+async def social_sentiment_endpoint(symbol: str):
+    """Liefert das Social-Sentiment Profil für ein Asset."""
+    try:
+        from backend.sentiment_engine import get_social_sentiment_radar
+        return get_social_sentiment_radar(symbol)
+    except Exception as e:
+        logger.error(f"Fehler beim Laden des Social Sentiments für {symbol}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

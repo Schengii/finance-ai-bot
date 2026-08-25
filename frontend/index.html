@@ -57,6 +57,12 @@
                 <div class="last-update">
                     Aktualisiert: <span id="last-update-time">-</span>
                 </div>
+                <!-- Fear & Greed Index Widget -->
+                <div class="fear-greed-badge-wrapper" id="fear-greed-badge" title="CNN & Crypto Fear & Greed Index">
+                    <span class="fear-greed-title">Fear &amp; Greed:</span>
+                    <span class="fear-greed-score" id="fear-greed-score-val">62</span>
+                    <span class="fear-greed-label" id="fear-greed-label-val">Gier</span>
+                </div>
                 <!-- Currency Toggle -->
                 <div class="currency-toggle-wrapper">
                     <button id="currency-toggle-btn" class="btn btn-secondary btn-sm" aria-label="Währung wechseln. Aktuell: USD" title="Währung wechseln">
@@ -289,7 +295,10 @@
                                     <i data-lucide="cpu"></i> KI-Prognose
                                 </button>
                                 <button class="detail-tabactive" data-tab="committee-tab">
-                                    <i data-lucide="users"></i> KI-Komitee
+                                    <i data-lucide="users"></i> Multi-Agent Debatte
+                                </button>
+                                <button class="detail-tabactive" data-tab="dcf-tab">
+                                    <i data-lucide="calculator"></i> DCF Fair Value
                                 </button>
                                 <button class="detail-tabactive" data-tab="fundamentals-tab">
                                     <i data-lucide="shield-check"></i> Bilanz-Check
@@ -388,34 +397,68 @@
                                     </div>
                                 </div>
 
-                                <!-- KI-Komitee Tab -->
+                                <!-- KI-Komitee & Multi-Agent Debatte Tab -->
                                 <div class="tab-pane" id="committee-tab">
                                     <div class="ai-report-panel">
                                         <div class="committee-header-row">
-                                            <h4>4-Experten KI-Komitee</h4>
-                                            <span class="badge committee-consensus-badge" id="committee-consensus-badge">Lade Komitee...</span>
+                                            <h4>5-Rollen Multi-Agenten Deliberation &amp; Debatte</h4>
+                                            <span class="badge committee-consensus-badge" id="committee-consensus-badge">Lade Debatte...</span>
                                         </div>
-                                        <div class="committee-grid">
-                                            <div class="driver-box committee-box-bull">
-                                                <h5 class="committee-title-bull"><i data-lucide="trending-up"></i> Bullen-Analyst</h5>
-                                                <p id="committee-bull-case" class="committee-text">Lade Analyse...</p>
+                                        
+                                        <!-- Debatten-Runden Container -->
+                                        <div id="multi-agent-debate-container" class="debate-timeline-container">
+                                            <!-- Dynamisch befüllt -->
+                                        </div>
+
+                                        <!-- CIO Konsens-Urteil Box -->
+                                        <div class="cio-verdict-card glass-panel" id="cio-verdict-box">
+                                            <div class="cio-verdict-header">
+                                                <h5><i data-lucide="award"></i> <span id="cio-verdict-title">CIO Konsens-Urteil</span></h5>
+                                                <span class="badge" id="cio-consensus-badge">Kauf (85% Konfidenz)</span>
                                             </div>
-                                            <div class="risk-box committee-box-bear">
-                                                <h5 class="committee-title-bear"><i data-lucide="trending-down"></i> Bären-Analyst</h5>
-                                                <p id="committee-bear-case" class="committee-text">Lade Analyse...</p>
-                                            </div>
-                                            <div class="driver-box committee-box-quant">
-                                                <h5 class="committee-title-quant"><i data-lucide="cpu"></i> Quant-Analyst</h5>
-                                                <p id="committee-quant-metrics" class="committee-text">Lade Kennzahlen...</p>
-                                            </div>
-                                            <div class="risk-box committee-box-social">
-                                                <h5 class="committee-title-social"><i data-lucide="message-square"></i> Social &amp; Reddit Sentiment</h5>
-                                                <p id="committee-social-sentiment" class="committee-text">Leicht Bullish (r/stocks)</p>
+                                            <p id="cio-summary-text" class="committee-text">Lade CIO Urteil...</p>
+                                            <div class="cio-catalysts-box">
+                                                <h6>Katalysatoren &amp; Absicherungsauflagen:</h6>
+                                                <ul id="cio-catalysts-list" class="cio-list"></ul>
                                             </div>
                                         </div>
-                                        <div class="committee-debate-card">
-                                            <h5 class="committee-debate-title"><i data-lucide="scale"></i> Debatten-Zusammenfassung</h5>
-                                            <p id="committee-debate-summary" class="committee-text">Lade Debatte...</p>
+                                    </div>
+                                </div>
+
+                                <!-- DCF Fair Value Tab -->
+                                <div class="tab-pane" id="dcf-tab">
+                                    <div class="ai-report-panel">
+                                        <div class="dcf-header-row">
+                                            <h4>Discounted Cash Flow (DCF) Fair Value</h4>
+                                            <span class="badge dcf-status-badge" id="dcf-status-badge">Berechne Fair Value...</span>
+                                        </div>
+                                        <div class="dcf-metrics-grid">
+                                            <div class="dcf-stat-card glass-panel">
+                                                <span class="dcf-label">Aktueller Kurs</span>
+                                                <span class="dcf-val" id="dcf-current-price">-</span>
+                                            </div>
+                                            <div class="dcf-stat-card glass-panel highlight-green">
+                                                <span class="dcf-label">Intrinsischer Fair Value</span>
+                                                <span class="dcf-val text-green" id="dcf-fair-value">-</span>
+                                            </div>
+                                            <div class="dcf-stat-card glass-panel">
+                                                <span class="dcf-label">Sicherheitsmarge (Margin of Safety)</span>
+                                                <span class="dcf-val" id="dcf-margin-safety">-</span>
+                                            </div>
+                                            <div class="dcf-stat-card glass-panel">
+                                                <span class="dcf-label">WACC / Kapitalkosten</span>
+                                                <span class="dcf-val" id="dcf-wacc">-</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="dcf-sensitivity-section">
+                                            <h5>5x5 Sensitivitätsmatrix: WACC vs. Terminal Growth</h5>
+                                            <p class="section-subtitle">Fair Value Simulation bei schwankenden Kapitalkosten und ewigem Wachstum:</p>
+                                            <div class="dcf-table-container">
+                                                <table class="dcf-sensitivity-table" id="dcf-sensitivity-table">
+                                                    <!-- Dynamisch -->
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -529,9 +572,11 @@
                         <!-- Portfolio Sub-Tabs -->
                         <div class="portfolio-sub-tabs">
                             <button class="portfolio-sub-tab active" data-port-tab="holdings-tab-content">Bestände</button>
+                            <button class="portfolio-sub-tab" data-port-tab="orders-tab-content">Advanced Orders (Bracket / OCO)</button>
                             <button class="portfolio-sub-tab" data-port-tab="transactions-tab-content">Transaktionsverlauf</button>
                             <button class="portfolio-sub-tab" data-port-tab="tax-tab-content">FIFO-Steuer-Rechner</button>
-                            <button class="portfolio-sub-tab" data-port-tab="rebalance-tab-content">Rebalancing</button>
+                            <button class="portfolio-sub-tab" data-port-tab="rebalance-tab-content">Rebalancing &amp; Quant-Modelle</button>
+                            <button class="portfolio-sub-tab" data-port-tab="stress-tab-content">Makro-Stresstests</button>
                         </div>
 
                         <!-- 1. Bestände Tab Content -->
@@ -594,6 +639,86 @@
                                         <canvas id="portfolioDividendChart"></canvas>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Orders Tab Content (Bracket, OCO, Limit) -->
+                        <div id="orders-tab-content" class="portfolio-tab-pane hidden">
+                            <!-- Create Order Form -->
+                            <form id="add-order-form" class="add-investment-form">
+                                <h3>Fortgeschrittene Order platzieren</h3>
+                                <p class="section-subtitle">Erstellen Sie Limit-, OCO- (One-Cancels-Other) oder Bracket-Orders (Entry + TP + SL).</p>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="order-asset">Asset wählen</label>
+                                        <select id="order-asset" class="glass-input" required></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="order-side">Richtung</label>
+                                        <select id="order-side" class="glass-input" required>
+                                            <option value="BUY">KAUFEN (Long)</option>
+                                            <option value="SELL">VERKAUFEN (Short / Exit)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="order-type">Order-Typ</label>
+                                        <select id="order-type" class="glass-input" required>
+                                            <option value="LIMIT">Limit-Order</option>
+                                            <option value="STOP">Stop-Loss Order</option>
+                                            <option value="OCO">OCO (Take-Profit &amp; Stop-Loss)</option>
+                                            <option value="BRACKET">Bracket Order (Entry + TP + SL)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="order-qty">Menge</label>
+                                        <input type="number" id="order-qty" class="glass-input" step="any" min="0.000001" placeholder="z.B. 5" required>
+                                    </div>
+                                </div>
+                                <div class="form-row" id="order-price-fields">
+                                    <div class="form-group" id="group-order-limit">
+                                        <label for="order-limit-price">Limit-Preis (€)</label>
+                                        <input type="number" id="order-limit-price" class="glass-input" step="any" placeholder="z.B. 140.00">
+                                    </div>
+                                    <div class="form-group" id="group-order-tp">
+                                        <label for="order-tp-price">Take-Profit Ziel (€)</label>
+                                        <input type="number" id="order-tp-price" class="glass-input" step="any" placeholder="z.B. 175.00">
+                                    </div>
+                                    <div class="form-group" id="group-order-sl">
+                                        <label for="order-sl-price">Stop-Loss Schwelle (€)</label>
+                                        <input type="number" id="order-sl-price" class="glass-input" step="any" placeholder="z.B. 130.00">
+                                    </div>
+                                </div>
+                                <div class="order-action-buttons">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i data-lucide="send"></i> Order platzieren
+                                    </button>
+                                    <button type="button" id="btn-evaluate-orders" class="btn btn-secondary btn-sm">
+                                        <i data-lucide="play"></i> Offene Orders jetzt auswerten
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Orders Table -->
+                            <div class="holdings-table-container">
+                                <h4>Aktive &amp; Historische Orders</h4>
+                                <table class="holdings-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Asset</th>
+                                            <th>Typ</th>
+                                            <th>Richtung</th>
+                                            <th>Menge</th>
+                                            <th>Limit / Trigger</th>
+                                            <th>Status</th>
+                                            <th>Erstellt</th>
+                                            <th>Aktion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="orders-list-body">
+                                        <!-- Dynamisch befüllt -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
@@ -713,13 +838,23 @@
                             </div>
                         </div>
 
-                        <!-- 4. Rebalancing & Asset-Allokation Content -->
+                        <!-- 4. Rebalancing & Quant-Modelle Content -->
                         <div id="rebalance-tab-content" class="portfolio-tab-pane hidden">
                             <div class="rebalance-container">
+                                <!-- Quant Model Selector Bar -->
+                                <div class="quant-model-bar glass-panel">
+                                    <span class="quant-model-label"><i data-lucide="cpu"></i> Allokations-Modell:</span>
+                                    <div class="quant-model-buttons">
+                                        <button type="button" class="btn btn-secondary btn-sm active" id="btn-model-manual">Manuell (Soll-%)</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" id="btn-model-black-litterman"><i data-lucide="sparkles" class="text-yellow"></i> Black-Litterman (AI-CAPM)</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" id="btn-model-hrp"><i data-lucide="git-branch" class="text-blue"></i> Hierarchical Risk Parity (HRP)</button>
+                                    </div>
+                                </div>
+
                                 <!-- target allocation form -->
                                 <form id="target-allocation-form" class="add-investment-form">
                                     <h3>Zielallokation festlegen</h3>
-                                    <p class="section-subtitle">Geben Sie Ihre gewünschte Verteilung in % ein. Die Summe muss 100% ergeben.</p>
+                                    <p class="section-subtitle">Geben Sie Ihre gewünschte Verteilung in % ein oder wählen Sie oben ein quantitatives KI-Modell.</p>
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="target-stock">Aktien (Stock) %</label>
@@ -834,6 +969,84 @@
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Makro-Stresstests & Krisen-Simulator Content -->
+                        <div id="stress-tab-content" class="portfolio-tab-pane hidden">
+                            <div class="stress-test-container">
+                                <div class="section-header">
+                                    <h3>Makro-Stresstests &amp; Historische Krisen-Simulation</h3>
+                                    <p class="section-subtitle">Simulieren Sie, wie Ihr aktuelles Portfolio in historischen Marktcrashs und Zinsschocks performt hätte.</p>
+                                </div>
+
+                                <!-- Crisis Scenario Selector Cards -->
+                                <div class="crisis-selector-grid">
+                                    <div class="crisis-card active glass-panel" data-scenario="covid_2020">
+                                        <div class="crisis-card-header">
+                                            <i data-lucide="activity" class="text-red"></i>
+                                            <h5>2020 COVID Crash</h5>
+                                        </div>
+                                        <p class="crisis-desc">Globaler Lockdown-Flash-Crash (-32% Equities, -48% Crypto).</p>
+                                    </div>
+                                    <div class="crisis-card glass-panel" data-scenario="gfc_2008">
+                                        <div class="crisis-card-header">
+                                            <i data-lucide="landmark" class="text-red"></i>
+                                            <h5>2008 Lehman-Krise</h5>
+                                        </div>
+                                        <p class="crisis-desc">Globale Bankenkrise &amp; langanhaltende Rezession (-52% Equities).</p>
+                                    </div>
+                                    <div class="crisis-card glass-panel" data-scenario="stagflation_2022">
+                                        <div class="crisis-card-header">
+                                            <i data-lucide="trending-down" class="text-yellow"></i>
+                                            <h5>2022 Zinsschock</h5>
+                                        </div>
+                                        <p class="crisis-desc">Stagflation, Notenbank-Zinsanhebungen &amp; Rohstoff-Boom.</p>
+                                    </div>
+                                    <div class="crisis-card glass-panel" data-scenario="dotcom_2000">
+                                        <div class="crisis-card-header">
+                                            <i data-lucide="cpu" class="text-red"></i>
+                                            <h5>2000 Dotcom-Crash</h5>
+                                        </div>
+                                        <p class="crisis-desc">Tech-Kernschmelze und Entwertung spekulativer Growth-Titel.</p>
+                                    </div>
+                                </div>
+
+                                <button id="btn-run-stress-test" class="btn btn-primary">
+                                    <i data-lucide="shield-alert"></i> Stresstest berechnen
+                                </button>
+
+                                <!-- Stress Test Results -->
+                                <div id="stress-test-results" class="stress-results-panel glass-panel hidden">
+                                    <div class="stress-summary-header">
+                                        <div>
+                                            <h4 id="stress-res-title">Ergebnis: 2020 COVID-19 Flash Crash</h4>
+                                            <span class="badge" id="stress-resilience-badge">Moderat Belastbar</span>
+                                        </div>
+                                        <div class="stress-pnl-box">
+                                            <span class="stress-pnl-label">Simulierter Verlust:</span>
+                                            <span class="stress-pnl-val text-red" id="stress-pnl-val">- 0.00 € (-0.0%)</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="holdings-table-container">
+                                        <h5>Asset-Level Belastungsprofil</h5>
+                                        <table class="holdings-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Asset</th>
+                                                    <th>Startwert</th>
+                                                    <th>Simulierter Schock</th>
+                                                    <th>Simulierter Endwert</th>
+                                                    <th>P&amp;L Effekt</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="stress-breakdown-body">
+                                                <!-- Dynamisch befüllt -->
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
