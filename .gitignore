@@ -1,0 +1,56 @@
+# Environments & Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+.env.local
+.env.*.local
+.env
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# Databases & Runtime Data
+*.sqlite
+*.sqlite3
+*.db
+backend/data/*.db
+backend/data/*.sqlite
+backend/data/*.sqlite3
+
+# Logs & Temporary Files
+*.log
+logs/
+scratch/
+tmp/
+temp/
+
+# Operating System & IDEs
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.sublime-project
+*.sublime-workspace
+
+# Node & Frontend (falls npm/bundler genutzt wird)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/

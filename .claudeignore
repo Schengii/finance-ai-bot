@@ -1,0 +1,44 @@
+# Secrets & Environment variables
+.env
+.env.*
+!.env.example
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache & Build Artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Databases & Runtime Data (große Binärdateien & SQLite)
+*.sqlite
+*.sqlite3
+*.db
+backend/data/
+
+# Logs & Temp files
+*.log
+logs/
+scratch/
+tmp/
+temp/
+
+# Git & IDE internals
+.git/
+.idea/
+.vscode/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
